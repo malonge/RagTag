@@ -20,6 +20,7 @@ def run(cmnd):
     log('Running : %s' % cmnd)
     if subprocess.call(cmnd, shell=True, executable='/bin/bash') != 0:
         raise RuntimeError('Failed : %s ' % cmnd)
+    log('Finished running : %s' % cmnd)
 
 
 def log(message):
