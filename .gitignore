@@ -1,0 +1,6 @@
+.idea
+*.fasta
+*.fa
+*.paf
+*.delta
+*.log
