@@ -107,6 +107,7 @@ def main():
         for i in ctg_alns:
             ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_len)
 
+    # Remove query sequences which have no more qualifying alignments
     fltrd_ctg_alns = dict()
     for i in ctg_alns:
         if ctg_alns[i] is not None:

@@ -43,7 +43,7 @@ class ContigAlignment:
         self.orientation_confidence = None
         self._get_orientation_confidence()
         self.location_confidence = None
-        #self._get_location_confidence()
+        self._get_location_confidence()
 
 
 
@@ -123,7 +123,7 @@ class ContigAlignment:
         self.primary_alignment = max_index
 
     def _get_orientation_confidence(self):
-        """ Get the orientation confidence score give these alignments for a given query sequence. """
+        """ Get the orientation confidence score given these alignments for a given query sequence. """
         num = 0
         denom = 0
         for i in self._get_best_ref_alns():
@@ -132,6 +132,33 @@ class ContigAlignment:
                 num += aln_len
             denom += aln_len
         self.orientation_confidence = num/denom
+
+    def _get_location_confidence(self):
+        """ Get the location confidence score given these alignments for a given query sequence. """
+        best_ref_alns = self._get_best_ref_alns()
+
+        # Get all the alignment reference intervals for alignments to the best reference sequence
+        aln_intervals = []
+        all_positions = []
+        for i in best_ref_alns:
+            aln_intervals.append((self._ref_starts[i], self._ref_ends[i]))
+            all_positions.append(self._ref_starts[i])
+            all_positions.append(self._ref_ends[i])
+
+        # The denominator is the max - min alignment positions
+        denom = max(all_positions) - min(all_positions)
+
+        # The numerator is the coverage
+        num = 0
+        sorted_intervals = sorted(aln_intervals, key=lambda tup: tup[0])
+        max_end = -1
+        for j in sorted_intervals:
+            start_new_terr = max(j[0], max_end)
+            num += max(0, j[1] - start_new_terr)
+            max_end = max(max_end, j[1])
+
+        self.location_confidence = num/denom
+
 
     def _get_best_ref_alns(self):
         return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == self.best_ref_header]
