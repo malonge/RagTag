@@ -1,3 +1,6 @@
+import operator
+from collections import defaultdict
+
 from ragoo_utilities.utilities import summarize_planesweep
 
 
@@ -25,12 +28,24 @@ class ContigAlignment:
         all_lens = self._get_attr_lens()
         if not len(set(all_lens)) == 1:
             raise ValueError("The alignments are incomplete.")
+        if not all_lens[0]:
+            raise ValueError("ContigAlignment must contain at least one alignment.")
 
         # Attributes derived from alignments
         self.best_ref_header = None
         self.grouping_confidence = None
-        self.orientation = None
+        self._get_best_ref_header()
+
+        self.primary_alignment = None
+        self._get_primary_alignment()
+
+        self.orientation = self._strands[self.primary_alignment]
         self.orientation_confidence = None
+        self._get_orientation_confidence()
+        self.location_confidence = None
+        #self._get_location_confidence()
+
+
 
     def __str__(self):
         alns = []
@@ -62,20 +77,82 @@ class ContigAlignment:
         ]
         return all_lens
 
+    def _get_best_ref_header(self):
+        """ From the alignments, determine the reference sequence that is the most covered by this query sequence. """
+        # Get the set of all references chromosomes
+        all_ref_headers = set(self._ref_headers)
+        if len(all_ref_headers) == 1:
+            self.best_ref_header = self._ref_headers[0]
+            self.grouping_confidence = 1
+
+        # Initialize coverage counts for each chromosome
+        ranges = defaultdict(int)
+
+        # Get all the alignment intervals for each reference sequence
+        all_intervals = defaultdict(list)
+        for i in range(len(self._ref_headers)):
+            this_range = (self._ref_starts[i], self._ref_ends[i])
+            this_seq = self._ref_headers[i]
+            all_intervals[this_seq].append(this_range)
+
+        # For each reference header, sort the intervals and get the union interval length.
+        for i in all_intervals.keys():
+            sorted_intervals = sorted(all_intervals[i], key=lambda tup: tup[0])
+            max_end = -1
+            for j in sorted_intervals:
+                start_new_terr = max(j[0], max_end)
+                ranges[i] += max(0, j[1] - start_new_terr)
+                max_end = max(max_end, j[1])
+
+        # I convert to a list and sort the ranges.items() in order to have ties broken in a deterministic way.
+        max_seq = max(sorted(list(ranges.items())), key=operator.itemgetter(1))[0]
+        self.best_ref_header = max_seq
+
+        # Now get the confidence of this chromosome assignment
+        # Equal to the max range over all ranges
+        self.grouping_confidence = ranges[max_seq] / sum(ranges.values())
+
+    def _get_primary_alignment(self):
+        max_index = -1
+        max_len = -1
+        for i in range(len(self._ref_headers)):
+            this_len = abs(self._query_ends[i] - self._query_starts[i])
+            if this_len > max_len:
+                max_len = this_len
+                max_index = i
+        self.primary_alignment = max_index
+
+    def _get_orientation_confidence(self):
+        """ Get the orientation confidence score give these alignments for a given query sequence. """
+        num = 0
+        denom = 0
+        for i in self._get_best_ref_alns():
+            aln_len = abs(self._query_ends[i] - self._query_starts[i])
+            if self._strands[i] == self.orientation:
+                num += aln_len
+            denom += aln_len
+        self.orientation_confidence = num/denom
+
+    def _get_best_ref_alns(self):
+        return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == self.best_ref_header]
+
     def _rearrange_alns(self, hits):
         """ Order the alignments according to 'hits', an ordered list of indices. """
-        return ContigAlignment(
-            self.query_header,
-            self.query_len,
-            [self._ref_headers[i] for i in hits],
-            [self._ref_lens[i] for i in hits],
-            [self._ref_starts[i] for i in hits],
-            [self._ref_ends[i] for i in hits],
-            [self._query_starts[i] for i in hits],
-            [self._query_ends[i] for i in hits],
-            [self._strands[i] for i in hits],
-            [self._mapqs[i] for i in hits]
-        )
+        if hits:
+            return ContigAlignment(
+                self.query_header,
+                self.query_len,
+                [self._ref_headers[i] for i in hits],
+                [self._ref_lens[i] for i in hits],
+                [self._ref_starts[i] for i in hits],
+                [self._ref_ends[i] for i in hits],
+                [self._query_starts[i] for i in hits],
+                [self._query_ends[i] for i in hits],
+                [self._strands[i] for i in hits],
+                [self._mapqs[i] for i in hits]
+            )
+        else:
+            return None
 
     def add_alignment(self, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_query_start, in_query_end, in_strand, in_mapq):
         """ Add an alignment for this query. """

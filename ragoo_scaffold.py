@@ -88,11 +88,12 @@ def main():
     aln_reader = AlignmentReader(output_path + "query_against_ref", aligner)
     for aln_line in aln_reader.parse_alignments():
 
-        ## Check that the contig and reference in this alignment are allowed.
+        # Check that the contig and reference in this alignment are allowed.
         if aln_line.query_header not in query_blacklist and aln_line.ref_header not in ref_blacklist:
             if aln_line.query_header not in ctg_alns:
-                ctg_alns[aln_line.query_header] = ContigAlignment(aln_line.query_header, aln_line.query_len, [], [], [], [], [], [], [], [])
-            ctg_alns[aln_line.query_header] = ctg_alns[aln_line.query_header].add_alignment(aln_line.ref_header, aln_line.ref_len, aln_line.ref_start, aln_line.ref_end, aln_line.query_start, aln_line.query_end, aln_line.strand, aln_line.mapq)
+                ctg_alns[aln_line.query_header] = ContigAlignment(aln_line.query_header, aln_line.query_len, [aln_line.ref_header], [aln_line.ref_len], [aln_line.ref_start], [aln_line.ref_end], [aln_line.query_start], [aln_line.query_end], [aln_line.strand], [aln_line.mapq])
+            else:
+                ctg_alns[aln_line.query_header] = ctg_alns[aln_line.query_header].add_alignment(aln_line.ref_header, aln_line.ref_len, aln_line.ref_start, aln_line.ref_end, aln_line.query_start, aln_line.query_end, aln_line.strand, aln_line.mapq)
 
     # Filter the alignments
     log("filtering alignments")
@@ -100,13 +101,25 @@ def main():
         log('alignments are from minimap2. removing alignments with mapq < %r.' % min_q)
         for i in ctg_alns:
             ctg_alns[i] = ctg_alns[i].filter_mapq(min_q)
-            ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_len)
+            if ctg_alns[i] is not None:
+                ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_len)
     else:
         for i in ctg_alns:
             ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_len)
 
+    fltrd_ctg_alns = dict()
+    for i in ctg_alns:
+        if ctg_alns[i] is not None:
+            fltrd_ctg_alns[i] = ctg_alns[i]
 
     # order and orient scaffolds
+    print(ctg_alns["scaffold202_61.7_battle_1"].orientation_confidence)
+    print(ctg_alns["scaffold202_61.7_battle_1"])
+    print(ctg_alns["scaffold202_61.7_battle_1"]._get_best_ref_alns())
+
+    for i in fltrd_ctg_alns:
+        if len(set(fltrd_ctg_alns[i]._strands)) > 1:
+            print (fltrd_ctg_alns[i].query_header)
 
 
 if __name__ == "__main__":
