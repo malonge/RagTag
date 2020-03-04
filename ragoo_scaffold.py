@@ -109,6 +109,7 @@ def main():
             ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_len)
 
     # Remove query sequences which have no more qualifying alignments
+    # TODO impose confidence score thresholds
     fltrd_ctg_alns = dict()
     for i in ctg_alns:
         if ctg_alns[i] is not None:
@@ -124,8 +125,14 @@ def main():
 
     # Sort the query sequences for each reference sequence
     # TODO make a new dict where ref seq is key, and list is the gap sizes to put between the query seqs
+    pads_sizes = dict()
     for i in all_mapped_ref_seqs:
         all_mapped_ref_seqs[i] = sorted(all_mapped_ref_seqs[i])
+        if infer_gaps:
+            # TODO
+            pass
+        else:
+            pads_sizes[i] = [gap_size for i in range(len(all_mapped_ref_seqs[i])-1)]
 
 
 

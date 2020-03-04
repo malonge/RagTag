@@ -31,9 +31,6 @@ class ContigAlignment:
         if not all_lens[0]:
             raise ValueError("ContigAlignment must contain at least one alignment.")
 
-        # Sort the alignments with respect to the reference sequences
-        self._sort_by_ref()
-
         # Attributes derived from alignments
         self.best_ref_header = None
         self.grouping_confidence = None
@@ -254,3 +251,16 @@ class ContigAlignment:
     def get_best_ref_pos(self):
         """ Return the ref start and ref end for the primary alignment. """
         return self._ref_starts[self.primary_alignment], self._ref_ends[self.primary_alignment]
+
+    def get_best_ref_flanks(self):
+        """
+        With respect to the "best" reference sequence, return the lowest and highest alignment positions
+        :return: lowest position, highest position
+        """
+        ref_pos = []
+        for i in self._get_best_ref_alns():
+            ref_pos.append(self._ref_starts[i])
+            ref_pos.append(self._ref_ends[i])
+
+        return min(ref_pos), max(ref_pos)
+
