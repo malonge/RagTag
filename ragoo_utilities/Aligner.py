@@ -134,7 +134,7 @@ class Minimap2Aligner(Aligner):
             raise ValueError("Please don't output Minimap2 alignments in SAM format (-a). RaGOO needs PAF format.")
 
         if "c" in all_flags:
-            log("WARNING: getting base alignments (-c) will slow down Minimap2 alignment.")
+            log("WARNING: computing base alignments (-c) will slow down Minimap2 alignment.")
 
         return True
 

@@ -31,6 +31,9 @@ class ContigAlignment:
         if not all_lens[0]:
             raise ValueError("ContigAlignment must contain at least one alignment.")
 
+        # Sort the alignments with respect to the reference sequences
+        self._sort_by_ref()
+
         # Attributes derived from alignments
         self.best_ref_header = None
         self.grouping_confidence = None
@@ -44,8 +47,6 @@ class ContigAlignment:
         self._get_orientation_confidence()
         self.location_confidence = None
         self._get_location_confidence()
-
-
 
     def __str__(self):
         alns = []
@@ -113,9 +114,10 @@ class ContigAlignment:
         self.grouping_confidence = ranges[max_seq] / sum(ranges.values())
 
     def _get_primary_alignment(self):
+        # Needs to be primary of the alignments to the best
         max_index = -1
         max_len = -1
-        for i in range(len(self._ref_headers)):
+        for i in self._get_best_ref_alns():
             this_len = abs(self._query_ends[i] - self._query_starts[i])
             if this_len > max_len:
                 max_len = this_len
@@ -159,12 +161,11 @@ class ContigAlignment:
 
         self.location_confidence = num/denom
 
-
     def _get_best_ref_alns(self):
         return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == self.best_ref_header]
 
-    def _rearrange_alns(self, hits):
-        """ Order the alignments according to 'hits', an ordered list of indices. """
+    def _update_alns(self, hits):
+        """ Order the alignments according to 'hits', an ordered list of indices. Return a new instance of the class. """
         if hits:
             return ContigAlignment(
                 self.query_header,
@@ -180,6 +181,28 @@ class ContigAlignment:
             )
         else:
             return None
+
+    def _rearrange_alns(self, hits):
+        """ Order the alignments according to 'hits', an ordered list of indices. """
+        if len(hits) != len(self._ref_headers):
+            raise ValueError("Can only shuffle alignments. To update, use '_update_alns()'")
+
+        self._ref_headers = [self._ref_headers[i] for i in hits]
+        self._ref_lens = [self._ref_lens[i] for i in hits]
+        self._ref_starts = [self._ref_starts[i] for i in hits]
+        self._ref_ends = [self._ref_ends[i] for i in hits]
+        self._query_starts = [self._query_starts[i] for i in hits]
+        self._query_ends = [self._query_ends[i] for i in hits]
+        self._strands = [self._strands[i] for i in hits]
+        self._mapqs = [self._mapqs[i] for i in hits]
+
+    def _sort_by_ref(self):
+        ref_pos = []
+        for i in range(len(self._ref_headers)):
+            ref_pos.append((self._ref_headers[i], self._ref_starts[i], self._ref_ends[i], i))
+        hits = [i[3] for i in sorted(ref_pos)]
+
+        self._rearrange_alns(hits)
 
     def add_alignment(self, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_query_start, in_query_end, in_strand, in_mapq):
         """ Add an alignment for this query. """
@@ -200,13 +223,13 @@ class ContigAlignment:
         if not isinstance(l, int):
             raise ValueError("l must be an integer. ")
         hits = [i for i in range(len(self._ref_headers)) if abs(self._query_ends[i] - self._query_starts[i]) >= l]
-        return self._rearrange_alns(hits)
+        return self._update_alns(hits)
 
     def filter_mapq(self, q):
         if not isinstance(q, int):
             raise ValueError("q must be an integer. ")
         hits = [i for i in range(len(self._ref_headers)) if self._mapqs[i] >= q]
-        return self._rearrange_alns(hits)
+        return self._update_alns(hits)
 
     def unique_anchor_filter(self, unique_length):
         """
@@ -226,4 +249,8 @@ class ContigAlignment:
             lines_by_query.append((i, j))
 
         hits = summarize_planesweep(lines_by_query, unique_length)
-        return self._rearrange_alns(hits)
+        return self._update_alns(hits)
+
+    def get_best_ref_pos(self):
+        """ Return the ref start and ref end for the primary alignment. """
+        return self._ref_starts[self.primary_alignment], self._ref_ends[self.primary_alignment]

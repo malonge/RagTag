@@ -1,5 +1,6 @@
 import os
 import argparse
+from collections import defaultdict
 
 from ragoo_utilities.utilities import log
 from ragoo_utilities.Aligner import Minimap2Aligner
@@ -113,14 +114,19 @@ def main():
         if ctg_alns[i] is not None:
             fltrd_ctg_alns[i] = ctg_alns[i]
 
-    # order and orient scaffolds
-    print(ctg_alns["scaffold202_61.7_battle_1"].orientation_confidence)
-    print(ctg_alns["scaffold202_61.7_battle_1"])
-    print(ctg_alns["scaffold202_61.7_battle_1"]._get_best_ref_alns())
-
+    # For each reference sequence which has at least one assigned query sequence, get the list of
+    # all query sequences assigned to that reference sequence.
+    all_mapped_ref_seqs = defaultdict(list)
     for i in fltrd_ctg_alns:
-        if len(set(fltrd_ctg_alns[i]._strands)) > 1:
-            print (fltrd_ctg_alns[i].query_header)
+        best_ref = fltrd_ctg_alns[i].best_ref_header
+        ref_start, ref_end = fltrd_ctg_alns[i].get_best_ref_pos()
+        all_mapped_ref_seqs[best_ref].append(ref_start, ref_end, i)
+
+    # Sort the query sequences for each reference sequence
+    # TODO make a new dict where ref seq is key, and list is the gap sizes to put between the query seqs
+    for i in all_mapped_ref_seqs:
+        all_mapped_ref_seqs[i] = sorted(all_mapped_ref_seqs[i])
+
 
 
 if __name__ == "__main__":
