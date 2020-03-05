@@ -32,17 +32,19 @@ def main():
 
     # Sort the orderings and write the fasta output
     out_fasta = open(out_file, "w")
-    curr_total = 0
-    curr_seq = []
     x = pysam.FastaFile(query_file)
     placed_q_seqs = set()
     for i in orderings:
+        curr_total = 0
+        curr_seq = []
         out_fasta.write(">" + i + "\n")
         orderings[i] = sorted(orderings[i])
+
+        # Iterate through each sequence of this scaffold
         for j in orderings[i]:
             q_header = j[3]
             if j[2] == "s":
-                # This is a contig
+                # This is a query sequence
                 placed_q_seqs.add(q_header)
                 if j[4] == "+":
                     curr_seq.append(x.fetch(q_header))
@@ -56,14 +58,15 @@ def main():
                 curr_seq.append("N" * gap_len)
                 curr_total += gap_len
 
-            if curr_total >= 10 ** 7:  # Print out every 10Mbps
+            # Print out every 10 Mbp
+            if curr_total >= 10 ** 7:
                 wrapped = re.findall(".{1,60}", "".join(curr_seq))
                 print(*wrapped[:-1], sep="\n", file=out_fasta)
                 curr_seq = [wrapped[-1]]
                 curr_total = len(wrapped[-1])
 
-    wrapped = re.findall(".{1,60}", "".join(curr_seq))
-    print(*wrapped, sep="\n", file=out_fasta)
+        wrapped = re.findall(".{1,60}", "".join(curr_seq))
+        print(*wrapped, sep="\n", file=out_fasta)
 
     all_q_seqs = set(x.references)
     remaining_seqs = all_q_seqs - placed_q_seqs

@@ -57,7 +57,7 @@ def write_orderings(ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
                 out_line.append("NA\tNA\tNA\tNA")
                 all_out_lines.append("\t".join(out_line))
 
-    log("writing: " + out_file)
+    log("Writing: " + out_file)
     with open(out_file, "w") as f:
         f.write("\n".join(all_out_lines))
 
@@ -73,8 +73,8 @@ def main():
     parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
     parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave unplaced")
     parser.add_argument("-g", metavar="INT", type=int, default=100, help="gap size for padding in pseudomolecules [100]")
-    parser.add_argument("-l", metavar="INT", type=int, default=10000, help="minimum unique alignment length to use for scaffolding [10000]")
-    parser.add_argument("-q", metavar="INT", type=int, default=0, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [0]")
+    parser.add_argument("-l", metavar="INT", type=int, default=1000, help="minimum unique alignment length to use for scaffolding [10000]")
+    parser.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [-1]")
     parser.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score needed to be localized [0.2]")
     parser.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score needed to be localized [0.0]")
     parser.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score needed to be localized [0.0]")
