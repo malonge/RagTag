@@ -81,18 +81,19 @@ def main():
                 curr_total += x.get_reference_length(i)
 
                 if curr_total >= 10 ** 7:  # Print out every 10Mbps
-                    wrapped = re.findall(".{1,60}", "pad".join(curr_seq))
+                    wrapped = re.findall(".{1,60}", pad.join(curr_seq))
                     print(*wrapped[:-1], sep="\n", file=out_fasta)
                     curr_seq = [wrapped[-1]]
                     curr_total = len(wrapped[-1])
-            wrapped = re.findall(".{1,60}", "".join(curr_seq))
+            wrapped = re.findall(".{1,60}", pad.join(curr_seq))
             print(*wrapped, sep="\n", file=out_fasta)
 
         else:
             # Write unplaced contigs individually with original headers
             for i in remaining_seqs:
                 wrapped = re.findall(".{1,60}", x.fetch(i))
-                out_fasta.write(">" + i + "\n")
+                # TODO remove "_RaGOO"
+                out_fasta.write(">" + i + "_RaGOO\n")
                 print(*wrapped, sep="\n", file=out_fasta)
 
     out_fasta.close()

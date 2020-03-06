@@ -68,7 +68,7 @@ def main():
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped.")
     parser.add_argument("-o", metavar="STR", type=str, default="ragoo_output", help="output directory name [ragoo_output]")
     parser.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="Aligner ('nucmer' or 'minimap2') to use for scaffolding. PATHs allowed [minimap2]")
-    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19 -t1", help="Space delimted parameters to pass directly to minimap2 ['-k19 -w19 -t1']")
+    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19 -t3", help="Space delimted parameters to pass directly to minimap2 ['-k19 -w19 -t3']")
     parser.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="Space delimted parameters to pass directly to nucmer ['-l 100 -c 500']")
     parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
     parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave unplaced")
@@ -151,9 +151,9 @@ def main():
         # Check that the contig and reference in this alignment are allowed.
         if aln_line.query_header not in query_blacklist and aln_line.ref_header not in ref_blacklist:
             if aln_line.query_header not in ctg_alns:
-                ctg_alns[aln_line.query_header] = ContigAlignment(aln_line.query_header, aln_line.query_len, [aln_line.ref_header], [aln_line.ref_len], [aln_line.ref_start], [aln_line.ref_end], [aln_line.query_start], [aln_line.query_end], [aln_line.strand], [aln_line.mapq])
+                ctg_alns[aln_line.query_header] = ContigAlignment(aln_line.query_header, aln_line.query_len, [aln_line.ref_header], [aln_line.ref_len], [aln_line.ref_start], [aln_line.ref_end], [aln_line.query_start], [aln_line.query_end], [aln_line.strand], [aln_line.aln_len], [aln_line.mapq])
             else:
-                ctg_alns[aln_line.query_header] = ctg_alns[aln_line.query_header].add_alignment(aln_line.ref_header, aln_line.ref_len, aln_line.ref_start, aln_line.ref_end, aln_line.query_start, aln_line.query_end, aln_line.strand, aln_line.mapq)
+                ctg_alns[aln_line.query_header] = ctg_alns[aln_line.query_header].add_alignment(aln_line.ref_header, aln_line.ref_len, aln_line.ref_start, aln_line.ref_end, aln_line.query_start, aln_line.query_end, aln_line.strand, aln_line.aln_len, aln_line.mapq)
 
     # Filter the alignments
     log("Filtering alignments")
@@ -174,6 +174,8 @@ def main():
                 ctg_alns[i].orientation_confidence > orient_score_thresh
             ]):
                 fltrd_ctg_alns[i] = ctg_alns[i]
+
+    #print(fltrd_ctg_alns["scaffold2833_62.2_battle_1"])
 
     # For each reference sequence which has at least one assigned query sequence, get the list of
     # all query sequences assigned to that reference sequence.

@@ -9,7 +9,7 @@ class ContigAlignment:
     Description
     """
 
-    def __init__(self, in_query_header, in_query_len, in_reference_headers, in_ref_lens, in_ref_starts, in_ref_ends, in_query_starts, in_query_ends, in_strands, in_mapqs):
+    def __init__(self, in_query_header, in_query_len, in_reference_headers, in_ref_lens, in_ref_starts, in_ref_ends, in_query_starts, in_query_ends, in_strands, in_aln_lens, in_mapqs):
         # Query info
         self.query_header = in_query_header
         self.query_len = in_query_len
@@ -22,6 +22,7 @@ class ContigAlignment:
         self._query_starts = in_query_starts
         self._query_ends = in_query_ends
         self._strands = in_strands
+        self._aln_lens = in_aln_lens
         self._mapqs = in_mapqs
 
         # Check that the dimensions are valid
@@ -58,6 +59,7 @@ class ContigAlignment:
                 str(self._ref_lens[i]),
                 str(self._ref_starts[i]),
                 str(self._ref_ends[i]),
+                str(self._aln_lens[i]),
                 str(self._mapqs[i])
             ]))
         return "\n".join(alns)
@@ -71,6 +73,7 @@ class ContigAlignment:
             len(self._query_starts),
             len(self._query_ends),
             len(self._strands),
+            len(self._aln_lens),
             len(self._mapqs)
         ]
         return all_lens
@@ -115,7 +118,7 @@ class ContigAlignment:
         max_index = -1
         max_len = -1
         for i in self._get_best_ref_alns():
-            this_len = abs(self._query_ends[i] - self._query_starts[i])
+            this_len = self._aln_lens[i]
             if this_len > max_len:
                 max_len = this_len
                 max_index = i
@@ -126,7 +129,7 @@ class ContigAlignment:
         num = 0
         denom = 0
         for i in self._get_best_ref_alns():
-            aln_len = abs(self._query_ends[i] - self._query_starts[i])
+            aln_len = self._aln_lens[i]
             if self._strands[i] == self.orientation:
                 num += aln_len
             denom += aln_len
@@ -174,6 +177,7 @@ class ContigAlignment:
                 [self._query_starts[i] for i in hits],
                 [self._query_ends[i] for i in hits],
                 [self._strands[i] for i in hits],
+                [self._aln_lens[i] for i in hits],
                 [self._mapqs[i] for i in hits]
             )
         else:
@@ -191,6 +195,7 @@ class ContigAlignment:
         self._query_starts = [self._query_starts[i] for i in hits]
         self._query_ends = [self._query_ends[i] for i in hits]
         self._strands = [self._strands[i] for i in hits]
+        self._aln_lens = [self._aln_lens[i] for i in hits]
         self._mapqs = [self._mapqs[i] for i in hits]
 
     def _sort_by_ref(self):
@@ -201,7 +206,7 @@ class ContigAlignment:
 
         self._rearrange_alns(hits)
 
-    def add_alignment(self, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_query_start, in_query_end, in_strand, in_mapq):
+    def add_alignment(self, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_query_start, in_query_end, in_strand, in_aln_len, in_mapq):
         """ Add an alignment for this query. """
         return ContigAlignment(
             self.query_header,
@@ -213,17 +218,18 @@ class ContigAlignment:
             self._query_starts + [in_query_start],
             self._query_ends + [in_query_end],
             self._strands + [in_strand],
+            self._aln_lens + [in_aln_len],
             self._mapqs + [in_mapq]
         )
 
     def filter_lengths(self, l):
-        """ Remove alignments shorter than l (with respect to the query). """
-        hits = [i for i in range(len(self._ref_headers)) if abs(self._query_ends[i] - self._query_starts[i]) >= l]
+        """ Remove alignments shorter than l. """
+        # TODO change back to >=
+        hits = [i for i in range(len(self._ref_headers)) if self._aln_lens[i] > l]
         return self._update_alns(hits)
 
     def filter_mapq(self, q):
-        if not isinstance(q, int):
-            raise ValueError("q must be an integer. ")
+        """ Remove alignments with mapq < q. """
         hits = [i for i in range(len(self._ref_headers)) if self._mapqs[i] >= q]
         return self._update_alns(hits)
 
