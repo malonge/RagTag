@@ -59,7 +59,7 @@ def write_orderings(ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
 
     log("Writing: " + out_file)
     with open(out_file, "w") as f:
-        f.write("\n".join(all_out_lines))
+        f.write("\n".join(all_out_lines) + "\n")
 
 
 def main():
@@ -219,6 +219,7 @@ def main():
             output_path + "orderings.bed",
             query_file,
             output_path + "ragoo.fasta",
+            output_path + "unplaced.txt",
             str(gap_size)
         ]
     else:
@@ -229,6 +230,7 @@ def main():
             output_path + "orderings.bed",
             query_file,
             output_path + "ragoo.fasta",
+            output_path + "unplaced.txt",
             str(gap_size)
         ]
     run(" ".join(cmd))
