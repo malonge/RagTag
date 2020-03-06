@@ -217,8 +217,7 @@ class ContigAlignment:
         )
 
     def filter_lengths(self, l):
-        if not isinstance(l, int):
-            raise ValueError("l must be an integer. ")
+        """ Remove alignments shorter than l (with respect to the query). """
         hits = [i for i in range(len(self._ref_headers)) if abs(self._query_ends[i] - self._query_starts[i]) >= l]
         return self._update_alns(hits)
 
@@ -228,8 +227,10 @@ class ContigAlignment:
         hits = [i for i in range(len(self._ref_headers)) if self._mapqs[i] >= q]
         return self._update_alns(hits)
 
-    def unique_anchor_filter(self, unique_length):
+    def unique_anchor_filter(self, l):
         """
+        Unique anchor filter the alignments. l is the minimum unique alignment length.
+
         The contents of this method are either influenced by or directly copied from "Assemblytics_uniq_anchor.py"
         written by Maria Nattestad. The original script can be found here:
 
@@ -245,7 +246,7 @@ class ContigAlignment:
         for i, j in zip(self._query_starts, self._query_ends):
             lines_by_query.append((i, j))
 
-        hits = summarize_planesweep(lines_by_query, unique_length)
+        hits = summarize_planesweep(lines_by_query, l)
         return self._update_alns(hits)
 
     def get_best_ref_pos(self):

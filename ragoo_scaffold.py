@@ -73,7 +73,8 @@ def main():
     parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
     parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave unplaced")
     parser.add_argument("-g", metavar="INT", type=int, default=100, help="gap size for padding in pseudomolecules [100]")
-    parser.add_argument("-l", metavar="INT", type=int, default=1000, help="minimum unique alignment length to use for scaffolding [10000]")
+    parser.add_argument("-l", metavar="INT", type=int, default=1000, help="minimum alignment length to use for scaffolding [1000]")
+    parser.add_argument("-f", metavar="INT", type=int, default=0, help="minimum unique alignment length to use for scaffolding [0]")
     parser.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [-1]")
     parser.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score needed to be localized [0.2]")
     parser.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score needed to be localized [0.0]")
@@ -88,6 +89,7 @@ def main():
     query_file = os.path.abspath(args.query)
     output_path = args.o.replace("/", "").replace(".", "")
     min_len = args.l
+    min_ulen = args.f
     min_q = args.q
     gap_size = args.g
     group_score_thresh = args.i
@@ -155,15 +157,12 @@ def main():
 
     # Filter the alignments
     log("Filtering alignments")
-    if aligner == "minimap2":
-        log('Alignments are from minimap2. removing alignments with mapq < %r.' % min_q)
-        for i in ctg_alns:
-            ctg_alns[i] = ctg_alns[i].filter_mapq(min_q)
+    for i in ctg_alns:
+        ctg_alns[i] = ctg_alns[i].filter_mapq(min_q)
+        if ctg_alns[i] is not None:
+            ctg_alns[i] = ctg_alns[i].filter_lengths(min_len)
             if ctg_alns[i] is not None:
-                ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_len)
-    else:
-        for i in ctg_alns:
-            ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_len)
+                ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
 
     # Remove query sequences which have no more qualifying alignments
     fltrd_ctg_alns = dict()
