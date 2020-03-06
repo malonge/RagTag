@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import argparse
 from collections import defaultdict
@@ -212,27 +214,43 @@ def main():
 
     # Write the scaffolds
     log("Writing scaffolds")
-    if make_chr0:
-        cmd = [
-            "python3",
-            "build_scaffolds.py",
-            output_path + "orderings.bed",
-            query_file,
-            output_path + "ragoo.fasta",
-            output_path + "unplaced.txt",
-            str(gap_size)
-        ]
-    else:
-        cmd = [
-            "python3",
-            "build_scaffolds.py",
-            "-C",
-            output_path + "orderings.bed",
-            query_file,
-            output_path + "ragoo.fasta",
-            output_path + "unplaced.txt",
-            str(gap_size)
-        ]
+    log("Writing scaffolds")
+
+    # TODO make direct call to the executable
+    cmd = [
+        "python3",
+        "build_scaffolds.py",
+        output_path + "orderings.bed",
+        query_file,
+        output_path + "ragoo.fasta",
+        output_path + "unplaced.txt",
+        str(gap_size)
+    ]
+    if not make_chr0:
+        cmd.append("-C")
+    run(" ".join(cmd))
+
+    # Calculate the stats
+    cmd = [
+        "python3",
+        "ragoo_stats.py",
+        output_path + "orderings.bed",
+        output_path + "unplaced.txt",
+        output_path + "localization_stats.txt"
+    ]
+    run(" ".join(cmd))
+
+    # Make the AGP file
+    cmd = [
+        "python3",
+        "make_agp.py",
+        output_path + "orderings.bed",
+        output_path + "unplaced.txt",
+        output_path + "ragoo.agp",
+        str(gap_size)
+    ]
+    if not make_chr0:
+        cmd.append("-C")
     run(" ".join(cmd))
 
 

@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+
+
 class AlignmentLine:
     """ Object to represent a single Minimap2 or Nucmer alignment. """
 
