@@ -214,7 +214,6 @@ def main():
 
     # Write the scaffolds
     log("Writing scaffolds")
-    log("Writing scaffolds")
 
     # TODO make direct call to the executable
     cmd = [
