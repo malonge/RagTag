@@ -39,8 +39,6 @@ def main():
     x = pysam.FastaFile(query_file)
     placed_q_seqs = set()
     for i in orderings:
-        curr_total = 0
-        curr_seq = []
         out_fasta.write(">" + i + "\n")
         orderings[i] = sorted(orderings[i])
 
@@ -51,26 +49,16 @@ def main():
                 # This is a query sequence
                 placed_q_seqs.add(q_header)
                 if j[4] == "+":
-                    curr_seq.append(x.fetch(q_header))
+                    out_fasta.write(x.fetch(q_header))
                 else:
-                    curr_seq.append(reverse_complement(x.fetch(q_header)))
-                curr_total += j[1] - j[0]
+                    out_fasta.write(reverse_complement(x.fetch(q_header)))
             else:
                 # This is a gap
                 assert j[2] == "g"
                 gap_len = j[1] - j[0]
-                curr_seq.append("N" * gap_len)
-                curr_total += gap_len
+                out_fasta.write("N" * gap_len)
 
-            # Print out every 10 Mbp
-            if curr_total >= 10 ** 7:
-                wrapped = re.findall(".{1,60}", "".join(curr_seq))
-                print(*wrapped[:-1], sep="\n", file=out_fasta)
-                curr_seq = [wrapped[-1]]
-                curr_total = len(wrapped[-1])
-
-        wrapped = re.findall(".{1,60}", "".join(curr_seq))
-        print(*wrapped, sep="\n", file=out_fasta)
+        out_fasta.write("\n")
 
     # Take care of the unplaced sequences
     all_q_seqs = set(x.references)
@@ -81,30 +69,22 @@ def main():
         if make_chr0:
             out_fasta.write(">Chr0_RaGOO\n")
             pad = "N" * chr0_gap_size
-            curr_total = 0
             curr_seq = []
+
+            # Iterate through the unplaced contigs
             for i in remaining_seqs:
                 unplaced_lines.append(i + "\t" + str(x.get_reference_length(i)))
                 curr_seq.append(x.fetch(i))
-                curr_total += x.get_reference_length(i)
 
-                # Print out every 10 Mbp
-                if curr_total >= 10 ** 7:
-                    wrapped = re.findall(".{1,60}", pad.join(curr_seq))
-                    print(*wrapped[:-1], sep="\n", file=out_fasta)
-                    curr_seq = [wrapped[-1]]
-                    curr_total = len(wrapped[-1])
-            wrapped = re.findall(".{1,60}", pad.join(curr_seq))
-            print(*wrapped, sep="\n", file=out_fasta)
+            out_fasta.write(pad.join(curr_seq) + "\n")
 
         else:
             # Write unplaced contigs individually with original headers
             for i in remaining_seqs:
                 unplaced_lines.append(i + "\t" + str(x.get_reference_length(i)))
-                wrapped = re.findall(".{1,60}", x.fetch(i))
                 # TODO remove "_RaGOO"
                 out_fasta.write(">" + i + "_RaGOO\n")
-                print(*wrapped, sep="\n", file=out_fasta)
+                out_fasta.write(x.fetch(i) + "\n")
 
     out_fasta.close()
 
