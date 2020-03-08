@@ -23,14 +23,16 @@ def write_orderings(ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
     # Proceed with writing the intermediate output
     gap_id = 0
     all_out_lines = []
-    for ref_header in ordering_dict:
+
+    # Go through the reference sequences in sorted order
+    sorted_ref_headers = sorted(list(ordering_dict.keys()))
+    for ref_header in sorted_ref_headers:
         pos = 0
         new_ref_header = ref_header + "_RaGOO"
         q_seqs = ordering_dict[ref_header]
         gap_seqs = gap_dict[ref_header]
 
         # Iterate through the query sequences for this reference header
-        # TODO give each gap a unique ID where query seq header goes
         for i in range(len(q_seqs)):
             out_line = []
             q = q_seqs[i][2]
@@ -176,8 +178,6 @@ def main():
                 ctg_alns[i].orientation_confidence > orient_score_thresh
             ]):
                 fltrd_ctg_alns[i] = ctg_alns[i]
-
-    #print(fltrd_ctg_alns["scaffold2833_62.2_battle_1"])
 
     # For each reference sequence which has at least one assigned query sequence, get the list of
     # all query sequences assigned to that reference sequence.
