@@ -119,6 +119,10 @@ def main():
     mm2_params = args.mm2_params
     nucmer_params = args.nucmer_params
 
+    # Make sure no quality filtering for nucmer alignments
+    if aligner == "nucmer":
+        min_q = -1
+
     # Get the skip and exclude sets
     query_blacklist = set()
     if skip_file:
@@ -146,10 +150,16 @@ def main():
         al = NucmerAligner(reference_file, query_file, aligner_path, nucmer_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
     al.run_aligner()
 
+    # If alignments are from Nucmer, need to convert from delta to paf
+    if aligner == "nucmer":
+        # TODO make direct call to executable
+        cmd = ["python3", "delta2paf.py", output_path + "query_against_ref.delta", ">", output_path + "query_against_ref.paf"]
+        run(" ".join(cmd))
+
     # Read and organize the alignments
     log('Reading alignments')
     ctg_alns = dict()
-    aln_reader = AlignmentReader(output_path + "query_against_ref", aligner)
+    aln_reader = AlignmentReader(output_path + "query_against_ref.paf")
     for aln_line in aln_reader.parse_alignments():
 
         # Check that the contig and reference in this alignment are allowed.

@@ -27,33 +27,24 @@ class AlignmentLine:
 
 class AlignmentReader:
 
-    def __init__(self, aln_file_prefix, aligner):
-        self.aligner = aligner
-        if self.aligner == "minimap2":
-            self.aln_file = aln_file_prefix + ".paf"
-        elif self.aligner == "nucmer":
-            self.aln_file = aln_file_prefix + ".delta"
-        else:
-            raise ValueError("aligner must be 'minimap2' or 'nucmer'.")
+    def __init__(self, aln_file):
+        self.aln_file = aln_file
 
     def parse_alignments(self):
-        if self.aligner == 'minimap2':
-            with open(self.aln_file) as f:
-                for line in f:
-                    line = line.rstrip().split("\t")
-                    yield AlignmentLine(
-                        line[0],
-                        int(line[1]),
-                        int(line[2]),
-                        int(line[3]),
-                        line[4],
-                        line[5],
-                        int(line[6]),
-                        int(line[7]),
-                        int(line[8]),
-                        int(line[9]),
-                        int(line[10]),
-                        int(line[11])
-                    )
-        else:
-            raise NotImplementedError
+        with open(self.aln_file) as f:
+            for line in f:
+                line = line.rstrip().split("\t")
+                yield AlignmentLine(
+                    line[0],
+                    int(line[1]),
+                    int(line[2]),
+                    int(line[3]),
+                    line[4],
+                    line[5],
+                    int(line[6]),
+                    int(line[7]),
+                    int(line[8]),
+                    int(line[9]),
+                    int(line[10]),
+                    int(line[11])
+                )
