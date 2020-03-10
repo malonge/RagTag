@@ -158,16 +158,45 @@ def main():
 
     # Read and organize the alignments
     log('Reading alignments')
-    ctg_alns = dict()
+    # Read all of the alignments into a temporary structure to save time on ContigAlignment instantiation
+    tmp_ctg_alns = dict()
     aln_reader = AlignmentReader(output_path + "query_against_ref.paf")
     for aln_line in aln_reader.parse_alignments():
-
         # Check that the contig and reference in this alignment are allowed.
         if aln_line.query_header not in query_blacklist and aln_line.ref_header not in ref_blacklist:
-            if aln_line.query_header not in ctg_alns:
-                ctg_alns[aln_line.query_header] = ContigAlignment(aln_line.query_header, aln_line.query_len, [aln_line.ref_header], [aln_line.ref_len], [aln_line.ref_start], [aln_line.ref_end], [aln_line.query_start], [aln_line.query_end], [aln_line.strand], [aln_line.aln_len], [aln_line.mapq])
+            if aln_line.query_header not in tmp_ctg_alns:
+                tmp_ctg_alns[aln_line.query_header] = [aln_line.query_header, aln_line.query_len,
+                                                                  [aln_line.ref_header], [aln_line.ref_len],
+                                                                  [aln_line.ref_start], [aln_line.ref_end],
+                                                                  [aln_line.query_start], [aln_line.query_end],
+                                                                  [aln_line.strand], [aln_line.aln_len],
+                                                                  [aln_line.mapq]]
             else:
-                ctg_alns[aln_line.query_header] = ctg_alns[aln_line.query_header].add_alignment(aln_line.ref_header, aln_line.ref_len, aln_line.ref_start, aln_line.ref_end, aln_line.query_start, aln_line.query_end, aln_line.strand, aln_line.aln_len, aln_line.mapq)
+                tmp_ctg_alns[aln_line.query_header][2].append(aln_line.ref_header)
+                tmp_ctg_alns[aln_line.query_header][3].append(aln_line.ref_len)
+                tmp_ctg_alns[aln_line.query_header][4].append(aln_line.ref_start)
+                tmp_ctg_alns[aln_line.query_header][5].append(aln_line.ref_end)
+                tmp_ctg_alns[aln_line.query_header][6].append(aln_line.query_start)
+                tmp_ctg_alns[aln_line.query_header][7].append(aln_line.query_end)
+                tmp_ctg_alns[aln_line.query_header][8].append(aln_line.strand)
+                tmp_ctg_alns[aln_line.query_header][9].append(aln_line.aln_len)
+                tmp_ctg_alns[aln_line.query_header][10].append(aln_line.mapq)
+
+    ctg_alns = dict()
+    for i in tmp_ctg_alns:
+        ctg_alns[i] = ContigAlignment(
+            tmp_ctg_alns[i][0],
+            tmp_ctg_alns[i][1],
+            tmp_ctg_alns[i][2],
+            tmp_ctg_alns[i][3],
+            tmp_ctg_alns[i][4],
+            tmp_ctg_alns[i][5],
+            tmp_ctg_alns[i][6],
+            tmp_ctg_alns[i][7],
+            tmp_ctg_alns[i][8],
+            tmp_ctg_alns[i][9],
+            tmp_ctg_alns[i][10]
+        )
 
     # Filter the alignments
     log("Filtering alignments")
