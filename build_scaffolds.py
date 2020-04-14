@@ -65,6 +65,8 @@ def main():
     unplaced_out = open(out_unplaced_file, "w")
     unplaced_lines = []
     if remaining_seqs:
+        # Output the unplaced contigs in sorted order
+        remaining_seqs = sorted(list(remaining_seqs))
         if make_chr0:
             out_fasta.write(">Chr0_RaGOO\n")
             pad = "N" * chr0_gap_size
@@ -81,8 +83,7 @@ def main():
             # Write unplaced contigs individually with original headers
             for i in remaining_seqs:
                 unplaced_lines.append(i + "\t" + str(x.get_reference_length(i)))
-                # TODO remove "_RaGOO"
-                out_fasta.write(">" + i + "_RaGOO\n")
+                out_fasta.write(">" + i + "\n")
                 out_fasta.write(x.fetch(i) + "\n")
 
     out_fasta.close()
