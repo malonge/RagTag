@@ -3,9 +3,9 @@
 import os
 import argparse
 
-from ragoo_utilities.utilities import log, run
-from ragoo_utilities.Aligner import Minimap2Aligner
-from ragoo_utilities.Aligner import NucmerAligner
+from ragoo2_utilities.utilities import log, run
+from ragoo2_utilities.Aligner import Minimap2Aligner
+from ragoo2_utilities.Aligner import NucmerAligner
 
 
 def main():

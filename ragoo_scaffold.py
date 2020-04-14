@@ -4,11 +4,11 @@ import os
 import argparse
 from collections import defaultdict
 
-from ragoo_utilities.utilities import log, run
-from ragoo_utilities.Aligner import Minimap2Aligner
-from ragoo_utilities.Aligner import NucmerAligner
-from ragoo_utilities.AlignmentReader import AlignmentReader
-from ragoo_utilities.ContigAlignment import ContigAlignment
+from ragoo2_utilities.utilities import log, run
+from ragoo2_utilities.Aligner import Minimap2Aligner
+from ragoo2_utilities.Aligner import NucmerAligner
+from ragoo2_utilities.AlignmentReader import AlignmentReader
+from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
 def write_orderings(ordering_dict, ctg_dict, gap_dict, overwrite, out_path):

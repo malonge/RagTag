@@ -12,7 +12,7 @@ setup(
     author='Michael Alonge',
     author_email='malonge11@gmail.com',
     packages=['ragoo_utilities'],
-    package_dir={'ragoo_utilities': 'ragoo_utilities/'},
+    package_dir={'ragoo2_utilities': 'ragoo2_utilities/'},
     install_requires=[
               'intervaltree',
               'numpy',

@@ -5,7 +5,7 @@ from collections import defaultdict
 
 import pysam
 
-from ragoo_utilities.utilities import reverse_complement
+from ragoo2_utilities.utilities import reverse_complement
 
 
 def main():
