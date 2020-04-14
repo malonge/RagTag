@@ -256,7 +256,6 @@ def main():
 
     # TODO make direct call to the executable
     cmd = [
-        "python3",
         "build_scaffolds.py",
         output_path + "orderings.bed",
         query_file,
@@ -270,7 +269,6 @@ def main():
 
     # Calculate the stats
     cmd = [
-        "python3",
         "ragoo_stats.py",
         output_path + "orderings.bed",
         output_path + "unplaced.txt",
@@ -280,8 +278,7 @@ def main():
 
     # Make the AGP file
     cmd = [
-        "python3",
-        "make_agp.py",
+        "bed2agp.py",
         output_path + "orderings.bed",
         output_path + "unplaced.txt",
         output_path + "ragoo.agp",
