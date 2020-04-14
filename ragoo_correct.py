@@ -31,6 +31,7 @@ def main():
     # ragoo_correct.py -o test_out
     # ragoo_scaffold.py -o test_out
     # Would that be a problem?
+    # Warning message for large gff intervals
 
     args = parser.parse_args()
     reference_file = os.path.abspath(args.reference)
