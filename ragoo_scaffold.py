@@ -84,7 +84,7 @@ def main():
     parser.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score needed to be localized [0.0]")
     parser.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score needed to be localized [0.0]")
     parser.add_argument("-C", action='store_true', default=False, help="write unplaced contigs individually instead of making a chr0")
-    parser.add_argument("-r", action='store_true', default=False, help=argparse.SUPPRESS) # Infer gaps from reference - not ready
+    parser.add_argument("-r", action='store_true', default=False, help=argparse.SUPPRESS) # Infer gaps from reference - not ready. maybe need to add unaligned sequence lengths to the end
     parser.add_argument("-w", action='store_true', default=False, help="overwrite pre-existing intermediate files. ragoo.fasta will always be overwritten")
 
     # Get the command line arguments and ensure all paths are absolute.
@@ -152,8 +152,7 @@ def main():
 
     # If alignments are from Nucmer, need to convert from delta to paf
     if aligner == "nucmer":
-        # TODO make direct call to executable
-        cmd = ["python3", "delta2paf.py", output_path + "query_against_ref.delta", ">", output_path + "query_against_ref.paf"]
+        cmd = ["delta2paf.py", output_path + "query_against_ref.delta", ">", output_path + "query_against_ref.paf"]
         run(" ".join(cmd))
 
     # Read and organize the alignments
@@ -253,8 +252,6 @@ def main():
 
     # Write the scaffolds
     log("Writing scaffolds")
-
-    # TODO make direct call to the executable
     cmd = [
         "build_scaffolds.py",
         output_path + "orderings.bed",

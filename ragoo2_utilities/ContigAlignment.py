@@ -208,6 +208,14 @@ class ContigAlignment:
 
         self._rearrange_alns(hits)
 
+    def _sort_by_query(self):
+        q_pos = []
+        for i in range(len(self._ref_headers)):
+            q_pos.append((self._query_starts[i], self._query_ends[i], i))
+        hits = [i[2] for i in sorted(q_pos)]
+
+        self._rearrange_alns(hits)
+
     def add_alignment(self, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_query_start, in_query_end, in_strand, in_aln_len, in_mapq):
         """ Add an alignment for this query. """
         return ContigAlignment(
@@ -226,8 +234,7 @@ class ContigAlignment:
 
     def filter_lengths(self, l):
         """ Remove alignments shorter than l. """
-        # TODO change back to >=
-        hits = [i for i in range(len(self._ref_headers)) if self._aln_lens[i] > l]
+        hits = [i for i in range(len(self._ref_headers)) if self._aln_lens[i] >= l]
         return self._update_alns(hits)
 
     def filter_mapq(self, q):
@@ -272,4 +279,113 @@ class ContigAlignment:
             ref_pos.append(self._ref_ends[i])
 
         return min(ref_pos), max(ref_pos)
+
+    def filter_query_contained(self):
+        """
+        Remove alignments that are contained (w.r.t the query) by other alignments.
+        This does not consider alignments contained by chains of alignments.
+        Consider merging first (merge_alns) to account for that.
+        """
+        cidx = set()
+        for i in range(len(self._ref_headers)):
+            for j in range(len(self._ref_headers)):
+                # Check if j is contained by i
+                if i == j:
+                    continue
+                if self._query_starts[i] <= self._query_starts[j] and self._query_ends[i] >= self._query_ends[j]:
+                    cidx.add(j)
+
+        hits = [i for i in range(len(self._ref_headers)) if i not in cidx]
+        return self._update_alns(hits)
+
+    def merge_alns(self, merge_dist=100000):
+        """
+        Merge adjacent alignments that have the same reference sequence, the same orientation, and are less than
+        merge_dist away from each other.
+        """
+        # Sort the alignments
+        self._sort_by_ref()
+
+        # Make a copy of the alignment info
+        ref_headers = self._ref_headers
+        ref_lens = self._ref_lens
+        ref_starts = self._ref_starts
+        ref_ends = self._ref_ends
+        query_starts = self._query_starts
+        query_ends = self._query_ends
+        strands = self._strands
+        aln_lens = self._aln_lens
+        mapqs = self._mapqs
+
+        # Keep track of which alignments we are comparing
+        i = 0
+        j = 1
+        while j < len(ref_headers):
+            if all([
+                        ref_headers[i] == ref_headers[j],
+                        strands[i] == strands[j],
+                        ref_starts[j] - ref_ends[i] <= merge_dist
+            ]):
+                # Merge the alignments in place of the first alignment
+                ref_starts[i] = min(ref_starts[i], ref_starts[j])
+                ref_ends[i] = max(ref_ends[i], ref_ends[j])
+                query_starts[i] = min(query_starts[i], query_starts[j])
+                query_ends[i] = max(query_ends[i], query_ends[j])
+
+                aln_lens[i] = ref_ends[i] - ref_starts[i]
+                mapqs[i] = (mapqs[i] + mapqs[j]) // 2
+
+                # Remove the redundant alignment
+                query_starts.pop(j)
+                query_ends.pop(j)
+                strands.pop(j)
+                ref_headers.pop(j)
+                ref_lens.pop(j)
+                ref_starts.pop(j)
+                ref_ends.pop(j)
+                aln_lens.pop(j)
+                mapqs.pop(j)
+            else:
+                i += 1
+                j += 1
+
+        # Make a new object with the merged data
+        x = ContigAlignment(
+            self.query_header,
+            self.query_len,
+            ref_headers,
+            ref_lens,
+            ref_starts,
+            ref_ends,
+            query_starts,
+            query_ends,
+            strands,
+            aln_lens,
+            mapqs
+        )
+
+        # remove contained alignments.
+        return x.filter_query_contained()
+
+    def get_break_candidates(self, min_dist=5000):
+        """
+        Return coordinates of the query sequence between consecutive alignments.
+        Consider merging alignments first (merge_alns)
+        :return: Two lists of coordinates. One where consecutive alignments aligned to the
+        same reference (intra) and one where the consecutive alignments aligned to different
+        references (inter).
+        """
+        self._sort_by_query()
+        intra_candidates = []
+        inter_candiats = []
+
+        # If there are more than two alignments, iterate through all but the first.
+        for i in range(1, len(self._ref_headers)):
+            if min_dist < self._query_starts[i] < (self.query_len - 5000):
+                if self._ref_headers[i] == self._ref_headers[i-1]:
+                    intra_candidates.append(self._query_starts[i])
+                else:
+                    inter_candiats.append(self._query_starts[i])
+
+        return intra_candidates, inter_candiats
 
