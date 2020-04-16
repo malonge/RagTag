@@ -13,6 +13,39 @@ from ragoo2_utilities.AlignmentReader import AlignmentReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
+def run_samtools(output_path, num_threads, overwrite_files):
+    """ Compress, sort and index alignments with pysam. """
+    log("Compressing read alignments")
+    if os.path.isfile(output_path + "c_reads_against_query.bam"):
+        if not overwrite_files:
+            log("retaining pre-existing file: " + output_path + "c_reads_against_query.bam")
+        else:
+            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.bam")
+            pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
+    else:
+        pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
+
+    log("Sorting read alignments")
+    if os.path.isfile(output_path + "c_reads_against_query.s.bam"):
+        if not overwrite_files:
+            log("retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+        else:
+            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+            pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
+    else:
+        pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
+
+    log("Indexing read alignments")
+    if os.path.isfile(output_path + "c_reads_against_query.s.bam.bai"):
+        if not overwrite_files:
+            log("retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
+        else:
+            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
+            pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
+    else:
+        pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
+
+
 def write_breaks(query_file, ctg_breaks, overwrite, out_path):
     """
     Write the intermediate file for contig breaks.
@@ -83,9 +116,10 @@ def main():
     parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped.")
     parser.add_argument("-o", metavar="STR", type=str, default="ragoo_correct_output", help="output directory name [ragoo_correct_output]")
-    parser.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="Aligner ('nucmer' or 'minimap2') to use for correction. PATHs allowed [minimap2]")
-    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19 -t3", help="Space delimted parameters to pass directly to minimap2 ['-k19 -w19 -t3']")
-    parser.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="Space delimted parameters to pass directly to nucmer ['-l 100 -c 500']")
+    parser.add_argument("-t", metavar="INT", type=int, default=1, help="number of threads to use when running minimap2 [1]")
+    parser.add_argument("--genome-aligner", metavar="PATH", type=str, default="minimap2", help="whole genome aligner ('nucmer' or 'minimap2') to use for correction. PATHs allowed [minimap2]")
+    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="Space delimted parameters to pass directly to minimap2 for whole genome alignment ['-k19 -w19 -t3']")
+    parser.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="Space delimted parameters to pass directly to nucmer for whole genome alignment ['-l 100 -c 500']")
     parser.add_argument("-f", metavar="INT", type=int, default=10000, help="minimum unique alignment length to use for scaffolding [10000]")
     parser.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [-1]")
     parser.add_argument("-d", metavar="INT", type=int, default=100000, help="merge contig alignments within this distance [100000]")
@@ -96,13 +130,19 @@ def main():
     parser.add_argument("--intra", action="store_true", default=False, help="Only break misassemblies within reference sequences")
     parser.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="Avoid breaking query sequences within any specified gff interval")
     parser.add_argument("-w", action='store_true', default=False,help="overwrite pre-existing intermediate files. ragoo.fasta will always be overwritten")
+    parser.add_argument("--read-aligner", metavar="PATH", type=str, default="minimap2", help="read aligner (only 'minimap2' is allowed). use this to specify minimap2 path if using Nucmer as the genome aligner.")
+    parser.add_argument("-R", metavar="<reads.fasta>", type=str, default="", help="Align provided reads to the contigs to validate misassembly correction breakpoints. gzipped fastq or fasta allowed.")
+    parser.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files.")
+    parser.add_argument("-T", metavar="sr", type=str, default="", help="type of reads provided by '-R'. 'sr' and 'corr' accepted for short reads and error corrected long reads respectively.")
 
     # If one uses the same output directory name for both correct and scaffold, could that be ok without having to worry
     # about re-writing files? e.g.
     # ragoo_correct.py -o test_out
     # ragoo_scaffold.py -o test_out
     # Would that be a problem?
-    # Warning message for large gff intervals
+    # TODO avoid gff intervals
+    # TODO Warning message for large gff intervals
+    # TODO move --aligner to --genome-aligner. then, make --read-aligner
 
     """
     NOTES ON COVERAGE VALIDATION
@@ -124,6 +164,7 @@ def main():
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
     output_path = args.o.replace("/", "").replace(".", "")
+    num_threads = args.t
     min_ulen = args.f
     min_q = args.q
     merge_dist = args.d
@@ -139,15 +180,19 @@ def main():
         exclude_file = os.path.abspath(args.e)
 
     # Get aligner arguments
-    aligner_path = args.aligner
-    aligner = aligner_path.split("/")[-1]
-    if aligner.split("/")[-1] not in {'minimap2', 'nucmer'}:
+    genome_aligner_path = args.genome_aligner
+    genome_aligner = genome_aligner_path.split("/")[-1]
+    if genome_aligner.split("/")[-1] not in {'minimap2', 'nucmer'}:
         raise ValueError("Must specify either 'minimap2' or 'nucmer' (PATHs allowed) with '--aligner'.")
     mm2_params = args.mm2_params
     nucmer_params = args.nucmer_params
 
+    # Add the number of mm2 threads if the mm2 params haven't been overridden.
+    if mm2_params == "-k19 -w19":
+        mm2_params += " -t" + str(num_threads)
+
     # Make sure no quality filtering for nucmer alignments
-    if aligner == "nucmer":
+    if genome_aligner == "nucmer":
         min_q = -1
 
     # Check if intra/inter breaking is desired
@@ -163,7 +208,34 @@ def main():
     if only_inter:
         break_intra = False
 
-    # Get the skip and exclude sets
+    # read alignment parameters
+    corr_reads = args.R
+    corr_reads_fofn = args.F
+    corr_reads_tech = args.T
+    read_aligner_path = args.read_aligner
+    read_aligner = read_aligner_path.split("/")[-1]
+    if read_aligner != "minimap2":
+        raise ValueError("Only minimap2 can be used for read alignments. got: %s" % read_aligner)
+
+    # If the genome aligner is minimap2, we can just use that path for read alignment
+    if genome_aligner == 'minimap2':
+        read_aligner_path = genome_aligner_path
+
+    # Make sure that if -R or -F, -T has been specified.
+    if corr_reads or corr_reads_fofn:
+        if not corr_reads_tech:
+            raise ValueError("'-T' must be provided when using -R or -F.")
+
+    # Make a list of read sequences.
+    read_files = []
+    if corr_reads_fofn:
+        with open(corr_reads_fofn, "r") as f:
+            for line in f:
+                read_files.append(line.rstrip())
+    elif corr_reads:
+        read_files.append(corr_reads)
+
+    # Get the skip and exclude sets.
     query_blacklist = set()
     if skip_file:
         with open(skip_file, "r") as f:
@@ -176,30 +248,42 @@ def main():
             for line in f:
                 ref_blacklist.add(line.rstrip())
 
-    # Get the current working directory and output path
+    # Get the current working directory and output path.
     cwd = os.getcwd()
     output_path = cwd + "/" + output_path + "/"
     if not os.path.exists(output_path):
         os.mkdir(output_path)
 
-    # Align the query to the reference
+    # Align the reads to the query sequence.
+    if read_files:
+        log("Aligning reads to query sequences.")
+        if corr_reads_tech == "sr":
+            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr", output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+        elif corr_reads_tech == "corr":
+            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax asm5", output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+        else:
+            raise ValueError("'-T' must be either 'sr' or 'corr'.")
+        al.run_aligner()
+
+        # Compress, sort and index the alignments.
+        run_samtools(output_path, num_threads, overwrite_files)
+
+    # Align the query to the reference.
     log("Aligning the query to the reference")
-    if aligner == "minimap2":
-        al = Minimap2Aligner(reference_file, query_file, aligner_path, mm2_params, output_path + "c_query_against_ref",
-                             in_overwrite=overwrite_files)
+    if genome_aligner == "minimap2":
+        al = Minimap2Aligner(reference_file, query_file, genome_aligner_path, mm2_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
     else:
-        al = NucmerAligner(reference_file, query_file, aligner_path, nucmer_params, output_path + "c_query_against_ref",
-                           in_overwrite=overwrite_files)
+        al = NucmerAligner(reference_file, query_file, genome_aligner_path, nucmer_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
     al.run_aligner()
 
-    # If alignments are from Nucmer, need to convert from delta to paf
-    if aligner == "nucmer":
+    # If alignments are from Nucmer, convert from delta to paf.
+    if genome_aligner == "nucmer":
         cmd = ["delta2paf.py", output_path + "c_query_against_ref.delta", ">", output_path + "c_query_against_ref.paf"]
         run(" ".join(cmd))
 
-    # Read and organize the alignments
-    log('Reading alignments')
-    # Read all of the alignments into a temporary structure to save time on ContigAlignment instantiation
+    # Read and organize the alignments.
+    log('Reading whole genome alignments')
+    # Read all of the alignments into a temporary structure to save time on ContigAlignment instantiation.
     tmp_ctg_alns = dict()
     aln_reader = AlignmentReader(output_path + "c_query_against_ref.paf")
     for aln_line in aln_reader.parse_alignments():
@@ -223,7 +307,7 @@ def main():
                 tmp_ctg_alns[aln_line.query_header][9].append(aln_line.aln_len)
                 tmp_ctg_alns[aln_line.query_header][10].append(aln_line.mapq)
 
-    # Put the tmp alignments into ContigAlignment objects
+    # Put the tmp alignments into ContigAlignment objects.
     ctg_alns = dict()
     for i in tmp_ctg_alns:
         ctg_alns[i] = ContigAlignment(
@@ -240,7 +324,7 @@ def main():
             tmp_ctg_alns[i][10]
         )
 
-    # Filter and merge the alignments
+    # Filter and merge the alignments.
     log("Filtering and merging alignments")
     for i in ctg_alns:
         ctg_alns[i] = ctg_alns[i].filter_mapq(min_q)
@@ -249,7 +333,7 @@ def main():
             if ctg_alns[i] is not None:
                 ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
 
-    # Get the putative breakpoints for each query sequence, if any
+    # Get the putative breakpoints for each query sequence, if any.
     ctg_breaks = dict()
     for i in ctg_alns:
         if ctg_alns[i] is not None:
@@ -264,7 +348,7 @@ def main():
 
     write_breaks(query_file, ctg_breaks, overwrite_files, output_path)
 
-    # Write the scaffolds
+    # Write the scaffolds.
     log("Writing broken contigs")
     qf_name = query_file.split("/")[-1]
     qf_pref = qf_name[:qf_name.rfind(".")]

@@ -86,6 +86,7 @@ def main():
     parser.add_argument("-C", action='store_true', default=False, help="write unplaced contigs individually instead of making a chr0")
     parser.add_argument("-r", action='store_true', default=False, help=argparse.SUPPRESS) # Infer gaps from reference - not ready. maybe need to add unaligned sequence lengths to the end
     parser.add_argument("-w", action='store_true', default=False, help="overwrite pre-existing intermediate files. ragoo.fasta will always be overwritten")
+    # TODO add an argument to control mm2 num threads. will overriden by --mm2-params.
 
     # Get the command line arguments and ensure all paths are absolute.
     args = parser.parse_args()
