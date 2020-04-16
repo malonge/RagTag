@@ -4,6 +4,7 @@ import os
 import argparse
 
 import pysam
+import numpy as np
 
 from ragoo2_utilities.utilities import log, run
 from ragoo2_utilities.Aligner import Minimap2Aligner
@@ -44,6 +45,15 @@ def run_samtools(output_path, num_threads, overwrite_files):
             pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
     else:
         pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
+
+
+def validate_breaks(ctg_breaks):
+    """
+    Does nothing for now
+    :param ctg_breaks:
+    :return:
+    """
+    return ctg_breaks
 
 
 def write_breaks(query_file, ctg_breaks, overwrite, out_path):
@@ -123,7 +133,7 @@ def main():
     parser.add_argument("-f", metavar="INT", type=int, default=10000, help="minimum unique alignment length to use for scaffolding [10000]")
     parser.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [-1]")
     parser.add_argument("-d", metavar="INT", type=int, default=100000, help="merge contig alignments within this distance [100000]")
-    parser.add_argument("-b", metavar="INT", type=int, default=5000, help="don't break contigs within this distance to the contigs ends")
+    parser.add_argument("-b", metavar="INT", type=int, default=5000, help="don't break contigs within this distance to the contigs ends [5000]")
     parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
     parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave uncorrected")
     parser.add_argument("--inter", action="store_true", default=False, help="Only break misassemblies between reference sequences")
@@ -143,6 +153,7 @@ def main():
     # TODO avoid gff intervals
     # TODO Warning message for large gff intervals
     # TODO move --aligner to --genome-aligner. then, make --read-aligner
+    # Use pysam.stats("c_reads_against_query.s.bam") to get the global coverage
 
     """
     NOTES ON COVERAGE VALIDATION
@@ -191,7 +202,7 @@ def main():
     if mm2_params == "-k19 -w19":
         mm2_params += " -t" + str(num_threads)
 
-    # Make sure no quality filtering for nucmer alignments
+    # Make sure quality filtering is disabled for nucmer alignments
     if genome_aligner == "nucmer":
         min_q = -1
 
@@ -254,22 +265,8 @@ def main():
     if not os.path.exists(output_path):
         os.mkdir(output_path)
 
-    # Align the reads to the query sequence.
-    if read_files:
-        log("Aligning reads to query sequences.")
-        if corr_reads_tech == "sr":
-            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr", output_path + "c_reads_against_query", in_overwrite=overwrite_files)
-        elif corr_reads_tech == "corr":
-            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax asm5", output_path + "c_reads_against_query", in_overwrite=overwrite_files)
-        else:
-            raise ValueError("'-T' must be either 'sr' or 'corr'.")
-        al.run_aligner()
-
-        # Compress, sort and index the alignments.
-        run_samtools(output_path, num_threads, overwrite_files)
-
     # Align the query to the reference.
-    log("Aligning the query to the reference")
+    log("Aligning the query genome to the reference")
     if genome_aligner == "minimap2":
         al = Minimap2Aligner(reference_file, query_file, genome_aligner_path, mm2_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
     else:
@@ -345,6 +342,27 @@ def main():
                 breaks = breaks + inter_breaks
             if breaks:
                 ctg_breaks[i] = breaks
+
+    # If desired, validate the putative breakpoints by observing read coverage.
+    if read_files:
+        log("Aligning reads to query sequences.")
+        if corr_reads_tech == "sr":
+            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr -t " + str(num_threads),
+                                    output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+        elif corr_reads_tech == "corr":
+            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax asm5 -t " + str(num_threads),
+                                    output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+        else:
+            raise ValueError("'-T' must be either 'sr' or 'corr'.")
+        al.run_aligner()
+
+        # Compress, sort and index the alignments.
+        run_samtools(output_path, num_threads, overwrite_files)
+
+        # Validate the breakpoints
+        log("Validating putative query breakpoints")
+        ctg_breaks = validate_breaks(ctg_breaks)
+
 
     write_breaks(query_file, ctg_breaks, overwrite_files, output_path)
 
