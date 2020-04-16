@@ -7,6 +7,7 @@ import pysam
 
 from ragoo2_utilities.utilities import log, run
 from ragoo2_utilities.Aligner import Minimap2Aligner
+from ragoo2_utilities.Aligner import Minimap2SAMAligner
 from ragoo2_utilities.Aligner import NucmerAligner
 from ragoo2_utilities.AlignmentReader import AlignmentReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
@@ -44,7 +45,7 @@ def write_breaks(query_file, ctg_breaks, overwrite, out_path):
                 ])
             )
         else:
-            # This query sequence has been broken
+            # This query sequence was broken
             sorted_breaks = sorted(ctg_breaks[q])
             start = 0
             for i in sorted_breaks:
@@ -102,6 +103,22 @@ def main():
     # ragoo_scaffold.py -o test_out
     # Would that be a problem?
     # Warning message for large gff intervals
+
+    """
+    NOTES ON COVERAGE VALIDATION
+    
+    1. use minimap2 to align reads and produce a SAM file, just as v1.1
+    2. compress, sort and index the file with pysam
+    (for 1 and 2, check if files already exist).
+    for each putative region, pull out reads mapping within a window around the breakpoint (probably 10k by default)
+    use AlignmentFile.pileup for this
+    use truncate=True
+    double check that 0-coverage bases in the region are reported
+    
+    for i in x.pileup("NC_003070.9", 0, 1000, truncate=True):
+        print(i.n) # give the coverage of the first 1k bases.
+    
+    """
 
     args = parser.parse_args()
     reference_file = os.path.abspath(args.reference)
@@ -258,7 +275,6 @@ def main():
         output_path + qf_pref + ".break.fasta"
     ]
     run(" ".join(cmd))
-
 
 
 if __name__ == "__main__":
