@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import os
+import sys
+import math
 import argparse
 
 import pysam
@@ -76,6 +78,10 @@ def run_samtools(output_path, num_threads, overwrite_files):
         pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
 
 
+def smooth_breaks(val_breaks):
+    return val_breaks
+
+
 def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_files, window_size=10000):
     """
     Does nothing for now
@@ -83,10 +89,15 @@ def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_
     :return:
     """
     glob_med = get_median_read_coverage(output_path, num_threads, overwrite_files)
+    dev = int(math.sqrt(glob_med))
+    max_cutoff = glob_med + (3*dev)
+    min_cutoff = max(0, (glob_med - (3*dev)))
     log("The global median read coverage is %d" % glob_med)
+    print("max and min cutoff: %f, %f" %(max_cutoff, min_cutoff))
 
     # Go through each break point and query the coverage within the vicinity of the breakpoint.
-    x = pysam.FastaFile(query_file)
+    qidx = pysam.FastaFile(query_file)
+    bam = pysam.AlignmentFile(output_path + "c_reads_against_query.s.bam")
     validated_ctg_breaks = dict()
     for ctg in ctg_breaks:
         val_breaks = []
@@ -94,8 +105,31 @@ def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_
         # Iterate over each breakpoint for this query sequence
         for b in ctg_breaks[ctg]:
             min_range = max(0, b-(window_size//2))
-            max_range = min(x.get_reference_length(ctg), b + (window_size // 2))
-            break
+            max_range = min(qidx.get_reference_length(ctg), b + (window_size // 2))
+            covs = np.asarray([i.n for i in bam.pileup(ctg, min_range, max_range, truncate=True)], dtype=np.int32)
+            cov_min, cov_max = np.min(covs), np.max(covs)
+
+            too_high = True if cov_max > max_cutoff else False
+            too_low = True if cov_min < min_cutoff else False
+            new_break = None
+            status = "not validated"
+            if too_low and too_high:
+                val_breaks.append(np.argmin(covs) + min_range)
+                new_break = np.argmin(covs) + min_range
+                status = "low and high cov"
+            elif too_low:
+                val_breaks.append(np.argmin(covs) + min_range)
+                new_break = np.argmin(covs) + min_range
+                status = "low cov"
+            elif too_high:
+                val_breaks.append(np.argmax(covs) + min_range)
+                new_break = np.argmax(covs) + min_range
+                status = "high cov"
+
+            # Temp logging
+            print("Contig: %s, break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
+
+        validated_ctg_breaks[ctg] = smooth_breaks(val_breaks)
 
     return ctg_breaks
 
@@ -406,7 +440,7 @@ def main():
         # Validate the breakpoints
         log("Validating putative query breakpoints")
         # TODO make window_size a command line parameter
-        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000)
+        ctg_breaks = validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_files, window_size=10000)
 
     write_breaks(query_file, ctg_breaks, overwrite_files, output_path)
 
