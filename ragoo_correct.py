@@ -16,6 +16,7 @@ from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 def run_samtools(output_path, num_threads, overwrite_files):
     """ Compress, sort and index alignments with pysam. """
+    # TODO may just want to check if the sorted BAM exists, rather than all alignment files
     log("Compressing read alignments")
     if os.path.isfile(output_path + "c_reads_against_query.bam"):
         if not overwrite_files:

@@ -2,7 +2,7 @@ import abc
 import os
 import shutil
 
-from ragoo_utilities.utilities import run, log
+from ragoo2_utilities.utilities import run, log
 
 
 class Aligner:

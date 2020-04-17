@@ -3,7 +3,7 @@
 import operator
 from collections import defaultdict
 
-from ragoo_utilities.utilities import summarize_planesweep
+from ragoo2_utilities.utilities import summarize_planesweep
 
 
 class ContigAlignment:
