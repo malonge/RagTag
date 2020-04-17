@@ -14,27 +14,55 @@ from ragoo2_utilities.AlignmentReader import AlignmentReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
+def get_median_read_coverage(output_path, num_threads, overwrite_files):
+    """ Given the read alignments, use samtools stats to return an approximate median coverage value. """
+    log("Calculating global read coverage")
+    if os.path.isfile(output_path + "c_reads_against_query.s.bam.stats"):
+        if not overwrite_files:
+            log("retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
+        else:
+            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
+            st = pysam.stats("-@", str(num_threads), output_path + "c_reads_against_query.s.bam")
+            with open(output_path + "c_reads_against_query.s.bam.stats", "w") as f:
+                f.write(st)
+    else:
+        st = pysam.stats("-@", str(num_threads), output_path + "c_reads_against_query.s.bam")
+        with open(output_path + "c_reads_against_query.s.bam.stats", "w") as f:
+            f.write(st)
+
+    # Get the coverage histogram (for 1 to 1k)
+    covs = []
+    with open(output_path + "c_reads_against_query.s.bam.stats") as f:
+        for line in f:
+            if line.startswith("COV"):
+                covs.append(int(line.split("\t")[3]))
+
+    # Get the median from the histogram
+    covs = np.asarray(covs, dtype=np.int32)
+
+    # Remove the last value, which is a catch-all for coverages > 1k
+    covs = covs[:-1]
+    mid = sum(covs) // 2
+    cs = 0
+    for i in range(len(covs)):
+        cs += covs[i]
+        if cs >= mid:
+            return i
+    raise ValueError()
+
+
 def run_samtools(output_path, num_threads, overwrite_files):
     """ Compress, sort and index alignments with pysam. """
-    # TODO may just want to check if the sorted BAM exists, rather than all alignment files
-    log("Compressing read alignments")
-    if os.path.isfile(output_path + "c_reads_against_query.bam"):
-        if not overwrite_files:
-            log("retaining pre-existing file: " + output_path + "c_reads_against_query.bam")
-        else:
-            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.bam")
-            pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
-    else:
-        pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
-
-    log("Sorting read alignments")
+    log("Compressing and sorting read alignments")
     if os.path.isfile(output_path + "c_reads_against_query.s.bam"):
         if not overwrite_files:
             log("retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam")
         else:
             log("overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+            pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
             pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
     else:
+        pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
         pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
 
     log("Indexing read alignments")
@@ -48,12 +76,27 @@ def run_samtools(output_path, num_threads, overwrite_files):
         pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
 
 
-def validate_breaks(ctg_breaks):
+def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_files, window_size=10000):
     """
     Does nothing for now
     :param ctg_breaks:
     :return:
     """
+    glob_med = get_median_read_coverage(output_path, num_threads, overwrite_files)
+    log("The global median read coverage is %d" % glob_med)
+
+    # Go through each break point and query the coverage within the vicinity of the breakpoint.
+    x = pysam.FastaFile(query_file)
+    validated_ctg_breaks = dict()
+    for ctg in ctg_breaks:
+        val_breaks = []
+
+        # Iterate over each breakpoint for this query sequence
+        for b in ctg_breaks[ctg]:
+            min_range = max(0, b-(window_size//2))
+            max_range = min(x.get_reference_length(ctg), b + (window_size // 2))
+            break
+
     return ctg_breaks
 
 
@@ -154,7 +197,7 @@ def main():
     # TODO avoid gff intervals
     # TODO Warning message for large gff intervals
     # TODO move --aligner to --genome-aligner. then, make --read-aligner
-    # Use pysam.stats("c_reads_against_query.s.bam") to get the global coverage
+    # Use pysam.stats("-@", "2", "c_reads_against_query.s.bam") to get the global coverage
 
     """
     NOTES ON COVERAGE VALIDATION
@@ -362,8 +405,8 @@ def main():
 
         # Validate the breakpoints
         log("Validating putative query breakpoints")
-        ctg_breaks = validate_breaks(ctg_breaks)
-
+        # TODO make window_size a command line parameter
+        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000)
 
     write_breaks(query_file, ctg_breaks, overwrite_files, output_path)
 
