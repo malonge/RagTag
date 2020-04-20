@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import os
-import sys
 import math
 import argparse
 
 import pysam
 import numpy as np
+import matplotlib.pyplot as plt
 
 from ragoo2_utilities.utilities import log, run
 from ragoo2_utilities.Aligner import Minimap2Aligner
@@ -78,11 +78,20 @@ def run_samtools(output_path, num_threads, overwrite_files):
         pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
 
 
-def smooth_breaks(val_breaks):
-    return val_breaks
+def smooth_breaks(val_breaks, d):
+    """ Merge breakpoints that are within d bp of each other. """
+    breaks = sorted(list(set(val_breaks)))
+    i, j = 0, 1
+    while j < len(breaks):
+        if breaks[j] - breaks[i] < d:
+            breaks.pop(j)
+        else:
+            i += 1
+            j += 1
+    return breaks
 
 
-def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_files, window_size=10000):
+def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000):
     """
     Does nothing for now
     :param ctg_breaks:
@@ -90,13 +99,13 @@ def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_
     """
     glob_med = get_median_read_coverage(output_path, num_threads, overwrite_files)
     dev = int(math.sqrt(glob_med))
+    # TODO make num devs a parameter
     max_cutoff = glob_med + (3*dev)
     min_cutoff = max(0, (glob_med - (3*dev)))
     log("The global median read coverage is %d" % glob_med)
-    print("max and min cutoff: %f, %f" %(max_cutoff, min_cutoff))
+    #print("max and min cutoff: %f, %f" % (max_cutoff, min_cutoff))
 
     # Go through each break point and query the coverage within the vicinity of the breakpoint.
-    qidx = pysam.FastaFile(query_file)
     bam = pysam.AlignmentFile(output_path + "c_reads_against_query.s.bam")
     validated_ctg_breaks = dict()
     for ctg in ctg_breaks:
@@ -105,8 +114,10 @@ def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_
         # Iterate over each breakpoint for this query sequence
         for b in ctg_breaks[ctg]:
             min_range = max(0, b-(window_size//2))
-            max_range = min(qidx.get_reference_length(ctg), b + (window_size // 2))
+            max_range = min(bam.get_reference_length(ctg), b + (window_size // 2))
             covs = np.asarray([i.n for i in bam.pileup(ctg, min_range, max_range, truncate=True)], dtype=np.int32)
+
+
             cov_min, cov_max = np.min(covs), np.max(covs)
 
             too_high = True if cov_max > max_cutoff else False
@@ -127,11 +138,26 @@ def validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_
                 status = "high cov"
 
             # Temp logging
-            print("Contig: %s, break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
+            #print("Contig: %s, break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
 
-        validated_ctg_breaks[ctg] = smooth_breaks(val_breaks)
+            ####################
+            ## TEMP PLOTTING ###
+            ####################
 
-    return ctg_breaks
+
+            #plt.figure(figsize=(10, 10))
+            #plt.plot(covs)
+            #plt.axvline(b-min_range, color="r", linestyle="--")
+            #plt.axvline(new_break-min_range, color="g", linestyle="--")
+            #plt.savefig(output_path + "plots/" + ctg + "_" + str(b) + ".png")
+            #plt.close()
+
+
+            ####################
+        # TODO make d a tunable parameter
+        validated_ctg_breaks[ctg] = smooth_breaks(val_breaks, 10000)
+
+    return validated_ctg_breaks
 
 
 def write_breaks(query_file, ctg_breaks, overwrite, out_path):
@@ -423,6 +449,7 @@ def main():
 
     # If desired, validate the putative breakpoints by observing read coverage.
     if read_files:
+        # TODO check if the BAM file exists before aligning
         log("Aligning reads to query sequences.")
         if corr_reads_tech == "sr":
             al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr -t " + str(num_threads),
@@ -440,7 +467,7 @@ def main():
         # Validate the breakpoints
         log("Validating putative query breakpoints")
         # TODO make window_size a command line parameter
-        ctg_breaks = validate_breaks(ctg_breaks, query_file, output_path, num_threads, overwrite_files, window_size=10000)
+        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000)
 
     write_breaks(query_file, ctg_breaks, overwrite_files, output_path)
 
