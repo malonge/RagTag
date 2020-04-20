@@ -115,11 +115,21 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, windo
         for b in ctg_breaks[ctg]:
             min_range = max(0, b-(window_size//2))
             max_range = min(bam.get_reference_length(ctg), b + (window_size // 2))
-            covs = np.asarray([i.n for i in bam.pileup(ctg, min_range, max_range, truncate=True)], dtype=np.int32)
-
+            region = "%s:%d-%d" % (ctg, min_range, max_range-1)
+            depth_out = pysam.samtools.depth("-aa", "-r", region, output_path + "c_reads_against_query.s.bam")
+            covs = np.asarray(
+                [j.split("\t")[2] for j in [i for i in depth_out.rstrip().split("\n")]],
+                dtype=np.int32
+            )
+            try:
+                assert len(covs) == max_range-min_range
+            except AssertionError:
+                print(str(len(covs)))
+                print(str(max_range-min_range))
+                print(ctg + ":" + str(min_range) + "-" + str(max_range))
+                raise AssertionError()
 
             cov_min, cov_max = np.min(covs), np.max(covs)
-
             too_high = True if cov_max > max_cutoff else False
             too_low = True if cov_min < min_cutoff else False
             new_break = None
@@ -256,24 +266,6 @@ def main():
     # Would that be a problem?
     # TODO avoid gff intervals
     # TODO Warning message for large gff intervals
-    # TODO move --aligner to --genome-aligner. then, make --read-aligner
-    # Use pysam.stats("-@", "2", "c_reads_against_query.s.bam") to get the global coverage
-
-    """
-    NOTES ON COVERAGE VALIDATION
-    
-    1. use minimap2 to align reads and produce a SAM file, just as v1.1
-    2. compress, sort and index the file with pysam
-    (for 1 and 2, check if files already exist).
-    for each putative region, pull out reads mapping within a window around the breakpoint (probably 10k by default)
-    use AlignmentFile.pileup for this
-    use truncate=True
-    double check that 0-coverage bases in the region are reported
-    
-    for i in x.pileup("NC_003070.9", 0, 1000, truncate=True):
-        print(i.n) # give the coverage of the first 1k bases.
-    
-    """
 
     args = parser.parse_args()
     reference_file = os.path.abspath(args.reference)
