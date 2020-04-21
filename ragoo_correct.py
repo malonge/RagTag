@@ -3,9 +3,11 @@
 import os
 import math
 import argparse
+from collections import defaultdict
 
 import pysam
 import numpy as np
+from intervaltree import IntervalTree
 import matplotlib.pyplot as plt
 
 from ragoo2_utilities.utilities import log, run
@@ -78,7 +80,7 @@ def run_samtools(output_path, num_threads, overwrite_files):
         pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
 
 
-def smooth_breaks(val_breaks, d):
+def clean_breaks(val_breaks, d):
     """ Merge breakpoints that are within d bp of each other. """
     breaks = sorted(list(set(val_breaks)))
     i, j = 0, 1
@@ -91,17 +93,14 @@ def smooth_breaks(val_breaks, d):
     return breaks
 
 
-def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000):
+def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000, num_devs=3, clean_dist=10000):
     """
-    Does nothing for now
-    :param ctg_breaks:
-    :return:
     """
+    # Get the median coverage over all bp
     glob_med = get_median_read_coverage(output_path, num_threads, overwrite_files)
     dev = int(math.sqrt(glob_med))
-    # TODO make num devs a parameter
-    max_cutoff = glob_med + (3*dev)
-    min_cutoff = max(0, (glob_med - (3*dev)))
+    max_cutoff = glob_med + (num_devs*dev)
+    min_cutoff = max(0, (glob_med - (num_devs*dev)))
     log("The global median read coverage is %d" % glob_med)
     #print("max and min cutoff: %f, %f" % (max_cutoff, min_cutoff))
 
@@ -113,7 +112,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, windo
 
         # Iterate over each breakpoint for this query sequence
         for b in ctg_breaks[ctg]:
-            min_range = max(0, b-(window_size//2))
+            min_range = max(0, b - (window_size//2))
             max_range = min(bam.get_reference_length(ctg), b + (window_size // 2))
             region = "%s:%d-%d" % (ctg, min_range, max_range-1)
             depth_out = pysam.samtools.depth("-aa", "-r", region, output_path + "c_reads_against_query.s.bam")
@@ -121,14 +120,9 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, windo
                 [j.split("\t")[2] for j in [i for i in depth_out.rstrip().split("\n")]],
                 dtype=np.int32
             )
-            try:
-                assert len(covs) == max_range-min_range
-            except AssertionError:
-                print(str(len(covs)))
-                print(str(max_range-min_range))
-                print(ctg + ":" + str(min_range) + "-" + str(max_range))
-                raise AssertionError()
+            assert len(covs) == max_range - min_range
 
+            # Given the coverage in vicinity of the breakpoint, find the max and min coverage.
             cov_min, cov_max = np.min(covs), np.max(covs)
             too_high = True if cov_max > max_cutoff else False
             too_low = True if cov_min < min_cutoff else False
@@ -164,10 +158,29 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, windo
 
 
             ####################
-        # TODO make d a tunable parameter
-        validated_ctg_breaks[ctg] = smooth_breaks(val_breaks, 10000)
+        validated_ctg_breaks[ctg] = clean_breaks(val_breaks, clean_dist)
 
     return validated_ctg_breaks
+
+
+def make_gff_interval_tree(gff_file):
+    # Dictionary storing an interval tree for each sequence header
+    t = defaultdict(IntervalTree)
+
+    # Iterate over the gff file
+    with open(gff_file, "r") as f:
+        for line in f:
+            if not line.startswith("#"):
+                fields = line.split("\t")
+                h, start, end = fields[0], int(fields[3]), int(fields[4])
+                start = start - 1  # make everything zero-indexed
+                assert start < end
+
+                if end - start > 100000:
+                    log("WARNING: there are large intervals in this gff file (>= 100 kbp). This could disproportionately invalidate putative query breakpoints.")
+                t[h][start:end] = (start, end)
+
+    return t
 
 
 def write_breaks(query_file, ctg_breaks, overwrite, out_path):
@@ -248,6 +261,8 @@ def main():
     parser.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [-1]")
     parser.add_argument("-d", metavar="INT", type=int, default=100000, help="merge contig alignments within this distance [100000]")
     parser.add_argument("-b", metavar="INT", type=int, default=5000, help="don't break contigs within this distance to the contigs ends [5000]")
+    parser.add_argument("-v", metavar="INT", type=int, default=10000, help="for each putative breakpoint, query the coverage in a window this size around the breakpoint [10000]")
+    parser.add_argument("-m", metavar="INT", type=int, default=10000, help="merge query breakpoints within this distance of each other [10000]")
     parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
     parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave uncorrected")
     parser.add_argument("--inter", action="store_true", default=False, help="Only break misassemblies between reference sequences")
@@ -264,8 +279,6 @@ def main():
     # ragoo_correct.py -o test_out
     # ragoo_scaffold.py -o test_out
     # Would that be a problem?
-    # TODO avoid gff intervals
-    # TODO Warning message for large gff intervals
 
     args = parser.parse_args()
     reference_file = os.path.abspath(args.reference)
@@ -275,8 +288,14 @@ def main():
     min_ulen = args.f
     min_q = args.q
     merge_dist = args.d
+    min_break_dist = args.m
     min_break_end_dist = args.b
+    val_window_size = args.v
     overwrite_files = args.w
+
+    gff_file = args.gff
+    if gff_file:
+        gff_file = os.path.abspath(gff_file)
 
     skip_file = args.j
     if skip_file:
@@ -441,26 +460,43 @@ def main():
 
     # If desired, validate the putative breakpoints by observing read coverage.
     if read_files:
-        # TODO check if the BAM file exists before aligning
-        log("Aligning reads to query sequences.")
-        if corr_reads_tech == "sr":
-            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr -t " + str(num_threads),
-                                    output_path + "c_reads_against_query", in_overwrite=overwrite_files)
-        elif corr_reads_tech == "corr":
-            al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax asm5 -t " + str(num_threads),
-                                    output_path + "c_reads_against_query", in_overwrite=overwrite_files)
-        else:
-            raise ValueError("'-T' must be either 'sr' or 'corr'.")
-        al.run_aligner()
+        log("Validating putative query breakpoints via read alignment.")
+        if not os.path.isfile(output_path + "c_reads_against_query.s.bam"):
+            log("Aligning reads to query sequences.")
+            if corr_reads_tech == "sr":
+                al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr -t " + str(num_threads),
+                                        output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+            elif corr_reads_tech == "corr":
+                al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax asm5 -t " + str(num_threads),
+                                        output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+            else:
+                raise ValueError("'-T' must be either 'sr' or 'corr'.")
+            al.run_aligner()
 
         # Compress, sort and index the alignments.
         run_samtools(output_path, num_threads, overwrite_files)
 
         # Validate the breakpoints
         log("Validating putative query breakpoints")
-        # TODO make window_size a command line parameter
-        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000)
+        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=val_window_size, clean_dist=min_break_dist)
 
+    # Check if we need to avoid gff intervals
+    if gff_file:
+        log("Avoiding breaks within GFF intervals")
+        it = make_gff_interval_tree(gff_file)
+        non_gff_breaks = dict()
+        for ctg in ctg_breaks:
+            new_breaks = []
+            for i in ctg_breaks[ctg]:
+                if it[ctg][i]:
+                    log("Avoiding breaking %s at %d. This point intersects a feature in the gff file.)" % (ctg, i))
+                else:
+                    new_breaks.append(i)
+            if new_breaks:
+                non_gff_breaks[ctg] = new_breaks
+        ctg_breaks = non_gff_breaks
+
+    # Write the summary of query sequence breaks in BED format
     write_breaks(query_file, ctg_breaks, overwrite_files, output_path)
 
     # Write the scaffolds.
