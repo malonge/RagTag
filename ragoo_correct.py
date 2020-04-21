@@ -183,14 +183,12 @@ def make_gff_interval_tree(gff_file):
     return t
 
 
-def write_breaks(query_file, ctg_breaks, overwrite, out_path):
+def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
     """
     Write the intermediate file for contig breaks.
     This should be the same format as the intermediate output from 'ragoo_scaffold.py'. As a result,
     the same lift-over script could be used for either.
     """
-    out_file = out_path + "correct.bed"
-
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
@@ -249,10 +247,10 @@ def write_breaks(query_file, ctg_breaks, overwrite, out_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Correct contigs according to alignments to a reference (v2.0.0)')
+    parser = argparse.ArgumentParser(description='Correct contigs according to alignments to a reference')
     parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped.")
-    parser.add_argument("-o", metavar="STR", type=str, default="ragoo_correct_output", help="output directory name [ragoo_correct_output]")
+    parser.add_argument("-o", metavar="STR", type=str, default="ragoo_output", help="output directory name [ragoo_correct_output]")
     parser.add_argument("-t", metavar="INT", type=int, default=1, help="number of threads to use when running minimap2 [1]")
     parser.add_argument("--genome-aligner", metavar="PATH", type=str, default="minimap2", help="whole genome aligner ('nucmer' or 'minimap2') to use for correction. PATHs allowed [minimap2]")
     parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="Space delimted parameters to pass directly to minimap2 for whole genome alignment ['-k19 -w19 -t3']")
@@ -497,7 +495,8 @@ def main():
         ctg_breaks = non_gff_breaks
 
     # Write the summary of query sequence breaks in BED format
-    write_breaks(query_file, ctg_breaks, overwrite_files, output_path)
+    bed_file = output_path + "correction.placement.bed"
+    write_breaks(bed_file, query_file, ctg_breaks, overwrite_files, output_path)
 
     # Write the scaffolds.
     log("Writing broken contigs")
@@ -505,7 +504,7 @@ def main():
     qf_pref = qf_name[:qf_name.rfind(".")]
     cmd = [
         "break_query.py",
-        output_path + "correct.bed",
+        bed_file,
         query_file,
         output_path + qf_pref + ".break.fasta"
     ]

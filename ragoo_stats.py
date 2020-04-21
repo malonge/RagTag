@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import argparse
 
 
@@ -27,11 +28,12 @@ def main():
                 placed_bp += seq_len
                 placed_seq += 1
 
-    with open(unplaced_file, "r") as f:
-        for line in f:
-            l = line.rstrip().split("\t")
-            unplaced_seq += 1
-            unplaced_bp += int(l[1])
+    if not os.path.getsize(unplaced_file) == 0:
+        with open(unplaced_file, "r") as f:
+            for line in f:
+                l = line.rstrip().split("\t")
+                unplaced_seq += 1
+                unplaced_bp += int(l[1])
 
     with open(output_file, "w") as f:
         f.write("placed_sequences\tplaced_bp\tunplaced_sequences\tunplaced_bp\n")

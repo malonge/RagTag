@@ -88,7 +88,8 @@ def main():
 
     out_fasta.close()
 
-    unplaced_out.write("\n".join(unplaced_lines) + "\n")
+    if unplaced_lines:
+        unplaced_out.write("\n".join(unplaced_lines) + "\n")
     unplaced_out.close()
 
 

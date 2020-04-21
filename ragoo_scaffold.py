@@ -67,7 +67,7 @@ def write_orderings(ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Scaffold contigs according to alignments to a reference (v2.0.0)')
+    parser = argparse.ArgumentParser(description='Scaffold contigs according to alignments to a reference')
     parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped.")
     parser.add_argument("-o", metavar="STR", type=str, default="ragoo_output", help="output directory name [ragoo_output]")
