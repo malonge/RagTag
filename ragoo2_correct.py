@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import math
 import argparse
 from collections import defaultdict
@@ -93,7 +94,7 @@ def clean_breaks(val_breaks, d):
     return breaks
 
 
-def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000, num_devs=3, clean_dist=10000):
+def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000, num_devs=3, clean_dist=1000):
     """
     """
     # Get the median coverage over all bp
@@ -247,11 +248,11 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Correct query contigs via alignments to a reference genome.')
-    parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
-    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file. must not be gzipped.")
+    parser = argparse.ArgumentParser(description='Reference-guided misassembly correction', usage="ragoo2.py correct <reference.fa> <query.fa>")
 
     cor_options = parser.add_argument_group("correction options")
+    cor_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
+    cor_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
     cor_options.add_argument("-f", metavar="INT", type=int, default=10000, help="minimum unique alignment length [10000]")
     cor_options.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum alignment mapq (minimap2 only) [-1]")
     cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
@@ -281,6 +282,11 @@ def main():
     cor_options.add_argument("-m", metavar="INT", type=int, default=1000, help=argparse.SUPPRESS)  # Merge breakpoints within this distance after validation
 
     args = parser.parse_args()
+
+    if not args.reference or not args.query:
+        parser.print_help()
+        sys.exit()
+
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
     output_path = args.o.replace("/", "").replace(".", "")
@@ -391,7 +397,7 @@ def main():
     # If alignments are from Nucmer, convert from delta to paf.
     if genome_aligner == "nucmer":
         cmd = ["ragoo2_delta2paf.py", output_path + "c_query_against_ref.delta", ">", output_path + "c_query_against_ref.paf"]
-        run(" ".join(cmd))
+        run(cmd)
 
     # Read and organize the alignments.
     log('Reading whole genome alignments')
@@ -510,7 +516,7 @@ def main():
         query_file,
         output_path + qf_pref + ".break.fasta"
     ]
-    run(" ".join(cmd))
+    run(cmd)
 
 
 if __name__ == "__main__":

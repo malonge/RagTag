@@ -3,8 +3,6 @@
 import sys
 import subprocess
 
-from ragoo2_utilities.utilities import run
-
 
 def main():
     VERSION = "2.0.0"
@@ -46,15 +44,15 @@ usage: ragoo2.py <command> [options]
 
         elif cmd == "scaffold":
             subcmd = ["ragoo2_scaffold.py"] + sys.argv[2:]
-            subprocess.call(" ".join(subcmd), shell=True, executable='/bin/bash')
+            subprocess.call(subcmd)
 
         elif cmd == "correct":
             subcmd = ["ragoo2_correct.py"] + sys.argv[2:]
-            subprocess.call(" ".join(subcmd), shell=True, executable='/bin/bash')
+            subprocess.call(subcmd)
 
         elif cmd == "updategff":
             subcmd = ["ragoo2_update_gff.py"] + sys.argv[2:]
-            subprocess.call(" ".join(subcmd), shell=True, executable='/bin/bash')
+            subprocess.call(subcmd)
 
         else:
             print(description)

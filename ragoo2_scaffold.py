@@ -66,7 +66,7 @@ def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite, out_
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Scaffold query contigs via mapping to a reference genome.', usage="ragoo2.py scaffold <reference.fa> <query.fa>")
+    parser = argparse.ArgumentParser(description='Reference-guided scaffolding', usage="ragoo2.py scaffold <reference.fa> <query.fa>")
     scaf_options = parser.add_argument_group("scaffolding options")
     scaf_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
     scaf_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
@@ -168,7 +168,7 @@ def main():
     # If alignments are from Nucmer, need to convert from delta to paf
     if aligner == "nucmer":
         cmd = ["ragoo2_delta2paf.py", output_path + "query_against_ref.delta", ">", output_path + "query_against_ref.paf"]
-        run(" ".join(cmd))
+        run(cmd)
 
     # Read and organize the alignments
     log('Reading alignments')
@@ -277,7 +277,7 @@ def main():
     ]
     if not make_chr0:
         cmd.append("-C")
-    run(" ".join(cmd))
+    run(cmd)
 
     # Calculate the stats
     cmd = [
@@ -286,7 +286,7 @@ def main():
         output_path + "unplaced.txt",
         output_path + "localization_stats.txt"
     ]
-    run(" ".join(cmd))
+    run(cmd)
 
     # Make the AGP file
     cmd = [
@@ -298,7 +298,7 @@ def main():
     ]
     if not make_chr0:
         cmd.append("-C")
-    run(" ".join(cmd))
+    run(cmd)
 
 
 if __name__ == "__main__":

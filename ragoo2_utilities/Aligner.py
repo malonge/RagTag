@@ -43,7 +43,7 @@ class Aligner:
     def compile_command(self):
         """
         Compile the space delimited command to be executed.
-        :return: The command as a string
+        :return: The command as a list of strings
         """
         pass
 
@@ -100,7 +100,7 @@ class NucmerAligner(Aligner):
         return True
 
     def compile_command(self):
-        return " ".join([
+        return [
             self.aligner,
             self.params_string,
             '-p ' + self.outfile_prefix,
@@ -108,7 +108,7 @@ class NucmerAligner(Aligner):
             self.q_file,
             "2>",
             self.out_log
-        ])
+        ]
 
 
 class Minimap2Aligner(Aligner):
@@ -143,7 +143,7 @@ class Minimap2Aligner(Aligner):
         Compile the space delimited command to be executed.
         :return: The command as a string
         """
-        return " ".join([
+        return [
             self.aligner,
             self.params_string,
             self.r_file,
@@ -152,7 +152,7 @@ class Minimap2Aligner(Aligner):
             self.out_file,
             "2>",
             self.out_log
-        ])
+        ]
 
 
 class Minimap2SAMAligner(Aligner):
@@ -184,7 +184,7 @@ class Minimap2SAMAligner(Aligner):
         Compile the space delimited command to be executed.
         :return: The command as a string
         """
-        return " ".join([
+        return [
             self.aligner,
             self.params_string,
             self.r_file,
@@ -193,4 +193,4 @@ class Minimap2SAMAligner(Aligner):
             self.out_file,
             "2>",
             self.out_log
-        ])
+        ]

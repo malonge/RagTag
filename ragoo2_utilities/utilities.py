@@ -16,12 +16,15 @@ def reverse_complement(seq):
     return seq.translate(complements)[::-1]
 
 
-def run(cmnd):
+def run(cmd):
     """ Run command and report status. """
-    log('Running : %s' % cmnd)
-    if subprocess.call(cmnd, shell=True, executable='/bin/bash') != 0:
-        raise RuntimeError('Failed : %s ' % cmnd)
-    log('Finished running : %s' % cmnd)
+    if not isinstance(cmd, list):
+        raise TypeError("'run' expects a list")
+
+    log('Running : %s' % " ".join(cmd))
+    if subprocess.call(cmd) != 0:
+        raise RuntimeError('Failed : %s ' % cmd)
+    log('Finished running : %s' " ".join(cmd))
 
 
 def log(message):
