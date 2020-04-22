@@ -11,9 +11,7 @@ from ragoo2_utilities.AlignmentReader import AlignmentReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
-def write_orderings(ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
-    out_file = out_path + "orderings.bed"
-
+def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
@@ -67,26 +65,32 @@ def write_orderings(ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Scaffold contigs according to alignments to a reference')
+    parser = argparse.ArgumentParser(description='Scaffold query contigs via alignments to a reference genome.')
     parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
-    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped.")
-    parser.add_argument("-o", metavar="STR", type=str, default="ragoo_output", help="output directory name [ragoo_output]")
-    parser.add_argument("-t", metavar="INT", type=int, default=1, help="number of threads to use when running minimap2 [1]")
-    parser.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="Aligner ('nucmer' or 'minimap2') to use for scaffolding. PATHs allowed [minimap2]")
-    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="Space delimted parameters to pass directly to minimap2 ['-k19 -w19']")
-    parser.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="Space delimted parameters to pass directly to nucmer ['-l 100 -c 500']")
-    parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
-    parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave unplaced")
-    parser.add_argument("-g", metavar="INT", type=int, default=100, help="gap size for padding in pseudomolecules [100]")
-    parser.add_argument("-l", metavar="INT", type=int, default=1000, help="minimum alignment length to use for scaffolding [1000]")
-    parser.add_argument("-f", metavar="INT", type=int, default=0, help="minimum unique alignment length to use for scaffolding [0]")
-    parser.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [-1]")
-    parser.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score needed to be localized [0.2]")
-    parser.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score needed to be localized [0.0]")
-    parser.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score needed to be localized [0.0]")
-    parser.add_argument("-C", action='store_true', default=False, help="write unplaced contigs individually instead of making a chr0")
-    parser.add_argument("-r", action='store_true', default=False, help=argparse.SUPPRESS) # Infer gaps from reference - not ready. maybe need to add unaligned sequence lengths to the end
-    parser.add_argument("-w", action='store_true', default=False, help="overwrite pre-existing intermediate files. ragoo.fasta will always be overwritten")
+    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file. must not be gzipped.")
+
+    scaf_options = parser.add_argument_group("scaffolding options")
+    scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
+    scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave unplaced")
+    scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="gap size for padding in pseudomolecules [100]")
+    scaf_options.add_argument("-l", metavar="INT", type=int, default=1000, help="minimum alignment length [1000]")
+    scaf_options.add_argument("-f", metavar="INT", type=int, default=0, help="minimum unique alignment length [0]")
+    scaf_options.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum alignment mapq (minimap2 only) [-1]")
+    scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
+    scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
+    scaf_options.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
+    scaf_options.add_argument("-C", action='store_true', default=False, help="write unplaced contigs individually instead of making a chr0")
+    scaf_options.add_argument("-r", action='store_true', default=False, help=argparse.SUPPRESS)  # Infer gaps from reference - not ready. maybe need to add unaligned sequence lengths to the end
+
+    io_options = parser.add_argument_group("input/output options")
+    io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo_output]")
+    io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
+
+    aln_options = parser.add_argument_group("alignment options")
+    aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
+    aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="aligner executable('nucmer' or 'minimap2') [minimap2]")
+    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="space delimted minimap2 parameters ['-k19 -w19']")
+    aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer parameters ['-l 100 -c 500']")
 
     # Get the command line arguments and ensure all paths are absolute.
     args = parser.parse_args()
@@ -254,7 +258,7 @@ def main():
             pads_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
 
     # Write the intermediate output file
-    write_orderings(mapped_ref_seqs, fltrd_ctg_alns, pads_sizes, overwrite_files, output_path)
+    write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pads_sizes, overwrite_files, output_path)
 
     # Write the scaffolds
     log("Writing scaffolds")

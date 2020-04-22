@@ -247,36 +247,38 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Correct contigs according to alignments to a reference')
+    parser = argparse.ArgumentParser(description='Correct query contigs via alignments to a reference genome.')
     parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
-    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped.")
-    parser.add_argument("-o", metavar="STR", type=str, default="ragoo_output", help="output directory name [ragoo_correct_output]")
-    parser.add_argument("-t", metavar="INT", type=int, default=1, help="number of threads to use when running minimap2 [1]")
-    parser.add_argument("--genome-aligner", metavar="PATH", type=str, default="minimap2", help="whole genome aligner ('nucmer' or 'minimap2') to use for correction. PATHs allowed [minimap2]")
-    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="Space delimted parameters to pass directly to minimap2 for whole genome alignment ['-k19 -w19 -t3']")
-    parser.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="Space delimted parameters to pass directly to nucmer for whole genome alignment ['-l 100 -c 500']")
-    parser.add_argument("-f", metavar="INT", type=int, default=10000, help="minimum unique alignment length to use for scaffolding [10000]")
-    parser.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum mapping quality value for alignments. only pertains to minimap2 alignments [-1]")
-    parser.add_argument("-d", metavar="INT", type=int, default=100000, help="merge contig alignments within this distance [100000]")
-    parser.add_argument("-b", metavar="INT", type=int, default=5000, help="don't break contigs within this distance to the contigs ends [5000]")
-    parser.add_argument("-v", metavar="INT", type=int, default=10000, help="for each putative breakpoint, query the coverage in a window this size around the breakpoint [10000]")
-    parser.add_argument("-m", metavar="INT", type=int, default=10000, help="merge query breakpoints within this distance of each other [10000]")
-    parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
-    parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave uncorrected")
-    parser.add_argument("--inter", action="store_true", default=False, help="Only break misassemblies between reference sequences")
-    parser.add_argument("--intra", action="store_true", default=False, help="Only break misassemblies within reference sequences")
-    parser.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="Avoid breaking query sequences within any specified gff interval")
-    parser.add_argument("-w", action='store_true', default=False,help="overwrite pre-existing intermediate files. ragoo.fasta will always be overwritten")
-    parser.add_argument("--read-aligner", metavar="PATH", type=str, default="minimap2", help="read aligner (only 'minimap2' is allowed). use this to specify minimap2 path if using Nucmer as the genome aligner.")
-    parser.add_argument("-R", metavar="<reads.fasta>", type=str, default="", help="Align provided reads to the contigs to validate misassembly correction breakpoints. gzipped fastq or fasta allowed.")
-    parser.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files.")
-    parser.add_argument("-T", metavar="sr", type=str, default="", help="type of reads provided by '-R'. 'sr' and 'corr' accepted for short reads and error corrected long reads respectively.")
+    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file. must not be gzipped.")
 
-    # If one uses the same output directory name for both correct and scaffold, could that be ok without having to worry
-    # about re-writing files? e.g.
-    # ragoo_correct.py -o test_out
-    # ragoo_scaffold.py -o test_out
-    # Would that be a problem?
+    cor_options = parser.add_argument_group("correction options")
+    cor_options.add_argument("-f", metavar="INT", type=int, default=10000, help="minimum unique alignment length [10000]")
+    cor_options.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum alignment mapq (minimap2 only) [-1]")
+    cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
+    cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
+    cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
+    cor_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave uncorrected")
+    cor_options.add_argument("--inter", action="store_true", default=False, help="only break misassemblies between reference sequences")
+    cor_options.add_argument("--intra", action="store_true", default=False, help="only break misassemblies within reference sequences")
+    cor_options.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals")
+
+    io_options = parser.add_argument_group("input/output options")
+    io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
+    io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
+
+    aln_options = parser.add_argument_group("alignment options")
+    aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
+    aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="whole genome aligner executable ('nucmer' or 'minimap2') [minimap2]")
+    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="space delimted minimap2 whole genome alignment parameters ['-k19 -w19']")
+    aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer whole genome alignment parameters ['-l 100 -c 500']")
+
+    val_options = parser.add_argument_group("validation options")
+    val_options.add_argument("--read-aligner", metavar="PATH", type=str, default="minimap2", help="read aligner executable (only 'minimap2' is allowed) [minimap2]")
+    val_options.add_argument("-R", metavar="<reads.fasta>", type=str, default="", help="validation reads. gzipped fastq or fasta allowed.")
+    val_options.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files.")
+    val_options.add_argument("-T", metavar="sr", type=str, default="", help="read type. 'sr' and 'corr' accepted for short reads and error corrected long-reads respectively.")
+    val_options.add_argument("-v", metavar="INT", type=int, default=10000, help="coverage validation window size [10000]")
+    cor_options.add_argument("-m", metavar="INT", type=int, default=1000, help=argparse.SUPPRESS)  # Merge breakpoints within this distance after validation
 
     args = parser.parse_args()
     reference_file = os.path.abspath(args.reference)
@@ -304,7 +306,7 @@ def main():
         exclude_file = os.path.abspath(args.e)
 
     # Get aligner arguments
-    genome_aligner_path = args.genome_aligner
+    genome_aligner_path = args.aligner
     genome_aligner = genome_aligner_path.split("/")[-1]
     if genome_aligner.split("/")[-1] not in {'minimap2', 'nucmer'}:
         raise ValueError("Must specify either 'minimap2' or 'nucmer' (PATHs allowed) with '--aligner'.")
