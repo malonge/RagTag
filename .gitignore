@@ -1,9 +1,4 @@
 .idea
-*.fasta
-*.fa
-*.fai
-*.paf
-*.delta
-*.log
-test*
-ragoo_output
+RaGOO.egg-info
+build
+dist
