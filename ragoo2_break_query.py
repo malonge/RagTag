@@ -7,7 +7,7 @@ import pysam
 
 def main():
     parser = argparse.ArgumentParser(description="Build scaffolds from an 'orderings.bed' file")
-    parser.add_argument("breaks", metavar="<breaks.bed>", type=str, help="'breaks.bed' file produced by 'ragoo_correct.py'")
+    parser.add_argument("breaks", metavar="<breaks.bed>", type=str, help="'breaks.bed' file produced by 'ragoo2_correct.py'")
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped")
     parser.add_argument("out_fasta_file", metavar="<query.break.fasta>", type=str, help="output fasta file name")
 

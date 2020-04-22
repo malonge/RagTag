@@ -71,8 +71,9 @@ def main():
     parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped.")
     parser.add_argument("-o", metavar="STR", type=str, default="ragoo_output", help="output directory name [ragoo_output]")
+    parser.add_argument("-t", metavar="INT", type=int, default=1, help="number of threads to use when running minimap2 [1]")
     parser.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="Aligner ('nucmer' or 'minimap2') to use for scaffolding. PATHs allowed [minimap2]")
-    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19 -t3", help="Space delimted parameters to pass directly to minimap2 ['-k19 -w19 -t3']")
+    parser.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="Space delimted parameters to pass directly to minimap2 ['-k19 -w19']")
     parser.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="Space delimted parameters to pass directly to nucmer ['-l 100 -c 500']")
     parser.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="single column text file of reference headers to ignore")
     parser.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="List of contigs to automatically leave unplaced")
@@ -86,7 +87,6 @@ def main():
     parser.add_argument("-C", action='store_true', default=False, help="write unplaced contigs individually instead of making a chr0")
     parser.add_argument("-r", action='store_true', default=False, help=argparse.SUPPRESS) # Infer gaps from reference - not ready. maybe need to add unaligned sequence lengths to the end
     parser.add_argument("-w", action='store_true', default=False, help="overwrite pre-existing intermediate files. ragoo.fasta will always be overwritten")
-    # TODO add an argument to control mm2 num threads. will overriden by --mm2-params.
 
     # Get the command line arguments and ensure all paths are absolute.
     args = parser.parse_args()
@@ -103,6 +103,7 @@ def main():
     make_chr0 = not args.C
     infer_gaps = args.r
     overwrite_files = args.w
+    num_threads = args.t
 
     skip_file = args.j
     if skip_file:
@@ -119,6 +120,10 @@ def main():
         raise ValueError("Must specify either 'minimap2' or 'nucmer' (PATHs allowed) with '--aligner'.")
     mm2_params = args.mm2_params
     nucmer_params = args.nucmer_params
+
+    # Add the number of mm2 threads if the mm2 params haven't been overridden.
+    if mm2_params == "-k19 -w19":
+        mm2_params += " -t" + str(num_threads)
 
     # Make sure no quality filtering for nucmer alignments
     if aligner == "nucmer":
@@ -153,7 +158,7 @@ def main():
 
     # If alignments are from Nucmer, need to convert from delta to paf
     if aligner == "nucmer":
-        cmd = ["delta2paf.py", output_path + "query_against_ref.delta", ">", output_path + "query_against_ref.paf"]
+        cmd = ["ragoo2_delta2paf.py", output_path + "query_against_ref.delta", ">", output_path + "query_against_ref.paf"]
         run(" ".join(cmd))
 
     # Read and organize the alignments
@@ -254,7 +259,7 @@ def main():
     # Write the scaffolds
     log("Writing scaffolds")
     cmd = [
-        "build_scaffolds.py",
+        "ragoo2_build_scaffolds.py",
         output_path + "orderings.bed",
         query_file,
         output_path + "ragoo.fasta",
@@ -267,7 +272,7 @@ def main():
 
     # Calculate the stats
     cmd = [
-        "ragoo_stats.py",
+        "ragoo2_stats.py",
         output_path + "orderings.bed",
         output_path + "unplaced.txt",
         output_path + "localization_stats.txt"
@@ -276,7 +281,7 @@ def main():
 
     # Make the AGP file
     cmd = [
-        "bed2agp.py",
+        "ragoo2_bed2agp.py",
         output_path + "orderings.bed",
         output_path + "unplaced.txt",
         output_path + "ragoo.agp",

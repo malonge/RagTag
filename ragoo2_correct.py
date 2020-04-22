@@ -186,7 +186,7 @@ def make_gff_interval_tree(gff_file):
 def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
     """
     Write the intermediate file for contig breaks.
-    This should be the same format as the intermediate output from 'ragoo_scaffold.py'. As a result,
+    This should be the same format as the intermediate output from 'ragoo2_scaffold.py'. As a result,
     the same lift-over script could be used for either.
     """
     # Check if the output file already exists
@@ -388,7 +388,7 @@ def main():
 
     # If alignments are from Nucmer, convert from delta to paf.
     if genome_aligner == "nucmer":
-        cmd = ["delta2paf.py", output_path + "c_query_against_ref.delta", ">", output_path + "c_query_against_ref.paf"]
+        cmd = ["ragoo2_delta2paf.py", output_path + "c_query_against_ref.delta", ">", output_path + "c_query_against_ref.paf"]
         run(" ".join(cmd))
 
     # Read and organize the alignments.
@@ -503,7 +503,7 @@ def main():
     qf_name = query_file.split("/")[-1]
     qf_pref = qf_name[:qf_name.rfind(".")]
     cmd = [
-        "break_query.py",
+        "ragoo2_break_query.py",
         bed_file,
         query_file,
         output_path + qf_pref + ".break.fasta"

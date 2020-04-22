@@ -10,7 +10,7 @@ from ragoo2_utilities.utilities import reverse_complement
 
 def main():
     parser = argparse.ArgumentParser(description="Build scaffolds from an 'orderings.bed' file")
-    parser.add_argument("orderings", metavar="<orderings.bed>", type=str, help="'orderings.bed' file produced by 'ragoo_scaffold.py'")
+    parser.add_argument("orderings", metavar="<orderings.bed>", type=str, help="'orderings.bed' file produced by 'ragoo2_scaffold.py'")
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped")
     parser.add_argument("out_fasta_file", metavar="<ragoo.fasta>", type=str, help="output fasta file name")
     parser.add_argument("out_unplaced_file", metavar="<unplaced.txt>", type=str, help="file to write unplaced sequences")
