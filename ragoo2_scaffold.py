@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import argparse
 from collections import defaultdict
 
@@ -15,7 +16,7 @@ def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite, out_
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
-            log("retaining pre-existing file: " + out_file)
+            log("Retaining pre-existing file: " + out_file)
             return
 
     # Proceed with writing the intermediate output
@@ -65,11 +66,10 @@ def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite, out_
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Scaffold query contigs via alignments to a reference genome.')
-    parser.add_argument("reference", metavar="<reference.fasta>", type=str, help="reference fasta file. must not be gzipped.")
-    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file. must not be gzipped.")
-
+    parser = argparse.ArgumentParser(description='Scaffold query contigs via mapping to a reference genome.', usage="ragoo2.py scaffold <reference.fa> <query.fa>")
     scaf_options = parser.add_argument_group("scaffolding options")
+    scaf_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
+    scaf_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave unplaced")
     scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="gap size for padding in pseudomolecules [100]")
@@ -86,7 +86,7 @@ def main():
     io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
 
-    aln_options = parser.add_argument_group("alignment options")
+    aln_options = parser.add_argument_group("mapping options")
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="aligner executable('nucmer' or 'minimap2') [minimap2]")
     aln_options.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="space delimted minimap2 parameters ['-k19 -w19']")
@@ -94,8 +94,13 @@ def main():
 
     # Get the command line arguments and ensure all paths are absolute.
     args = parser.parse_args()
+    if not args.reference or not args.query:
+        parser.print_help()
+        sys.exit()
+
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
+
     output_path = args.o.replace("/", "").replace(".", "")
     min_len = args.l
     min_ulen = args.f
@@ -264,7 +269,7 @@ def main():
     log("Writing scaffolds")
     cmd = [
         "ragoo2_build_scaffolds.py",
-        output_path + "orderings.bed",
+        output_path + "scaffolding.placement.bed",
         query_file,
         output_path + "ragoo.fasta",
         output_path + "unplaced.txt",
@@ -277,7 +282,7 @@ def main():
     # Calculate the stats
     cmd = [
         "ragoo2_stats.py",
-        output_path + "orderings.bed",
+        output_path + "scaffolding.placement.bed",
         output_path + "unplaced.txt",
         output_path + "localization_stats.txt"
     ]
@@ -286,7 +291,7 @@ def main():
     # Make the AGP file
     cmd = [
         "ragoo2_bed2agp.py",
-        output_path + "orderings.bed",
+        output_path + "scaffolding.placement.bed",
         output_path + "unplaced.txt",
         output_path + "ragoo.agp",
         str(gap_size)

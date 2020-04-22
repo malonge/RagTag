@@ -75,7 +75,7 @@ class Aligner:
                     log("overwriting pre-existing file: " + self.out_file)
                     run(self.compile_command())
                 else:
-                    log("retaining pre-existing file: " + self.out_file)
+                    log("Retaining pre-existing file: " + self.out_file)
 
 
 class NucmerAligner(Aligner):
