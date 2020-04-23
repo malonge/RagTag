@@ -23,8 +23,44 @@ def run(cmd):
 
     log('Running : %s' % " ".join(cmd))
     if subprocess.call(cmd) != 0:
-        raise RuntimeError('Failed : %s ' % cmd)
-    log('Finished running : %s' " ".join(cmd))
+        raise RuntimeError('Failed : %s' % " ".join(cmd))
+    log('Finished running : %s' % " ".join(cmd))
+
+
+def run_oe(cmd, out, err):
+    """ Run command and redirect stdout/stderr. """
+
+    if not isinstance(out, str) or not isinstance(err, str):
+        raise TypeError("out/err should be file names (strings)")
+
+    f_out = open(out, "w")
+    f_err = open(err, "w")
+
+    log('Running : %s > %s 2> %s' % (" ".join(cmd), out, err))
+    if subprocess.call(cmd, stdout=f_out, stderr=f_err) != 0:
+        raise RuntimeError('Failed : %s > %s 2> %s' % (" ".join(cmd), out, err))
+
+    log('Finished running : %s > %s 2> %s' % (" ".join(cmd), out, err))
+
+    f_out.close()
+    f_err.close()
+
+
+def run_o(cmd, out):
+    """ Run command and redirect stdout but not stderr. """
+
+    if not isinstance(out, str):
+        raise TypeError("out should be a file name (string)")
+
+    f_out = open(out, "w")
+
+    log('Running : %s > %s' % (" ".join(cmd), out))
+    if subprocess.call(cmd, stdout=f_out) != 0:
+        raise RuntimeError('Failed : %s > %s' % (" ".join(cmd), out))
+
+    log('Finished running : %s > %s' % (" ".join(cmd), out))
+
+    f_out.close()
 
 
 def log(message):

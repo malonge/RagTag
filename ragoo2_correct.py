@@ -11,7 +11,7 @@ import numpy as np
 from intervaltree import IntervalTree
 import matplotlib.pyplot as plt
 
-from ragoo2_utilities.utilities import log, run
+from ragoo2_utilities.utilities import log, run, run_o
 from ragoo2_utilities.Aligner import Minimap2Aligner
 from ragoo2_utilities.Aligner import Minimap2SAMAligner
 from ragoo2_utilities.Aligner import NucmerAligner
@@ -396,8 +396,8 @@ def main():
 
     # If alignments are from Nucmer, convert from delta to paf.
     if genome_aligner == "nucmer":
-        cmd = ["ragoo2_delta2paf.py", output_path + "c_query_against_ref.delta", ">", output_path + "c_query_against_ref.paf"]
-        run(cmd)
+        cmd = ["ragoo2_delta2paf.py", output_path + "c_query_against_ref.delta"]
+        run_o(cmd, output_path + "c_query_against_ref.paf", )
 
     # Read and organize the alignments.
     log('Reading whole genome alignments')
