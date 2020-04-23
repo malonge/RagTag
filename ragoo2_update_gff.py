@@ -98,10 +98,10 @@ def sup_update(gff_file, bed_file):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Update gff invervals given a 'placement' BED file", usage="ragoo2.py updategff [-c] <genes.gff> <placement.bed>")
-    parser.add_argument("gff", metavar="<genes.gff>", type=str, help="gff file. must not be gzipped")
+    parser = argparse.ArgumentParser(description="Update gff intvervals given a RaGOO2 'placement' BED file", usage="ragoo2.py updategff [-c] <genes.gff> <placement.bed>")
+    parser.add_argument("gff", metavar="<genes.gff>", type=str, help="gff file")
     parser.add_argument("bed", metavar="<placement.bed>", type=str, help="placement BED file")
-    parser.add_argument("-c", action="store_true", default=False, help="placement BED file")
+    parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction")
 
     args = parser.parse_args()
     gff_file = os.path.abspath(args.gff)

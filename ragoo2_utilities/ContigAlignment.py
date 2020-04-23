@@ -270,15 +270,18 @@ class ContigAlignment:
 
     def get_best_ref_flanks(self):
         """
-        With respect to the "best" reference sequence, return the lowest and highest alignment positions
+        With respect to the "best" reference sequence, return the lowest and highest inferred alignment positions.
+        "inferred" because this method tries to account for unaligned sequence at the end of contigs.
         :return: lowest position, highest position
         """
-        ref_pos = []
-        for i in self._get_best_ref_alns():
-            ref_pos.append(self._ref_starts[i])
-            ref_pos.append(self._ref_ends[i])
+        self._sort_by_query()
 
-        return min(ref_pos), max(ref_pos)
+        min_q, max_q = self._query_starts[0], self._query_ends[-1]
+        min_r, max_r = self._ref_starts[0], self._ref_ends[-1]
+
+        left_flank = min_r - min_q
+        right_flank = max_r + (self.query_len - max_q)
+        return left_flank, right_flank
 
     def filter_query_contained(self):
         """

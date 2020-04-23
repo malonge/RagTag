@@ -242,25 +242,32 @@ def main():
         mapped_ref_seqs[best_ref].append((ref_start, ref_end, i))
 
     # Sort the query sequences for each reference sequence and define the padding sizes between adjacent query seqs
-    pads_sizes = dict()
+    pad_sizes = dict()
     for i in mapped_ref_seqs:
         mapped_ref_seqs[i] = sorted(mapped_ref_seqs[i])
         if infer_gaps:
             # Infer the gap sizes between adjacent query seqs
-            pads_sizes[i] = []
+            pad_sizes[i] = []
             for j in range(1, len(mapped_ref_seqs[i])):
                 left_ctg = mapped_ref_seqs[i][j-1][2]
                 left_min, left_max = fltrd_ctg_alns[left_ctg].get_best_ref_flanks()
+                left_confidence = fltrd_ctg_alns[left_ctg].grouping_confidence
+
                 right_ctg = mapped_ref_seqs[i][j][2]
                 right_min, right_max = fltrd_ctg_alns[right_ctg].get_best_ref_flanks()
+                right_confidence = fltrd_ctg_alns[right_ctg].grouping_confidence
 
-                # If the contigs overlap, revert to the fixed pre-defined gap size
-                if right_min - left_max >= 0:
-                    pads_sizes[i].append(right_min - left_max)
+                # If the contigs overlap, or if either has a low confidence score, revert to the fixed gap size
+                if right_min - left_max < 0:
+                    pad_sizes[i].append(gap_size)
                 else:
-                    pads_sizes[i].append(gap_size)
+                    if left_confidence < 0.95 or right_confidence < 0.95:
+                        pad_sizes[i].append(gap_size)
+                    else:
+                        pad_sizes[i].append(right_min - left_max)
+
         else:
-            pads_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
+            pad_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
 
     # Write the intermediate output file
     write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pads_sizes, overwrite_files, output_path)
