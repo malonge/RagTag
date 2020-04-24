@@ -277,7 +277,7 @@ def main():
     val_options.add_argument("--read-aligner", metavar="PATH", type=str, default="minimap2", help="read aligner executable (only 'minimap2' is allowed) [minimap2]")
     val_options.add_argument("-R", metavar="<reads.fasta>", type=str, default="", help="validation reads. gzipped fastq or fasta allowed.")
     val_options.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files.")
-    val_options.add_argument("-T", metavar="sr", type=str, default="", help="read type. 'sr' and 'corr' accepted for short reads and error corrected long-reads respectively.")
+    val_options.add_argument("-T", metavar="sr", type=str, default="", help="read type. 'sr' and 'corr' accepted for short reads and error corrected long-reads, respectively.")
     val_options.add_argument("-v", metavar="INT", type=int, default=10000, help="coverage validation window size [10000]")
     cor_options.add_argument("-m", metavar="INT", type=int, default=1000, help=argparse.SUPPRESS)  # Merge breakpoints within this distance after validation
 

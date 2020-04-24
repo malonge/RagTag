@@ -79,11 +79,11 @@ def main():
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
     scaf_options.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
-    scaf_options.add_argument("-C", action='store_true', default=False, help="write unplaced contigs individually instead of making a chr0")
-    scaf_options.add_argument("-r", action='store_true', default=False, help=argparse.SUPPRESS)  # Infer gaps from reference - not ready. maybe need to add unaligned sequence lengths to the end
+    scaf_options.add_argument("-C", action='store_true', default=False, help="concatenate unplaced contigs and make 'chr0'")
+    scaf_options.add_argument("-r", action='store_true', default=False, help="infer gap sizes")
 
     io_options = parser.add_argument_group("input/output options")
-    io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo_output]")
+    io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
 
     aln_options = parser.add_argument_group("mapping options")
@@ -109,7 +109,7 @@ def main():
     group_score_thresh = args.i
     loc_score_thresh = args.a
     orient_score_thresh = args.d
-    make_chr0 = not args.C
+    make_chr0 = args.C
     infer_gaps = args.r
     overwrite_files = args.w
     num_threads = args.t
@@ -243,6 +243,11 @@ def main():
 
     # Sort the query sequences for each reference sequence and define the padding sizes between adjacent query seqs
     pad_sizes = dict()
+    total_inferred = 0
+    total_ovlp = 0
+    total_ns = 0
+    total_u = 0
+    total = 0
     for i in mapped_ref_seqs:
         mapped_ref_seqs[i] = sorted(mapped_ref_seqs[i])
         if infer_gaps:
@@ -251,28 +256,72 @@ def main():
             for j in range(1, len(mapped_ref_seqs[i])):
                 left_ctg = mapped_ref_seqs[i][j-1][2]
                 left_ctg_alns = fltrd_ctg_alns[left_ctg].unique_anchor_filter(1000)  # Get unique alignments
-                left_min, left_max = left_ctg_alns.get_best_ref_flanks()
-                left_confidence = left_ctg_alns.grouping_confidence
+
+                # If we have removed all the alignments, use the default gap size
+                if left_ctg_alns is None:
+                    pad_sizes[i].append(gap_size)
+                    total_u += 1
+                    total += 1
+                    continue
+
+                left_max = left_ctg_alns.get_right_ref_flanks(i, d=1000)
 
                 right_ctg = mapped_ref_seqs[i][j][2]
                 right_ctg_alns = fltrd_ctg_alns[right_ctg].unique_anchor_filter(1000)  # Get unique alignments
-                right_min, right_max = right_ctg_alns.get_best_ref_flanks()
-                right_confidence = right_ctg_alns.grouping_confidence
+
+                # If we have removed all the alignments, use the default gap size
+                if right_ctg_alns is None:
+                    pad_sizes[i].append(gap_size)
+                    total_u += 1
+                    total += 1
+                    continue
+
+                right_min = left_ctg_alns.get_left_ref_flanks(i, d=1000)
+
+                """
+                # TEMP DEBUG
+                if left_ctg == "utg7180000000418":
+                    print()
+                    fltrd_ctg_alns[left_ctg]._sort_by_query()
+                    print(fltrd_ctg_alns[left_ctg])
+                    print()
+                    print(left_ctg_alns)
+                    print()
+                    fltrd_ctg_alns[right_ctg]._sort_by_query()
+                    print(fltrd_ctg_alns[right_ctg])
+                    print()
+                    print(right_ctg_alns)
+                    print()
+                """
+
+                # If either flank was invalid, revert to the fixed gap size
+                if left_max is None or right_min is None:
+                    pad_sizes[i].append(gap_size)
+                    total_ns += 1
+                    total += 1
+                    continue
 
                 # If the contigs overlap, or if either has a low confidence score, revert to the fixed gap size
                 if right_min - left_max < 0:
                     pad_sizes[i].append(gap_size)
+                    total_ovlp += 1
+                    total += 1
                 else:
-                    if left_confidence < 0.95 or right_confidence < 0.95:
-                        pad_sizes[i].append(gap_size)
-                    else:
-                        i_gap_size = right_min - left_max
-                        if i_gap_size > 20000:
-                            log("WARNING (large gap): The inferred gap size between %s and %s is %r." % (left_ctg, right_ctg, i_gap_size))
-                        pad_sizes[i].append(i_gap_size)
+                    i_gap_size = right_min - left_max
+                    if i_gap_size > 20000:
+                        log("WARNING (large gap): The inferred gap size between %s and %s is %r." % (left_ctg, right_ctg, i_gap_size))
+                    pad_sizes[i].append(i_gap_size)
+                    total_inferred += 1
+                    total += 1
 
         else:
             pad_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
+
+    log("total " + str(total))
+    log("total inferred " + str(total_inferred))
+    log("total ovlp: " + str(total_ovlp))
+    log("total non syn: " + str(total_ns))
+    log("total non uniq: " + str(total_u))
 
     # Write the intermediate output file
     write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, overwrite_files, output_path)
@@ -287,7 +336,7 @@ def main():
         output_path + "unplaced.txt",
         str(gap_size)
     ]
-    if not make_chr0:
+    if make_chr0:
         cmd.append("-C")
     run(cmd)
 
@@ -308,11 +357,10 @@ def main():
         output_path + "ragoo.agp",
         str(gap_size)
     ]
-    if not make_chr0:
+    if make_chr0:
         cmd.append("-C")
     run(cmd)
 
 
 if __name__ == "__main__":
     main()
-

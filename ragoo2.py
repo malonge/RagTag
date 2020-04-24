@@ -12,7 +12,7 @@ Genome biology 20.1 (2019): 1-17.
     """
 
     description = """
-RaGOO2: Scaffold and correct contigs via mapping to a reference genome.
+RaGOO2: Reference-guided scaffolding and misassembly correction.
 Version: %s
 
 usage: ragoo2.py <command> [options]

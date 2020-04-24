@@ -15,7 +15,7 @@ def main():
     parser.add_argument("out_fasta_file", metavar="<ragoo.fasta>", type=str, help="output fasta file name")
     parser.add_argument("out_unplaced_file", metavar="<unplaced.txt>", type=str, help="file to write unplaced sequences")
     parser.add_argument("gap_size", metavar="100", default=100, type=int, help="gap size for chr0")
-    parser.add_argument("-C", default=False, action='store_true', help="write individual unplaced contigs instead of chr0")
+    parser.add_argument("-C", default=False, action='store_true', help="concatenate unplaced contigs and make 'chr0'")
 
     args = parser.parse_args()
     orderings_file = args.orderings
@@ -23,7 +23,7 @@ def main():
     out_file = args.out_fasta_file
     out_unplaced_file = args.out_unplaced_file
     chr0_gap_size = args.gap_size
-    make_chr0 = not args.C
+    make_chr0 = args.C
 
     # Organize the orderings
     orderings = defaultdict(list)

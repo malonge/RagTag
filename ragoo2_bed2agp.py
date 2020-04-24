@@ -9,14 +9,14 @@ def main():
     parser.add_argument("unplaced_file", metavar="<unplaced.txt>", type=str, help="unplaced sequence file")
     parser.add_argument("output_file", metavar="<stats.txt>", type=str, help="output file name")
     parser.add_argument("gap_len", metavar="<100>", type=int, help="gap length used in RaGOO")
-    parser.add_argument("-C", action="store_true", default=False, help="unplaced contigs are written individually")
+    parser.add_argument("-C", action="store_true", default=False, help="concatenate unplaced contigs and make 'chr0'")
 
     args = parser.parse_args()
     orderings_file = args.orderings
     unplaced_file = args.unplaced_file
     output_file = args.output_file
     gap_len = args.gap_len
-    make_chr0 = not args.C
+    make_chr0 = args.C
 
     out_lines = []
 
