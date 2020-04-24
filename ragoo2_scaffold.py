@@ -250,12 +250,14 @@ def main():
             pad_sizes[i] = []
             for j in range(1, len(mapped_ref_seqs[i])):
                 left_ctg = mapped_ref_seqs[i][j-1][2]
-                left_min, left_max = fltrd_ctg_alns[left_ctg].get_best_ref_flanks()
-                left_confidence = fltrd_ctg_alns[left_ctg].grouping_confidence
+                left_ctg_alns = fltrd_ctg_alns[left_ctg].unique_anchor_filter(1000)  # Get unique alignments
+                left_min, left_max = left_ctg_alns.get_best_ref_flanks()
+                left_confidence = left_ctg_alns.grouping_confidence
 
                 right_ctg = mapped_ref_seqs[i][j][2]
-                right_min, right_max = fltrd_ctg_alns[right_ctg].get_best_ref_flanks()
-                right_confidence = fltrd_ctg_alns[right_ctg].grouping_confidence
+                right_ctg_alns = fltrd_ctg_alns[right_ctg].unique_anchor_filter(1000)  # Get unique alignments
+                right_min, right_max = right_ctg_alns.get_best_ref_flanks()
+                right_confidence = right_ctg_alns.grouping_confidence
 
                 # If the contigs overlap, or if either has a low confidence score, revert to the fixed gap size
                 if right_min - left_max < 0:
@@ -264,13 +266,16 @@ def main():
                     if left_confidence < 0.95 or right_confidence < 0.95:
                         pad_sizes[i].append(gap_size)
                     else:
-                        pad_sizes[i].append(right_min - left_max)
+                        i_gap_size = right_min - left_max
+                        if i_gap_size > 20000:
+                            log("WARNING (large gap): The inferred gap size between %s and %s is %r." % (left_ctg, right_ctg, i_gap_size))
+                        pad_sizes[i].append(i_gap_size)
 
         else:
             pad_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
 
     # Write the intermediate output file
-    write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pads_sizes, overwrite_files, output_path)
+    write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, overwrite_files, output_path)
 
     # Write the scaffolds
     log("Writing scaffolds")
