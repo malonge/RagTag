@@ -16,6 +16,7 @@ class Aligner:
         self.q_file = in_query_file
         self.aligner = in_aligner
         self.params_string = in_params
+        self.params = self._split_params(in_params)
         self.outfile_prefix = in_out_file
         self.overwrite = in_overwrite
 
@@ -30,6 +31,11 @@ class Aligner:
     def _update_attrs(self):
         """ Update class attributes for a specific aligner. """
         pass
+
+    @staticmethod
+    def _split_params(a):
+        """ Split aligner parameters into a suitable format for 'subprocess.call'. """
+        return a.split(" ")
 
     @abc.abstractmethod
     def params_are_valid(self):
@@ -102,7 +108,7 @@ class NucmerAligner(Aligner):
     def compile_command(self):
         return [
             self.aligner,
-            self.params_string,
+            *self.params,
             '-p ' + self.outfile_prefix,
             self.r_file,
             self.q_file
@@ -143,7 +149,7 @@ class Minimap2Aligner(Aligner):
         """
         return [
             self.aligner,
-            self.params_string,
+            *self.params,
             self.r_file,
             self.q_file
         ]
@@ -180,7 +186,7 @@ class Minimap2SAMAligner(Aligner):
         """
         return [
             self.aligner,
-            self.params_string,
+            *self.params,
             self.r_file,
             self.q_file
         ]

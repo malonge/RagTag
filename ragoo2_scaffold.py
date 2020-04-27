@@ -248,51 +248,40 @@ def main():
     total_ns = 0
     total_u = 0
     total = 0
+
     for i in mapped_ref_seqs:
         mapped_ref_seqs[i] = sorted(mapped_ref_seqs[i])
         if infer_gaps:
             # Infer the gap sizes between adjacent query seqs
             pad_sizes[i] = []
             for j in range(1, len(mapped_ref_seqs[i])):
+                # Get info for the upstream alignment
                 left_ctg = mapped_ref_seqs[i][j-1][2]
-                left_ctg_alns = fltrd_ctg_alns[left_ctg].unique_anchor_filter(1000)  # Get unique alignments
+                left_ctg_strand = fltrd_ctg_alns[left_ctg].orientation
+                left_ctg_alns = fltrd_ctg_alns[left_ctg].unique_anchor_filter(500)  # Get unique alignments
 
                 # If we have removed all the alignments, use the default gap size
-                if left_ctg_alns is None:
+                if left_ctg_alns is None or i not in left_ctg_alns._ref_headers:
                     pad_sizes[i].append(gap_size)
                     total_u += 1
                     total += 1
                     continue
 
-                left_max = left_ctg_alns.get_right_ref_flanks(i, d=1000)
+                left_max = left_ctg_alns.get_right_ref_flank(i, left_ctg_strand, d=10000)
 
+                # Get info for the downstream alignments
                 right_ctg = mapped_ref_seqs[i][j][2]
-                right_ctg_alns = fltrd_ctg_alns[right_ctg].unique_anchor_filter(1000)  # Get unique alignments
+                right_ctg_strand = fltrd_ctg_alns[right_ctg].orientation
+                right_ctg_alns = fltrd_ctg_alns[right_ctg].unique_anchor_filter(500)  # Get unique alignments
 
                 # If we have removed all the alignments, use the default gap size
-                if right_ctg_alns is None:
+                if right_ctg_alns is None or i not in right_ctg_alns._ref_headers:
                     pad_sizes[i].append(gap_size)
                     total_u += 1
                     total += 1
                     continue
 
-                right_min = left_ctg_alns.get_left_ref_flanks(i, d=1000)
-
-                """
-                # TEMP DEBUG
-                if left_ctg == "utg7180000000418":
-                    print()
-                    fltrd_ctg_alns[left_ctg]._sort_by_query()
-                    print(fltrd_ctg_alns[left_ctg])
-                    print()
-                    print(left_ctg_alns)
-                    print()
-                    fltrd_ctg_alns[right_ctg]._sort_by_query()
-                    print(fltrd_ctg_alns[right_ctg])
-                    print()
-                    print(right_ctg_alns)
-                    print()
-                """
+                right_min = right_ctg_alns.get_left_ref_flank(i, right_ctg_strand, d=10000)
 
                 # If either flank was invalid, revert to the fixed gap size
                 if left_max is None or right_min is None:
@@ -301,14 +290,14 @@ def main():
                     total += 1
                     continue
 
-                # If the contigs overlap, or if either has a low confidence score, revert to the fixed gap size
+                # If the contigs overlap, or if either has a low confidence score, revert to the fixed gap sizes
                 if right_min - left_max < 0:
                     pad_sizes[i].append(gap_size)
                     total_ovlp += 1
                     total += 1
                 else:
                     i_gap_size = right_min - left_max
-                    if i_gap_size > 20000:
+                    if i_gap_size > 50000:
                         log("WARNING (large gap): The inferred gap size between %s and %s is %r." % (left_ctg, right_ctg, i_gap_size))
                     pad_sizes[i].append(i_gap_size)
                     total_inferred += 1

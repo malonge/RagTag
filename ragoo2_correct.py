@@ -19,6 +19,11 @@ from ragoo2_utilities.AlignmentReader import AlignmentReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
+def split_args(a):
+    L1 = a.split("-")
+    return ['-' + i for i in L1 if i]
+
+
 def get_median_read_coverage(output_path, num_threads, overwrite_files):
     """ Given the read alignments, use samtools stats to return an approximate median coverage value. """
     log("Calculating global read coverage")
@@ -363,9 +368,9 @@ def main():
     if corr_reads_fofn:
         with open(corr_reads_fofn, "r") as f:
             for line in f:
-                read_files.append(line.rstrip())
+                read_files.append(os.path.abspath(line.rstrip()))
     elif corr_reads:
-        read_files.append(corr_reads)
+        read_files.append(os.path.abspath(corr_reads))
 
     # Get the skip and exclude sets.
     query_blacklist = set()
