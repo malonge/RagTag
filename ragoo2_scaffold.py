@@ -12,6 +12,23 @@ from ragoo2_utilities.AlignmentReader import AlignmentReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
+def remove_contained(a):
+    """
+    remove contained intervals
+    :param a: list of tuples (start, end, header)
+    :return: intervals with contained intervals removed
+    """
+    o = []
+    a = sorted(a, key=lambda x: (x[0], -x[1]))
+
+    max_end = -1
+    for i in a:
+        if i[1] > max_end:
+            max_end = i[1]
+            o.append(i)
+    return o
+
+
 def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
     # Check if the output file already exists
     if os.path.isfile(out_file):
@@ -73,9 +90,7 @@ def main():
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave unplaced")
     scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="gap size for padding in pseudomolecules [100]")
-    scaf_options.add_argument("-l", metavar="INT", type=int, default=1000, help="minimum alignment length [1000]")
-    scaf_options.add_argument("-f", metavar="INT", type=int, default=0, help="minimum unique alignment length [0]")
-    scaf_options.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum alignment mapq (minimap2 only) [-1]")
+    scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
     scaf_options.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
@@ -102,9 +117,7 @@ def main():
     query_file = os.path.abspath(args.query)
 
     output_path = args.o.replace("/", "").replace(".", "")
-    min_len = args.l
     min_ulen = args.f
-    min_q = args.q
     gap_size = args.g
     group_score_thresh = args.i
     loc_score_thresh = args.a
@@ -133,10 +146,6 @@ def main():
     # Add the number of mm2 threads if the mm2 params haven't been overridden.
     if mm2_params == "-k19 -w19":
         mm2_params += " -t" + str(num_threads)
-
-    # Make sure no quality filtering for nucmer alignments
-    if aligner == "nucmer":
-        min_q = -1
 
     # Get the skip and exclude sets
     query_blacklist = set()
@@ -215,11 +224,9 @@ def main():
     # Filter the alignments
     log("Filtering alignments")
     for i in ctg_alns:
-        ctg_alns[i] = ctg_alns[i].filter_mapq(min_q)
+        ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
         if ctg_alns[i] is not None:
-            ctg_alns[i] = ctg_alns[i].filter_lengths(min_len)
-            if ctg_alns[i] is not None:
-                ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
+            ctg_alns[i] = ctg_alns[i].merge_alns()
 
     # Remove query sequences which have no more qualifying alignments
     fltrd_ctg_alns = dict()
@@ -242,15 +249,47 @@ def main():
         mapped_ref_seqs[best_ref].append((ref_start, ref_end, i))
 
     # Sort the query sequences for each reference sequence and define the padding sizes between adjacent query seqs
+    total = 0
+    total_inferred = 0
     pad_sizes = dict()
     for i in mapped_ref_seqs:
-        mapped_ref_seqs[i] = sorted(mapped_ref_seqs[i])
+        # Remove contained contigs and sort the rest
+        non_contained = remove_contained(mapped_ref_seqs[i])
+        mapped_ref_seqs[i] = sorted(non_contained)
         if infer_gaps:
             # Infer the gap sizes between adjacent query seqs
-            raise NotImplementedError()
+            # Use the primary alignments to infer gap sizes
+            pad_sizes[i] = []
+            for j in range(1, len(mapped_ref_seqs[i])):
+                # Get info for the upstream alignment
+                left_ctg = mapped_ref_seqs[i][j - 1][2]
+                left_ref_start, left_ref_end = fltrd_ctg_alns[left_ctg].get_best_ref_pos()
+                left_qdist_start, left_qdist_end = fltrd_ctg_alns[left_ctg].get_best_q_dist()
 
+                # Get info for the downstream alignment
+                right_ctg = mapped_ref_seqs[i][j][2]
+                right_ref_start, right_ref_end = fltrd_ctg_alns[right_ctg].get_best_ref_pos()
+                right_qdist_start, right_qdist_end = fltrd_ctg_alns[right_ctg].get_best_q_dist()
+
+                # Get the inferred gap size
+                i_gap_size = (right_ref_start - right_qdist_start) - (left_ref_end + left_qdist_end)
+
+                if i_gap_size > 100000:
+                    log("WARNING (large gap): The inferred gap size between %s and %s is %r." % (
+                    left_ctg, right_ctg, i_gap_size))
+
+                # Check if the gap size is too small or too large
+                if i_gap_size < 0 or i_gap_size > 100000:
+                    pad_sizes[i].append(gap_size)
+                else:
+                    pad_sizes[i].append(i_gap_size)
+                    total_inferred += 1
+                total += 1
         else:
             pad_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
+
+    log("total inferred = %d" % total_inferred)
+    log("total = %d" % total)
 
     # Write the intermediate output file
     write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, overwrite_files, output_path)

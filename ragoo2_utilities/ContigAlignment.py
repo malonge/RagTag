@@ -265,62 +265,22 @@ class ContigAlignment:
         for i, j in zip(self._query_starts, self._query_ends):
             lines_by_query.append((i, j))
 
-        hits = summarize_planesweep(lines_by_query, l)
+        hits = summarize_planesweep(lines_by_query, l, keep_small_uniques=True)
         return self._update_alns(hits)
 
     def get_best_ref_pos(self):
         """ Return the ref start and ref end for the primary alignment. """
         return self._ref_starts[self.primary_alignment], self._ref_ends[self.primary_alignment]
 
-    def get_left_ref_flank(self, ref, strand, d=500):
-        """
-        With respect to the reference sequence r, return the lowest inferred alignment position.
-        "inferred" because this method tries to account for unaligned sequence at the end of contigs.
-        If the length of that unaligned sequence exceeds d, None is returned
-        """
-        self._sort_by_query()
+    def get_best_q_dist(self):
+        """ Find the distance from the primary alignment to the beginning and end of the query sequence. """
+        ld = self._query_starts[self.primary_alignment]
+        ed = self.query_len - self._query_ends[self.primary_alignment]
 
-        # Only consider alignments to the "best" reference header
-        ref_idxs = self._get_ref_alns(ref)
-        if not ref_idxs:
-            return None
+        if self.orientation == "-":
+            ld, ed = ed, ld
 
-        if strand == "+":
-            min_r = self._ref_starts[min(ref_idxs)]
-            q_dist = self._query_starts[min(ref_idxs)]
-        else:
-            min_r = self._ref_starts[max(ref_idxs)]
-            q_dist = self.query_len - self._query_ends[max(ref_idxs)]
-
-        if q_dist > d:
-            return None
-
-        return min_r - q_dist
-
-    def get_right_ref_flank(self, ref, strand, d=500):
-        """
-        With respect to the reference sequence r, return the highest inferred alignment position.
-        "inferred" because this method tries to account for unaligned sequence at the end of contigs.
-        if the length of that unaligned sequence exceeds d, None is returned
-        """
-        self._sort_by_query()
-
-        # Only consider alignments to the "best" reference header
-        ref_idxs = self._get_ref_alns(ref)
-        if not ref_idxs:
-            return None
-
-        if strand == "+":
-            max_r = self._ref_ends[max(ref_idxs)]
-            q_dist = self.query_len - self._query_ends[max(ref_idxs)]
-        else:
-            max_r = self._ref_ends[min(ref_idxs)]
-            q_dist = self._query_starts[min(ref_idxs)]
-
-        if q_dist > d:
-            return None
-
-        return max_r + q_dist
+        return ld, ed
 
     def filter_query_contained(self):
         """
