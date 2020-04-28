@@ -297,7 +297,7 @@ def main():
                     total += 1
                 else:
                     i_gap_size = right_min - left_max
-                    if i_gap_size > 50000:
+                    if i_gap_size > 1000000:
                         log("WARNING (large gap): The inferred gap size between %s and %s is %r." % (left_ctg, right_ctg, i_gap_size))
                     pad_sizes[i].append(i_gap_size)
                     total_inferred += 1

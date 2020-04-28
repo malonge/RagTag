@@ -86,7 +86,7 @@ class ContigAlignment:
         all_ref_headers = set(self._ref_headers)
         if len(all_ref_headers) == 1:
             self.best_ref_header = self._ref_headers[0]
-            self.grouping_confidence = 1
+            self.grouping_confidence = 1.0
             return
 
         # Initialize coverage counts for each chromosome
