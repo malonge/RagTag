@@ -55,7 +55,8 @@ def sub_update(gff_file, bed_file):
 
 def sup_update(gff_file, bed_file):
     # Make a dictionary associating each original sequence with the destination sequence
-    #TODO debug with tomato data
+    # TODO debug with tomato data
+    # TODO currently does not handel unplaced contigs correctly.
     trans = {}
     strands = {}
     seq_lens = {}
@@ -79,6 +80,8 @@ def sup_update(gff_file, bed_file):
                 s -= 1  # Keep everything zero-indexed
 
                 if h not in trans:
+                    print()
+                    print (line)
                     raise ValueError("Inconsistent input files.")
 
                 # Check if the original sequence has been reverse complemented

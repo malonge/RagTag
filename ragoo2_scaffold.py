@@ -29,7 +29,7 @@ def remove_contained(a):
     return o
 
 
-def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite, out_path):
+def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite):
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
@@ -77,7 +77,6 @@ def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite, out_
                 out_line.append("NA\tNA\tNA\tNA")
                 all_out_lines.append("\t".join(out_line))
 
-    log("Writing: " + out_file)
     with open(out_file, "w") as f:
         f.write("\n".join(all_out_lines) + "\n")
 
@@ -296,8 +295,9 @@ def main():
     log("%d adjacent contig overlap" % g_ovlp)
     log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
 
+    log("Writing: " + output_path + "scaffolding.placement.bed")
     # Write the intermediate output file
-    write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, overwrite_files, output_path)
+    write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, overwrite_files)
 
     # Write the scaffolds
     log("Writing scaffolds")
