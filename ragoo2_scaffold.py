@@ -89,13 +89,14 @@ def main():
     scaf_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave unplaced")
-    scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="gap size for padding in pseudomolecules [100]")
     scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
     scaf_options.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
     scaf_options.add_argument("-C", action='store_true', default=False, help="concatenate unplaced contigs and make 'chr0'")
     scaf_options.add_argument("-r", action='store_true', default=False, help="infer gap sizes")
+    scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="default gap size [100]")
+    scaf_options.add_argument("-m", metavar="INT", type=int, default=100000, help="maximum gap size [100000]")
 
     io_options = parser.add_argument_group("input/output options")
     io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
@@ -119,6 +120,7 @@ def main():
     output_path = args.o.replace("/", "").replace(".", "")
     min_ulen = args.f
     gap_size = args.g
+    max_gap_size = args.m
     group_score_thresh = args.i
     loc_score_thresh = args.a
     orient_score_thresh = args.d
@@ -249,8 +251,9 @@ def main():
         mapped_ref_seqs[best_ref].append((ref_start, ref_end, i))
 
     # Sort the query sequences for each reference sequence and define the padding sizes between adjacent query seqs
-    total = 0
-    total_inferred = 0
+    g_inferred = 0
+    g_ovlp = 0
+    g_large = 0
     pad_sizes = dict()
     for i in mapped_ref_seqs:
         # Remove contained contigs and sort the rest
@@ -274,22 +277,22 @@ def main():
                 # Get the inferred gap size
                 i_gap_size = (right_ref_start - right_qdist_start) - (left_ref_end + left_qdist_end)
 
-                if i_gap_size > 100000:
-                    log("WARNING (large gap): The inferred gap size between %s and %s is %r." % (
-                    left_ctg, right_ctg, i_gap_size))
-
                 # Check if the gap size is too small or too large
-                if i_gap_size < 0 or i_gap_size > 100000:
+                if i_gap_size <= 0:
                     pad_sizes[i].append(gap_size)
+                    g_ovlp += 1
+                elif i_gap_size > 100000:
+                    pad_sizes[i].append(gap_size)
+                    g_large += 1
                 else:
                     pad_sizes[i].append(i_gap_size)
-                    total_inferred += 1
-                total += 1
+                    g_inferred += 1
         else:
             pad_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
 
-    log("total inferred = %d" % total_inferred)
-    log("total = %d" % total)
+    log("%d inferred gaps" % g_inferred)
+    log("%d adjacent contigs overlap" % g_ovlp)
+    log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
 
     # Write the intermediate output file
     write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, overwrite_files, output_path)

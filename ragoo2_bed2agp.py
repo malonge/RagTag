@@ -76,7 +76,7 @@ def main():
 
     with open(output_file, "w") as f:
         f.write("## AGP-version 2.1\n")
-        f.write("## AGP constructed by RaGOO\n")
+        f.write("## AGP constructed by RaGOO2\n")
         f.write("\n".join(out_lines) + "\n")
 
 
