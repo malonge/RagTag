@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+import sys
 import argparse
 from collections import defaultdict
 
@@ -54,6 +55,7 @@ def sub_update(gff_file, bed_file):
 
 def sup_update(gff_file, bed_file):
     # Make a dictionary associating each original sequence with the destination sequence
+    #TODO debug with tomato data
     trans = {}
     strands = {}
     seq_lens = {}
@@ -99,11 +101,17 @@ def sup_update(gff_file, bed_file):
 
 def main():
     parser = argparse.ArgumentParser(description="Update gff intvervals given a RaGOO2 'placement' BED file", usage="ragoo2.py updategff [-c] <genes.gff> <placement.bed>")
-    parser.add_argument("gff", metavar="<genes.gff>", type=str, help="gff file")
-    parser.add_argument("bed", metavar="<placement.bed>", type=str, help="placement BED file")
+    parser.add_argument("gff", nargs='?', default="", metavar="<genes.gff>", type=str, help="gff file")
+    parser.add_argument("bed", nargs='?', default="", metavar="<placement.bed>", type=str, help="placement BED file")
     parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction")
 
     args = parser.parse_args()
+
+    if not args.gff or not args.bed:
+        parser.print_help()
+        sys.exit()
+
+
     gff_file = os.path.abspath(args.gff)
     bed_file = os.path.abspath(args.bed)
     is_sub = args.c

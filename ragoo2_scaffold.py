@@ -90,9 +90,10 @@ def main():
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave unplaced")
     scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
+    scaf_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
-    scaf_options.add_argument("-d", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
+    scaf_options.add_argument("-s", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
     scaf_options.add_argument("-C", action='store_true', default=False, help="concatenate unplaced contigs and make 'chr0'")
     scaf_options.add_argument("-r", action='store_true', default=False, help="infer gap sizes")
     scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="default gap size [100]")
@@ -119,11 +120,12 @@ def main():
 
     output_path = args.o.replace("/", "").replace(".", "")
     min_ulen = args.f
+    merge_dist = args.d
     gap_size = args.g
     max_gap_size = args.m
     group_score_thresh = args.i
     loc_score_thresh = args.a
-    orient_score_thresh = args.d
+    orient_score_thresh = args.s
     make_chr0 = args.C
     infer_gaps = args.r
     overwrite_files = args.w
@@ -169,7 +171,7 @@ def main():
         os.mkdir(output_path)
 
     # Align the query to the reference
-    log("Aligning the query to the reference")
+    log("Mapping the query genome to the reference genome")
     if aligner == "minimap2":
         al = Minimap2Aligner(reference_file, query_file, aligner_path, mm2_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
     else:
@@ -224,11 +226,11 @@ def main():
         )
 
     # Filter the alignments
-    log("Filtering alignments")
+    log("Filtering and merging alignments")
     for i in ctg_alns:
         ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
         if ctg_alns[i] is not None:
-            ctg_alns[i] = ctg_alns[i].merge_alns()
+            ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
 
     # Remove query sequences which have no more qualifying alignments
     fltrd_ctg_alns = dict()

@@ -19,11 +19,6 @@ from ragoo2_utilities.AlignmentReader import AlignmentReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
-def split_args(a):
-    L1 = a.split("-")
-    return ['-' + i for i in L1 if i]
-
-
 def get_median_read_coverage(output_path, num_threads, overwrite_files):
     """ Given the read alignments, use samtools stats to return an approximate median coverage value. """
     log("Calculating global read coverage")
@@ -183,7 +178,7 @@ def make_gff_interval_tree(gff_file):
                 assert start < end
 
                 if end - start > 100000:
-                    log("WARNING: there are large intervals in this gff file (>= 100 kbp). This could disproportionately invalidate putative query breakpoints.")
+                    log("WARNING: large interval in this gff file (>= 100 kbp). This could disproportionately invalidate putative query breakpoints.")
                 t[h][start:end] = (start, end)
 
     return t
@@ -258,8 +253,7 @@ def main():
     cor_options = parser.add_argument_group("correction options")
     cor_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
     cor_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
-    cor_options.add_argument("-f", metavar="INT", type=int, default=10000, help="minimum unique alignment length [10000]")
-    cor_options.add_argument("-q", metavar="INT", type=int, default=-1, help="minimum alignment mapq (minimap2 only) [-1]")
+    cor_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
     cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
@@ -297,7 +291,6 @@ def main():
     output_path = args.o.replace("/", "").replace(".", "")
     num_threads = args.t
     min_ulen = args.f
-    min_q = args.q
     merge_dist = args.d
     min_break_dist = args.m
     min_break_end_dist = args.b
@@ -327,10 +320,6 @@ def main():
     # Add the number of mm2 threads if the mm2 params haven't been overridden.
     if mm2_params == "-k19 -w19":
         mm2_params += " -t" + str(num_threads)
-
-    # Make sure quality filtering is disabled for nucmer alignments
-    if genome_aligner == "nucmer":
-        min_q = -1
 
     # Check if intra/inter breaking is desired
     break_intra = True
@@ -392,7 +381,7 @@ def main():
         os.mkdir(output_path)
 
     # Align the query to the reference.
-    log("Aligning the query genome to the reference")
+    log("Mapping the query genome to the reference genome")
     if genome_aligner == "minimap2":
         al = Minimap2Aligner(reference_file, query_file, genome_aligner_path, mm2_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
     else:
@@ -450,11 +439,9 @@ def main():
     # Filter and merge the alignments.
     log("Filtering and merging alignments")
     for i in ctg_alns:
-        ctg_alns[i] = ctg_alns[i].filter_mapq(min_q)
+        ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
         if ctg_alns[i] is not None:
-            ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
-            if ctg_alns[i] is not None:
-                ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
+            ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
 
     # Get the putative breakpoints for each query sequence, if any.
     ctg_breaks = dict()
