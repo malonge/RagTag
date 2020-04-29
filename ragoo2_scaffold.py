@@ -281,8 +281,8 @@ def main():
                 if i_gap_size <= 0:
                     pad_sizes[i].append(gap_size)
                     g_ovlp += 1
-                elif i_gap_size > 100000:
-                    pad_sizes[i].append(gap_size)
+                elif i_gap_size > max_gap_size:
+                    pad_sizes[i].append(max_gap_size)
                     g_large += 1
                 else:
                     pad_sizes[i].append(i_gap_size)
@@ -290,8 +290,8 @@ def main():
         else:
             pad_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
 
-    log("%d inferred gaps" % g_inferred)
-    log("%d adjacent contigs overlap" % g_ovlp)
+    log("%d inferred gap" % g_inferred)
+    log("%d adjacent contig overlap" % g_ovlp)
     log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
 
     # Write the intermediate output file
