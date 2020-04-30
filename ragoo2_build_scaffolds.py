@@ -14,6 +14,7 @@ def main():
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped")
     parser.add_argument("out_fasta_file", metavar="<ragoo.fasta>", type=str, help="output fasta file name")
 
+    # TODO if possible, take in a AGP file rather than the bed file.
     args = parser.parse_args()
     orderings_file = args.orderings
     query_file = args.query

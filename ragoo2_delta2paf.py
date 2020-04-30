@@ -9,13 +9,12 @@ def delta2paf():
     https://github.com/lh3/minimap2/tree/master/misc
     """
     parser = argparse.ArgumentParser(description="Convert a Nucmer delta file to a PAF file.")
-    parser.add_argument("delta_file", metavar="<alns.delta>", type=str, help="delta file to convert. ")
+    parser.add_argument("delta_file", metavar="<alns.delta>", type=str, help="delta file to convert.")
 
     args = parser.parse_args()
     delta_file = args.delta_file
 
     seen_gt = False
-
     with open(delta_file, "r") as f:
         for line in f:
             t = line.rstrip().split(" ")

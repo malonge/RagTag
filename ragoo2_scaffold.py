@@ -47,7 +47,7 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
     sorted_ref_headers = sorted(list(ordering_dict.keys()))
     for ref_header in sorted_ref_headers:
         pos = 0
-        new_ref_header = ref_header + "_RaGOO"
+        new_ref_header = ref_header + "_RaGOO2"
         q_seqs = ordering_dict[ref_header]
         gap_seqs = gap_dict[ref_header]
 
@@ -88,7 +88,7 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
     if unplaced_seqs:
         if make_chr0:
             pos = 0
-            new_ref_header = "Chr0_RaGOO"
+            new_ref_header = "Chr0_RaGOO2"
             for q in unplaced_seqs:
                 out_line = []
                 qlen = fai.get_reference_length(q)
