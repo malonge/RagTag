@@ -168,6 +168,7 @@ def main():
         parser.print_help()
         sys.exit()
 
+    log("CMD:" + " ".join(sys.argv))
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
 

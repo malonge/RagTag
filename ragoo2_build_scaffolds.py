@@ -32,7 +32,6 @@ def main():
     # Sort the orderings and write the fasta output
     out_fasta = open(out_file, "w")
     x = pysam.FastaFile(query_file)
-    placed_q_seqs = set()
     for i in orderings:
         out_fasta.write(">" + i + "\n")
         orderings[i] = sorted(orderings[i])
@@ -42,14 +41,14 @@ def main():
             q_header = j[3]
             if j[2] == "s":
                 # This is a query sequence
-                placed_q_seqs.add(q_header)
+                q_seq = x.fetch(q_header)
+                if not len(q_seq) == j[1] - j[0]:
+                    raise RuntimeError("Inconsistency between query fasta and placement file.")
+
                 if j[4] == "+":
-                    q_seq = x.fetch(q_header)
-                    if not len(q_seq) == j[1] - j[0]:
-                        raise RuntimeError("Inconsistency between query fasta and placement file.")
                     out_fasta.write(q_seq)
                 else:
-                    out_fasta.write(reverse_complement(x.fetch(q_header)))
+                    out_fasta.write(reverse_complement(q_seq))
             else:
                 # This is a gap
                 assert j[2] == "g"

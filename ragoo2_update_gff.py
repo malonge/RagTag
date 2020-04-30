@@ -55,8 +55,6 @@ def sub_update(gff_file, bed_file):
 
 def sup_update(gff_file, bed_file):
     # Make a dictionary associating each original sequence with the destination sequence
-    # TODO debug with tomato data
-    # TODO currently does not handel unplaced contigs correctly.
     trans = {}
     strands = {}
     seq_lens = {}
@@ -113,7 +111,6 @@ def main():
     if not args.gff or not args.bed:
         parser.print_help()
         sys.exit()
-
 
     gff_file = os.path.abspath(args.gff)
     bed_file = os.path.abspath(args.bed)
