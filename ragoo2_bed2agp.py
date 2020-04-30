@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 
+import sys
 import argparse
 
 
 def main():
     parser = argparse.ArgumentParser(description="Calculate scaffolding statistics")
-    parser.add_argument("orderings", metavar="<orderings.bed>", type=str, help="RaGOO ordering file")
-    parser.add_argument("unplaced_file", metavar="<unplaced.txt>", type=str, help="unplaced sequence file")
-    parser.add_argument("output_file", metavar="<stats.txt>", type=str, help="output file name")
-    parser.add_argument("gap_len", metavar="<100>", type=int, help="gap length used in RaGOO")
-    parser.add_argument("-C", action="store_true", default=False, help="concatenate unplaced contigs and make 'chr0'")
+    parser.add_argument("orderings", nargs='?', default="", metavar="<orderings.bed>", type=str, help="RaGOO ordering file")
+    parser.add_argument("output_file", nargs='?', default="", metavar="<stats.txt>", type=str, help="output file name")
 
     args = parser.parse_args()
+
+    if not args.orderings or not args.output_file:
+        parser.print_help()
+        sys.exit()
+
     orderings_file = args.orderings
-    unplaced_file = args.unplaced_file
     output_file = args.output_file
-    gap_len = args.gap_len
-    make_chr0 = args.C
 
     out_lines = []
 
@@ -26,9 +26,7 @@ def main():
         for line in f:
             l = line.rstrip().split("\t")
             ref_header = l[0]
-
-            ref_start = int(l[1])
-            ref_end = int(l[2])
+            ref_start, ref_end = int(l[1]), int(l[2])
             query_len = ref_end - ref_start
             ref_start = ref_start + 1  # AGP is 1-indexed
 
@@ -43,36 +41,6 @@ def main():
 
             out_lines.append("\t".join(this_line))
             uid += 1
-
-    # Compile the AGP lines for unplaced sequences
-    with open(unplaced_file, "r") as f:
-        if make_chr0:
-            pos = 0
-            for line in f:
-                l = line.rstrip().split("\t")
-                unplaced_header, unplaced_len = l[0], int(l[1])
-
-                # The sequence line
-                this_line = ["Chr0_RaGOO", str(pos + 1), str(pos + unplaced_len), str(uid), "W", unplaced_header, "1", str(unplaced_len), "+"]
-                out_lines.append("\t".join(this_line))
-                pos += unplaced_len
-                uid += 1
-
-                # Next the gap line
-                this_line = ["Chr0_RaGOO", str(pos + 1), str(pos + gap_len), str(uid), "N", str(gap_len), "scaffold", "no", "na"]
-                out_lines.append("\t".join(this_line))
-                pos += gap_len
-                uid += 1
-
-            # Remove the last gap line
-            out_lines = out_lines[:-1]
-        else:
-            for line in f:
-                l = line.rstrip().split("\t")
-                unplaced_header, unplaced_len = l[0], int(l[1])
-                this_line = [unplaced_header, "1", str(unplaced_len), str(uid), "W", unplaced_header, "1", str(unplaced_len), "+"]
-                uid += 1
-                out_lines.append("\t".join(this_line))
 
     with open(output_file, "w") as f:
         f.write("## AGP-version 2.1\n")

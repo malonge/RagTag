@@ -5,6 +5,8 @@ import sys
 import argparse
 from collections import defaultdict
 
+import pysam
+
 from ragoo2_utilities.utilities import log, run
 from ragoo2_utilities.Aligner import Minimap2Aligner
 from ragoo2_utilities.Aligner import NucmerAligner
@@ -29,7 +31,7 @@ def remove_contained(a):
     return o
 
 
-def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite):
+def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, default_gap, make_chr0, overwrite):
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
@@ -37,6 +39,7 @@ def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite):
             return
 
     # Proceed with writing the intermediate output
+    placed_seqs = set()
     gap_id = 0
     all_out_lines = []
 
@@ -52,6 +55,7 @@ def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite):
         for i in range(len(q_seqs)):
             out_line = []
             q = q_seqs[i][2]
+            placed_seqs.add(q)
             qlen = ctg_dict[q].query_len
             strand = ctg_dict[q].orientation
             gc, lc, oc = ctg_dict[q].grouping_confidence, ctg_dict[q].location_confidence, ctg_dict[q].orientation_confidence
@@ -67,14 +71,64 @@ def write_orderings(out_file, ordering_dict, ctg_dict, gap_dict, overwrite):
             all_out_lines.append("\t".join(out_line))
 
             if i < len(gap_seqs):
-                out_line = []
                 # Print the gap line
+                out_line = []
                 out_line.append(new_ref_header)
                 out_line.append(str(pos))
                 pos += gap_seqs[i]
                 out_line.append(str(pos) + "\tg\t" + str(gap_id))
                 gap_id += 1
                 out_line.append("NA\tNA\tNA\tNA")
+                all_out_lines.append("\t".join(out_line))
+
+    # Write unplaced sequences
+    fai = pysam.FastaFile(query_file)
+    all_seqs = set(fai.references)
+    unplaced_seqs = all_seqs - placed_seqs
+    if unplaced_seqs:
+        if make_chr0:
+            pos = 0
+            new_ref_header = "Chr0_RaGOO"
+            for q in unplaced_seqs:
+                out_line = []
+                qlen = fai.get_reference_length(q)
+                out_line.append(new_ref_header)
+                out_line.append(str(pos))
+                pos += qlen
+                out_line.append(str(pos) + "\ts")
+                out_line.append(q)
+                out_line.append("+")
+                out_line.append("NA")
+                out_line.append("NA")
+                out_line.append("NA")
+                all_out_lines.append("\t".join(out_line))
+
+                # Now for the gap, since we are making a chr0
+                out_line = []
+                out_line.append(new_ref_header)
+                out_line.append(str(pos))
+                pos += default_gap
+                out_line.append(str(pos) + "\tg\t" + str(gap_id))
+                gap_id += 1
+                out_line.append("NA\tNA\tNA\tNA")
+                all_out_lines.append("\t".join(out_line))
+
+            # Remove the final unecessary gap
+            all_out_lines = all_out_lines[:-1]
+        else:
+            # List the unplaced contigs individually
+            for q in unplaced_seqs:
+                out_line = []
+                qlen = fai.get_reference_length(q)
+                gc, lc, oc = "NA", "NA", "NA"
+                out_line.append(q)
+                out_line.append("0")
+                out_line.append(str(qlen) + "\ts")
+                out_line.append(q)
+                out_line.append("+")
+                out_line.append("NA")
+                out_line.append("NA")
+                out_line.append("NA")
                 all_out_lines.append("\t".join(out_line))
 
     with open(out_file, "w") as f:
@@ -297,7 +351,7 @@ def main():
 
     log("Writing: " + output_path + "scaffolding.placement.bed")
     # Write the intermediate output file
-    write_orderings(output_path + "scaffolding.placement.bed", mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, overwrite_files)
+    write_orderings(output_path + "scaffolding.placement.bed", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_size, make_chr0, overwrite_files)
 
     # Write the scaffolds
     log("Writing scaffolds")
@@ -305,19 +359,14 @@ def main():
         "ragoo2_build_scaffolds.py",
         output_path + "scaffolding.placement.bed",
         query_file,
-        output_path + "ragoo.fasta",
-        output_path + "unplaced.txt",
-        str(gap_size)
+        output_path + "ragoo.fasta"
     ]
-    if make_chr0:
-        cmd.append("-C")
     run(cmd)
 
     # Calculate the stats
     cmd = [
         "ragoo2_stats.py",
         output_path + "scaffolding.placement.bed",
-        output_path + "unplaced.txt",
         output_path + "localization_stats.txt"
     ]
     run(cmd)
@@ -326,12 +375,8 @@ def main():
     cmd = [
         "ragoo2_bed2agp.py",
         output_path + "scaffolding.placement.bed",
-        output_path + "unplaced.txt",
-        output_path + "ragoo.agp",
-        str(gap_size)
+        output_path + "ragoo.agp"
     ]
-    if make_chr0:
-        cmd.append("-C")
     run(cmd)
 
 
