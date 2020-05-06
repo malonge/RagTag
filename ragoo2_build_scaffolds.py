@@ -14,7 +14,6 @@ def main():
     parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped")
     parser.add_argument("out_fasta_file", metavar="<ragoo.fasta>", type=str, help="output fasta file name")
 
-    # TODO if possible, take in a AGP file rather than the bed file.
     args = parser.parse_args()
     orderings_file = args.orderings
     query_file = args.query
@@ -40,7 +39,7 @@ def main():
         # Iterate through each sequence of this scaffold
         for j in orderings[i]:
             q_header = j[3]
-            if j[2] == "s":
+            if j[2] == "S":
                 # This is a query sequence
                 q_seq = x.fetch(q_header)
                 if not len(q_seq) == j[1] - j[0]:
@@ -52,7 +51,7 @@ def main():
                     out_fasta.write(reverse_complement(q_seq))
             else:
                 # This is a gap
-                assert j[2] == "g"
+                assert j[2] == "N" or j[2] == "U"
                 gap_len = j[1] - j[0]
                 out_fasta.write("N" * gap_len)
 

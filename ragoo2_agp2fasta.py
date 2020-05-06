@@ -14,17 +14,18 @@ def log_err(n, s):
     :param n: agp line number
     :param s: error message
     """
-    s = "ERROR - line " + str(n) + ": " + s
-    raise ValueError(s)
+    s = "line " + str(n) + ": " + s
+    raise RuntimeError(s)
 
 
 def is_covered(s, l):
-    coords = sorted(list(s))
-    if len(coords) != 2:
-        return False
+    s = sorted(s)
+    for j in range(1, len(s)):
+        i = j-1
+        if s[i][1] != s[j][0]:
+            return False
 
-    a, b = coords
-    if a or b != l:
+    if s[0][0] or s[-1][1] != l:
         return False
 
     return True
@@ -36,7 +37,7 @@ def main():
     parser.add_argument("components", metavar="<components.fasta>", type=str, help="FASTA file with component sequences to be scaffolded. must not be gzipped")
 
     args = parser.parse_args()
-    agp_file = args.orderings
+    agp_file = args.agp
     components_file = args.components
 
     fai = pysam.FastaFile(components_file)
@@ -44,7 +45,7 @@ def main():
     prev_pid = 0
     curr_obj = None
     seen_objs = set()
-    curr_obj_intervals = set()
+    curr_obj_intervals = []
     curr_obj_bp = 0
     past_gaps = False
     is_first = True
@@ -101,8 +102,9 @@ def main():
                         log_err(line_number, "object identifier out of order")
 
                     # Check that the last object has been completely covered
-                    if not is_covered(curr_obj_intervals, curr_obj_bp):
-                        log_err(line_number, "some positions in %s are not accounted for" % curr_obj)
+                    if not is_first:
+                        if not is_covered(curr_obj_intervals, curr_obj_bp):
+                            log_err(line_number, "some positions in %s are not accounted for" % curr_obj)
 
                     # Update all the info for this new object
                     prev_pid = 0
@@ -120,8 +122,7 @@ def main():
                     log_err(line_number, "non-sequential part_numbers")
 
                 prev_pid = pid
-                curr_obj_intervals.add(obj_beg-1)
-                curr_obj_intervals.add(obj_end)
+                curr_obj_intervals.append((obj_beg-1, obj_end))
 
                 # The remaining operations depends on if this line is a gap or not.
                 comp_type = fields[4]
@@ -135,7 +136,9 @@ def main():
                     orientation = fields[8]
                     if orientation == "+":
                         sys.stdout.write(fai.fetch(cid))
+                        pass
                     elif orientation == "-":
+                        pass
                         sys.stdout.write(reverse_complement(fai.fetch(cid)))
                     else:
                         log_err(line_number, "invalid orientation")
@@ -143,10 +146,14 @@ def main():
                     # This is a gap component
                     comp_len, gap_type, linkage, evidence = int(fields[5]), fields[6], fields[7], fields[8]
 
+                    # Check if this is a valid gap type
+                    if gap_type not in allowed_gap_types:
+                        log_err(line_number, "invalid gap type")
+
                     if comp_len < 1:
                         log_err(line_number, "gap length must be non-negative")
-                    if comp_type == "N" and comp_len != 100:
-                        log_err(line_number, "gaps of type 'N' must be of length 100")
+                    if comp_type == "U" and comp_len != 100:
+                        log_err(line_number, "gaps of type 'U' must be 100 bp")
 
                     sys.stdout.write("N"*comp_len)
 
@@ -158,3 +165,6 @@ def main():
 
     sys.stdout.write("\n")
 
+
+if __name__ == "__main__":
+    main()

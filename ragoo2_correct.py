@@ -489,7 +489,7 @@ def main():
             new_breaks = []
             for i in ctg_breaks[ctg]:
                 if it[ctg][i]:
-                    log("Avoiding breaking %s at %d. This point intersects a feature in the gff file.)" % (ctg, i))
+                    log("Avoiding breaking %s at %d. This point intersects a feature in the gff file." % (ctg, i))
                 else:
                     new_breaks.append(i)
             if new_breaks:

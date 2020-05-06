@@ -19,12 +19,18 @@ def main():
     output_file = args.output_file
 
     # Compile the AGP lines for the placed sequences
+    last_obj = None
     uid = 1
     out_lines = []
     with open(orderings_file, "r") as f:
         for line in f:
             l = line.rstrip().split("\t")
             ref_header = l[0]
+
+            if ref_header != last_obj:
+                uid = 1
+                last_obj = ref_header
+
             ref_start, ref_end = int(l[1]), int(l[2])
             query_len = ref_end - ref_start
             ref_start = ref_start + 1  # AGP is 1-indexed
@@ -32,10 +38,10 @@ def main():
             query_header = l[4]
             strand = l[5]
 
-            if seq_type == "s":
+            if seq_type == "S":
                 this_line = [ref_header, str(ref_start), str(ref_end), str(uid), "W", query_header, "1", str(query_len), strand]
             else:
-                this_line = [ref_header, str(ref_start), str(ref_end), str(uid), "N", str(query_len), "scaffold", "yes", "align_genus"]
+                this_line = [ref_header, str(ref_start), str(ref_end), str(uid), seq_type, str(query_len), "scaffold", "yes", "align_genus"]
 
             out_lines.append("\t".join(this_line))
             uid += 1

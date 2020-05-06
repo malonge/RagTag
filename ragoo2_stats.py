@@ -22,22 +22,35 @@ def main():
     placed_seq = 0
     unplaced_bp = 0
     unplaced_seq = 0
+    gap_bp = 0
+    gap_seq = 0
 
     with open(orderings_file, "r") as f:
         for line in f:
             l = line.rstrip().split("\t")
-            if l[3] == "s":
-                seq_len = int(l[2]) - int(l[1])
+            seq_len = int(l[2]) - int(l[1])
+            if l[3] == "S":
                 if l[6] != "NA":
                     placed_bp += seq_len
                     placed_seq += 1
                 else:
                     unplaced_bp += seq_len
                     unplaced_seq += 1
+            else:
+                gap_bp += seq_len
+                gap_seq += 1
 
     with open(output_file, "w") as f:
-        f.write("placed_sequences\tplaced_bp\tunplaced_sequences\tunplaced_bp\n")
-        f.write("\t".join([str(placed_seq), str(placed_bp), str(unplaced_seq), str(unplaced_bp)]) + "\n")
+        f.write("placed_sequences\tplaced_bp\tunplaced_sequences\tunplaced_bp\tgap_bp\tgap_sequences\n")
+        f.write("\t".join([str(), str(), str(), str()]) + "\n")
+        f.write("\t".join([
+            str(placed_seq),
+            str(placed_bp),
+            str(unplaced_seq),
+            str(unplaced_bp),
+            str(gap_bp),
+            str(gap_seq)
+        ]))
 
 
 if __name__ == "__main__":

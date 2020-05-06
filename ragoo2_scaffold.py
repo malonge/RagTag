@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import pysam
 
-from ragoo2_utilities.utilities import log, run
+from ragoo2_utilities.utilities import log, run, run_o
 from ragoo2_utilities.Aligner import Minimap2Aligner
 from ragoo2_utilities.Aligner import NucmerAligner
 from ragoo2_utilities.AlignmentReader import AlignmentReader
@@ -31,7 +31,7 @@ def remove_contained(a):
     return o
 
 
-def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, default_gap, make_chr0, overwrite):
+def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, gap_type_dict, make_chr0, overwrite):
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
@@ -50,6 +50,7 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
         new_ref_header = ref_header + "_RaGOO2"
         q_seqs = ordering_dict[ref_header]
         gap_seqs = gap_dict[ref_header]
+        gap_types = gap_type_dict[ref_header]
 
         # Iterate through the query sequences for this reference header
         for i in range(len(q_seqs)):
@@ -62,7 +63,7 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
             out_line.append(new_ref_header)
             out_line.append(str(pos))
             pos += qlen
-            out_line.append(str(pos) + "\ts")
+            out_line.append(str(pos) + "\tS")
             out_line.append(q)
             out_line.append(strand)
             out_line.append(str(gc))
@@ -76,7 +77,8 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
                 out_line.append(new_ref_header)
                 out_line.append(str(pos))
                 pos += gap_seqs[i]
-                out_line.append(str(pos) + "\tg\t" + str(gap_id))
+                gap_type = gap_types[i]
+                out_line.append(str(pos) + "\t" + gap_type + "\t" + str(gap_id))
                 gap_id += 1
                 out_line.append("NA\tNA\tNA\tNA")
                 all_out_lines.append("\t".join(out_line))
@@ -95,7 +97,7 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
                 out_line.append(new_ref_header)
                 out_line.append(str(pos))
                 pos += qlen
-                out_line.append(str(pos) + "\ts")
+                out_line.append(str(pos) + "\tS")
                 out_line.append(q)
                 out_line.append("+")
                 out_line.append("NA")
@@ -107,8 +109,8 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
                 out_line = []
                 out_line.append(new_ref_header)
                 out_line.append(str(pos))
-                pos += default_gap
-                out_line.append(str(pos) + "\tg\t" + str(gap_id))
+                pos += 100
+                out_line.append(str(pos) + "\tU\t" + str(gap_id))
                 gap_id += 1
                 out_line.append("NA\tNA\tNA\tNA")
                 all_out_lines.append("\t".join(out_line))
@@ -123,7 +125,7 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, def
                 gc, lc, oc = "NA", "NA", "NA"
                 out_line.append(q)
                 out_line.append("0")
-                out_line.append(str(qlen) + "\ts")
+                out_line.append(str(qlen) + "\tS")
                 out_line.append(q)
                 out_line.append("+")
                 out_line.append("NA")
@@ -148,9 +150,9 @@ def main():
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
     scaf_options.add_argument("-s", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
     scaf_options.add_argument("-C", action='store_true', default=False, help="concatenate unplaced contigs and make 'chr0'")
-    scaf_options.add_argument("-r", action='store_true', default=False, help="infer gap sizes")
-    scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="default gap size [100]")
-    scaf_options.add_argument("-m", metavar="INT", type=int, default=100000, help="maximum gap size [100000]")
+    scaf_options.add_argument("-r", action='store_true', default=False, help="infer gap sizes. if not, all gaps are 100 bp")
+    scaf_options.add_argument("-g", metavar="INT", type=int, default=100, help="minimum inferred gap size [100]")
+    scaf_options.add_argument("-m", metavar="INT", type=int, default=100000, help="maximum inferred gap size [100000]")
 
     io_options = parser.add_argument_group("input/output options")
     io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
@@ -159,7 +161,7 @@ def main():
     aln_options = parser.add_argument_group("mapping options")
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="aligner executable('nucmer' or 'minimap2') [minimap2]")
-    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="space delimted minimap2 parameters ['-k19 -w19']")
+    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="space delimted minimap2 parameters ['-k19 -w19 -t1']")
     aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer parameters ['-l 100 -c 500']")
 
     # Get the command line arguments and ensure all paths are absolute.
@@ -175,7 +177,6 @@ def main():
     output_path = args.o.replace("/", "").replace(".", "")
     min_ulen = args.f
     merge_dist = args.d
-    gap_size = args.g
     max_gap_size = args.m
     group_score_thresh = args.i
     loc_score_thresh = args.a
@@ -184,6 +185,14 @@ def main():
     infer_gaps = args.r
     overwrite_files = args.w
     num_threads = args.t
+
+    min_gap_size = args.g
+    max_gap_size = args.m
+    if min_gap_size < 1:
+        raise ValueError("the minimum gap size must be positive")
+
+    if max_gap_size < 1:
+        raise ValueError("the maximum gap size must be positive")
 
     skip_file = args.j
     if skip_file:
@@ -308,9 +317,10 @@ def main():
 
     # Sort the query sequences for each reference sequence and define the padding sizes between adjacent query seqs
     g_inferred = 0
-    g_ovlp = 0
+    g_small = 0
     g_large = 0
     pad_sizes = dict()
+    gap_types = dict()
     for i in mapped_ref_seqs:
         # Remove contained contigs and sort the rest
         non_contained = remove_contained(mapped_ref_seqs[i])
@@ -319,6 +329,7 @@ def main():
             # Infer the gap sizes between adjacent query seqs
             # Use the primary alignments to infer gap sizes
             pad_sizes[i] = []
+            gap_types[i] = []
             for j in range(1, len(mapped_ref_seqs[i])):
                 # Get info for the upstream alignment
                 left_ctg = mapped_ref_seqs[i][j - 1][2]
@@ -334,25 +345,30 @@ def main():
                 i_gap_size = (right_ref_start - right_qdist_start) - (left_ref_end + left_qdist_end)
 
                 # Check if the gap size is too small or too large
-                if i_gap_size <= 0:
-                    pad_sizes[i].append(gap_size)
-                    g_ovlp += 1
+                if i_gap_size <= min_gap_size:
+                    pad_sizes[i].append(100)
+                    gap_types[i].append("U")
+                    g_small += 1
                 elif i_gap_size > max_gap_size:
-                    pad_sizes[i].append(max_gap_size)
+                    pad_sizes[i].append(100)
+                    gap_types[i].append("U")
                     g_large += 1
                 else:
                     pad_sizes[i].append(i_gap_size)
+                    gap_types[i].append("N")
                     g_inferred += 1
         else:
-            pad_sizes[i] = [gap_size for i in range(len(mapped_ref_seqs[i])-1)]
+            pad_sizes[i] = [100 for i in range(len(mapped_ref_seqs[i])-1)]
+            gap_types[i] = ["U" for i in range(len(mapped_ref_seqs[i])-1)]
 
-    log("%d inferred gap" % g_inferred)
-    log("%d adjacent contig overlap" % g_ovlp)
-    log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
+    if infer_gaps:
+        log("%d inferred gap" % g_inferred)
+        log("%d adjacent contig within min distance (%d) of each other" % (g_small, min_gap_size))
+        log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
 
     log("Writing: " + output_path + "scaffolding.placement.bed")
     # Write the intermediate output file
-    write_orderings(output_path + "scaffolding.placement.bed", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_size, make_chr0, overwrite_files)
+    write_orderings(output_path + "scaffolding.placement.bed", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files)
 
     # Write the scaffolds
     log("Writing scaffolds")
@@ -360,7 +376,7 @@ def main():
         "ragoo2_build_scaffolds.py",
         output_path + "scaffolding.placement.bed",
         query_file,
-        output_path + "ragoo.fasta"
+        output_path + "ragoo2.orderings.fasta"
     ]
     run(cmd)
 
@@ -376,9 +392,16 @@ def main():
     cmd = [
         "ragoo2_bed2agp.py",
         output_path + "scaffolding.placement.bed",
-        output_path + "ragoo.agp"
+        output_path + "ragoo2.agp"
     ]
     run(cmd)
+
+    cmd = [
+        "ragoo2_agp2fasta.py",
+        output_path + "ragoo2.agp",
+        query_file
+    ]
+    run_o(cmd, output_path + "ragoo2.fasta")
 
 
 if __name__ == "__main__":
