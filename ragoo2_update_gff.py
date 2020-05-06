@@ -17,8 +17,8 @@ def sub_update(gff_file, bed_file):
             oh, start, end, stype, nh, strand = fields[0], int(fields[1]), int(fields[2]), fields[3], fields[4], fields[5]
             if not strand == "+":
                 raise ValueError("The placement BED file is not formatted correctly. All strand should be positive.")
-            if not stype == "s":
-                raise ValueError("The placement BED file is not formatted correctly. All lines should be sequence (s).")
+            if not stype == "S":
+                raise ValueError("The placement BED file is not formatted correctly. All lines should be sequence (S).")
             trans[oh][int(start):int(end)] = nh
 
     # Iterate through the gff intervals and update them according to trans
@@ -79,7 +79,7 @@ def sup_update(gff_file, bed_file):
 
                 if h not in trans:
                     print()
-                    print (line)
+                    print(line)
                     raise ValueError("Inconsistent input files.")
 
                 # Check if the original sequence has been reverse complemented

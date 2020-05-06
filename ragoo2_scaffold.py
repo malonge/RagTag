@@ -372,21 +372,6 @@ def main():
 
     # Write the scaffolds
     log("Writing scaffolds")
-    cmd = [
-        "ragoo2_build_scaffolds.py",
-        output_path + "scaffolding.placement.bed",
-        query_file,
-        output_path + "ragoo2.orderings.fasta"
-    ]
-    run(cmd)
-
-    # Calculate the stats
-    cmd = [
-        "ragoo2_stats.py",
-        output_path + "scaffolding.placement.bed",
-        output_path + "localization_stats.txt"
-    ]
-    run(cmd)
 
     # Make the AGP file
     cmd = [
@@ -396,12 +381,21 @@ def main():
     ]
     run(cmd)
 
+    # Build a FASTA from the AGP
     cmd = [
         "ragoo2_agp2fasta.py",
         output_path + "ragoo2.agp",
         query_file
     ]
     run_o(cmd, output_path + "ragoo2.fasta")
+
+    # Calculate the stats
+    cmd = [
+        "ragoo2_stats.py",
+        output_path + "scaffolding.placement.bed",
+        output_path + "localization_stats.txt"
+    ]
+    run(cmd)
 
 
 if __name__ == "__main__":

@@ -42,7 +42,6 @@ def main():
 
     with open(output_file, "w") as f:
         f.write("placed_sequences\tplaced_bp\tunplaced_sequences\tunplaced_bp\tgap_bp\tgap_sequences\n")
-        f.write("\t".join([str(), str(), str(), str()]) + "\n")
         f.write("\t".join([
             str(placed_seq),
             str(placed_bp),
@@ -50,7 +49,7 @@ def main():
             str(unplaced_bp),
             str(gap_bp),
             str(gap_seq)
-        ]))
+        ]) + "\n")
 
 
 if __name__ == "__main__":

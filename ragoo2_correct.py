@@ -208,7 +208,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
                     q,
                     "0",
                     str(x.get_reference_length(q)),
-                    "s",
+                    "S",
                     q,
                     "+"
                 ])
@@ -223,7 +223,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
                         q,
                         str(start),
                         str(i),
-                        "s",
+                        "S",
                         q + ":" + str(start) + "-" + str(i) + "(+)",
                         "+"
                     ])
@@ -236,7 +236,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
                     q,
                     str(start),
                     str(x.get_reference_length(q)),
-                    "s",
+                    "S",
                     q + ":" + str(start) + "-" + str(x.get_reference_length(q)) + "(+)",
                     "+"
                 ])
