@@ -60,6 +60,20 @@ def main():
         "repeat",
         "contamination"
     }
+    allowed_evidence_types = {
+        "na",
+        "paired-ends",
+        "align_genus",
+        "align_xgenus",
+        "align_trnscpt",
+        "within_clone",
+        "clone_contig",
+        "map",
+        "pcr",
+        "proximity_ligation",
+        "strobe",
+        "unspecified"
+    }
 
     # Iterate over the lines of the AGP file
     with open(agp_file, "r") as f:
@@ -134,11 +148,9 @@ def main():
                     cid, comp_beg, comp_end = fields[5], int(fields[6]), int(fields[7])
                     comp_len = comp_end - (comp_beg - 1)
                     orientation = fields[8]
-                    if orientation == "+":
+                    if orientation in {"+", "?", "0", "na"}:
                         sys.stdout.write(fai.fetch(cid))
-                        pass
                     elif orientation == "-":
-                        pass
                         sys.stdout.write(reverse_complement(fai.fetch(cid)))
                     else:
                         log_err(line_number, "invalid orientation")
@@ -154,6 +166,12 @@ def main():
                         log_err(line_number, "gap length must be non-negative")
                     if comp_type == "U" and comp_len != 100:
                         log_err(line_number, "gaps of type 'U' must be 100 bp")
+
+                    # Check for valid evidence
+                    all_evidence = evidence.split(";")
+                    for e in all_evidence:
+                        if e not in allowed_evidence_types:
+                            log_err(line_number, "invalid linkage evidence")
 
                     sys.stdout.write("N"*comp_len)
 
