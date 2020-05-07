@@ -9,24 +9,15 @@ from ragoo2_utilities.utilities import reverse_complement
 
 
 def log_err(n, s):
-    """
-    Raise a value error with a line number and message
-    :param n: agp line number
-    :param s: error message
-    """
     s = "line " + str(n) + ": " + s
     raise RuntimeError(s)
 
 
-def is_covered(s, l):
+def is_covered(s):
     s = sorted(s)
     for j in range(1, len(s)):
-        i = j-1
-        if s[i][1] != s[j][0]:
+        if s[j-1][1] != s[j][0]:
             return False
-
-    if s[0][0] or s[-1][1] != l:
-        return False
 
     return True
 
@@ -46,10 +37,10 @@ def main():
     curr_obj = None
     seen_objs = set()
     curr_obj_intervals = []
-    curr_obj_bp = 0
-    past_gaps = False
+    past_comments = False
     is_first = True
     allowed_comp_types = {"A", "D", "F", "G", "O", "P", "W", "N", "U"}
+    allowed_linkage_types = {"yes", "no"}
     allowed_gap_types = {
         "scaffold",
         "contig",
@@ -82,11 +73,11 @@ def main():
 
             # Deal with the headers
             if line.startswith("#"):
-                if past_gaps:
+                if past_comments:
                     log_err(line_number, "illegal comment in AGP body")
             else:
                 # This is an AGP body line
-                past_gaps = True
+                past_comments = True
                 fields = line.rstrip().split("\t")
 
                 # There should be exactly 9 tab delimited fields
@@ -103,13 +94,17 @@ def main():
                 pid = int(fields[3])
 
                 if obj_beg < 1 or obj_end < 1:
-                    log_err(line_number, "object coordinates should be 1-indexed")
+                    log_err(line_number, "object coordinates should be 1-indexed and positive")
 
                 if obj_beg > obj_end:
-                    log_err(line_number, "beginning coordinate should be less than or equal to the end coordinate")
+                    log_err(line_number, "beginning object coordinate should be <= the end coordinate")
 
                 # Check if we are transitioning object identifiers
                 if obj != curr_obj:
+
+                    # Make sure we start at the beginning coordinate
+                    if not obj_beg == 1:
+                        log_err(line_number, "all objects should start with '1'")
 
                     # Ensure we have not yet seen this object identifier
                     if obj in seen_objs:
@@ -117,19 +112,20 @@ def main():
 
                     # Check that the last object has been completely covered
                     if not is_first:
-                        if not is_covered(curr_obj_intervals, curr_obj_bp):
-                            log_err(line_number, "some positions in %s are not accounted for" % curr_obj)
+                        if not is_covered(curr_obj_intervals):
+                            log_err(line_number, "some positions in %s are not accounted for or overlap" % curr_obj)
 
-                    # Update all the info for this new object
-                    prev_pid = 0
+                    # Write the fasta header for the object
                     header = ">" + obj + "\n"
                     if not is_first:
                         header = "\n" + header
                     sys.stdout.write(header)
+
+                    # Update all the info for this new object
+                    prev_pid = 0
                     seen_objs.add(obj)
                     curr_obj = obj
                     curr_obj_intervals = []
-                    curr_obj_bp = 0
                     is_first = False
 
                 if pid - prev_pid != 1:
@@ -146,8 +142,17 @@ def main():
                 if comp_type != "N" and comp_type != "U":
                     # This is a sequence component
                     cid, comp_beg, comp_end = fields[5], int(fields[6]), int(fields[7])
+
+                    if comp_beg < 1 or comp_end < 1:
+                        log_err(line_number, "component coordinates should be 1-indexed and positive")
+
+                    if comp_beg > comp_end:
+                        log_err(line_number, "beginning component coordinate should be less than or equal to the end coordinate")
+
                     comp_len = comp_end - (comp_beg - 1)
                     orientation = fields[8]
+
+                    # Write the fasta sequence for this component
                     if orientation in {"+", "?", "0", "na"}:
                         sys.stdout.write(fai.fetch(cid))
                     elif orientation == "-":
@@ -162,8 +167,12 @@ def main():
                     if gap_type not in allowed_gap_types:
                         log_err(line_number, "invalid gap type")
 
+                    if linkage not in allowed_linkage_types:
+                        log_err(line_number, "invalid linkage field")
+
                     if comp_len < 1:
-                        log_err(line_number, "gap length must be non-negative")
+                        log_err(line_number, "gap length must be >0")
+
                     if comp_type == "U" and comp_len != 100:
                         log_err(line_number, "gaps of type 'U' must be 100 bp")
 
@@ -173,13 +182,12 @@ def main():
                         if e not in allowed_evidence_types:
                             log_err(line_number, "invalid linkage evidence")
 
+                    # Write the gap sequence to the fasta file
                     sys.stdout.write("N"*comp_len)
 
                 # Ensure that the coordinates indicate the same length in the object and component
                 if comp_len != obj_len:
                     log_err(line_number, "object and component coordinates have inconsistent lengths")
-
-                curr_obj_bp += comp_len
 
     sys.stdout.write("\n")
 
