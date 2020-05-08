@@ -184,7 +184,7 @@ def make_gff_interval_tree(gff_file):
     return t
 
 
-def write_breaks(out_file, query_file, ctg_breaks, overwrite, out_path):
+def write_breaks(out_file, query_file, ctg_breaks, overwrite):
     """
     Write the intermediate file for contig breaks.
     This should be the same format as the intermediate output from 'ragoo2_scaffold.py'. As a result,
@@ -498,7 +498,7 @@ def main():
 
     # Write the summary of query sequence breaks in BED format
     bed_file = output_path + "correction.placement.bed"
-    write_breaks(bed_file, query_file, ctg_breaks, overwrite_files, output_path)
+    write_breaks(bed_file, query_file, ctg_breaks, overwrite_files)
 
     # Write the scaffolds.
     log("Writing broken contigs")
@@ -508,7 +508,7 @@ def main():
         "ragoo2_break_query.py",
         bed_file,
         query_file,
-        output_path + qf_pref + ".break.fasta"
+        output_path + qf_pref + ".corrected.fasta"
     ]
     run(cmd)
 

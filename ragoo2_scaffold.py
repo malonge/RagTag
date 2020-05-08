@@ -177,7 +177,6 @@ def main():
     output_path = args.o.replace("/", "").replace(".", "")
     min_ulen = args.f
     merge_dist = args.d
-    max_gap_size = args.m
     group_score_thresh = args.i
     loc_score_thresh = args.a
     orient_score_thresh = args.s
