@@ -265,6 +265,7 @@ def main():
     io_options = parser.add_argument_group("input/output options")
     io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
+    io_options.add_argument("-u", action='store_true', default=False, help="don't add suffix to unaltered sequence headers")
 
     aln_options = parser.add_argument_group("mapping options")
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
