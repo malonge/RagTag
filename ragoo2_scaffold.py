@@ -123,7 +123,7 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, gap
                 out_line = []
                 qlen = fai.get_reference_length(q)
                 gc, lc, oc = "NA", "NA", "NA"
-                out_line.append(q)
+                out_line.append(q + "_RaGOO2")
                 out_line.append("0")
                 out_line.append(str(qlen) + "\tS")
                 out_line.append(q)
