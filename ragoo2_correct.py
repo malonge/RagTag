@@ -184,12 +184,8 @@ def make_gff_interval_tree(gff_file):
     return t
 
 
-def write_breaks(out_file, query_file, ctg_breaks, overwrite):
-    """
-    Write the intermediate file for contig breaks.
-    This should be the same format as the intermediate output from 'ragoo2_scaffold.py'. As a result,
-    the same lift-over script could be used for either.
-    """
+def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
+    """ Write the intermediate file for contig breaks in AGP v2.1 format."""
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
@@ -201,43 +197,60 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite):
     all_out_lines = []
 
     for q in all_q_seqs:
+
+        # Check if this sequence was broken during misassembly correction
         if q not in ctg_breaks:
-            # This query sequence was not broken
+
+            # Add suffix to query header, unless otherwise requested
+            unchanged_comp_header = q
+            if not remove_suffix:
+                unchanged_comp_header = q + ":0" + "-" + str(x.get_reference_length(q)) + "(+)"
+
             all_out_lines.append(
                 "\t".join([
                     q,
-                    "0",
+                    "1",
                     str(x.get_reference_length(q)),
-                    "S",
-                    q,
+                    "1",
+                    "W",
+                    unchanged_comp_header,
+                    "1",
+                    str(x.get_reference_length(q)),
                     "+"
                 ])
             )
-        else:
-            # This query sequence was broken
+        else:  # This query sequence was broken
+            pid = 1
             sorted_breaks = sorted(ctg_breaks[q])
             start = 0
             for i in sorted_breaks:
                 all_out_lines.append(
                     "\t".join([
                         q,
-                        str(start),
+                        str(start+1),
                         str(i),
-                        "S",
+                        str(pid),
+                        "W",
                         q + ":" + str(start) + "-" + str(i) + "(+)",
+                        "1",
+                        str(i-start),
                         "+"
                     ])
                 )
                 start = i
+                pid += 1
 
             # Add one line for the last interval
             all_out_lines.append(
                 "\t".join([
                     q,
-                    str(start),
+                    str(start+1),
                     str(x.get_reference_length(q)),
-                    "S",
+                    str(pid),
+                    "W",
                     q + ":" + str(start) + "-" + str(x.get_reference_length(q)) + "(+)",
+                    "1",
+                    str(x.get_reference_length(q)-start),
                     "+"
                 ])
             )
@@ -291,14 +304,17 @@ def main():
 
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
-    output_path = args.o.replace("/", "").replace(".", "")
     num_threads = args.t
     min_ulen = args.f
     merge_dist = args.d
     min_break_dist = args.m
     min_break_end_dist = args.b
     val_window_size = args.v
+
+    # IO options
+    output_path = args.o.replace("/", "").replace(".", "")
     overwrite_files = args.w
+    remove_suffix = args.u
 
     gff_file = args.gff
     if gff_file:
@@ -497,9 +513,9 @@ def main():
                 non_gff_breaks[ctg] = new_breaks
         ctg_breaks = non_gff_breaks
 
-    # Write the summary of query sequence breaks in BED format
-    bed_file = output_path + "correction.placement.bed"
-    write_breaks(bed_file, query_file, ctg_breaks, overwrite_files)
+    # Write the summary of query sequence breaks in AGP format
+    agp_file = output_path + "ragoo2.correction.agp"
+    write_breaks(agp_file, query_file, ctg_breaks, overwrite_files, remove_suffix)
 
     # Write the scaffolds.
     log("Writing broken contigs")
@@ -507,7 +523,7 @@ def main():
     qf_pref = qf_name[:qf_name.rfind(".")]
     cmd = [
         "ragoo2_break_query.py",
-        bed_file,
+        agp_file,
         query_file,
         output_path + qf_pref + ".corrected.fasta"
     ]
