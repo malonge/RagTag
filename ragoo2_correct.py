@@ -257,6 +257,8 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
 
     log("Writing: " + out_file)
     with open(out_file, "w") as f:
+        f.write("## agp-version 2.1\n")
+        f.write("# AGP created by RaGOO2\n")
         f.write("\n".join(all_out_lines) + "\n")
 
 
@@ -311,10 +313,12 @@ def main():
     min_break_end_dist = args.b
     val_window_size = args.v
 
-    # IO options
+    # I/O options
     output_path = args.o.replace("/", "").replace(".", "")
     overwrite_files = args.w
     remove_suffix = args.u
+    if remove_suffix:
+        log("WARNING: with -u invoked, some component/object AGP pairs will share the same ID. Some external programs don't like this.")
 
     gff_file = args.gff
     if gff_file:

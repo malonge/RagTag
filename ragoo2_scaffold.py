@@ -31,21 +31,22 @@ def remove_contained(a):
     return o
 
 
-def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, gap_type_dict, make_chr0, overwrite):
+def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict, ctg_dict, gap_dict, gap_type_dict, make_chr0, overwrite):
     # Check if the output file already exists
-    if os.path.isfile(out_file):
+    if os.path.isfile(out_agp_file):
         if not overwrite:
-            log("Retaining pre-existing file: " + out_file)
+            log("Retaining pre-existing file: " + out_agp_file)
             return
 
     # Proceed with writing the intermediate output
     placed_seqs = set()
-    gap_id = 0
-    all_out_lines = []
+    all_out_agp_lines = []
+    all_out_cs_lines = []
 
     # Go through the reference sequences in sorted order
     sorted_ref_headers = sorted(list(ordering_dict.keys()))
     for ref_header in sorted_ref_headers:
+        pid = 1
         pos = 0
         new_ref_header = ref_header + "_RaGOO2"
         q_seqs = ordering_dict[ref_header]
@@ -54,87 +55,110 @@ def write_orderings(out_file, query_file, ordering_dict, ctg_dict, gap_dict, gap
 
         # Iterate through the query sequences for this reference header
         for i in range(len(q_seqs)):
-            out_line = []
+            out_agp_line = []
+            out_cs_line = []
             q = q_seqs[i][2]
             placed_seqs.add(q)
             qlen = ctg_dict[q].query_len
             strand = ctg_dict[q].orientation
             gc, lc, oc = ctg_dict[q].grouping_confidence, ctg_dict[q].location_confidence, ctg_dict[q].orientation_confidence
-            out_line.append(new_ref_header)
-            out_line.append(str(pos))
+            out_agp_line.append(new_ref_header)
+            out_agp_line.append(str(pos+1))
             pos += qlen
-            out_line.append(str(pos) + "\tS")
-            out_line.append(q)
-            out_line.append(strand)
-            out_line.append(str(gc))
-            out_line.append(str(lc))
-            out_line.append(str(oc))
-            all_out_lines.append("\t".join(out_line))
+            out_agp_line.append(str(pos))
+            out_agp_line.append(str(pid) + "\tW")
+            out_agp_line.append(q)
+            out_agp_line.append("1")
+            out_agp_line.append(str(ctg_dict[q].query_len))
+            out_agp_line.append(strand)
+
+            # Save the confidence score info
+            out_cs_line.append(q)
+            out_cs_line.append(str(gc))
+            out_cs_line.append(str(lc))
+            out_cs_line.append(str(oc))
+
+            all_out_agp_lines.append("\t".join(out_agp_line))
+            all_out_cs_lines.append("\t".join(out_cs_line))
+            pid += 1
 
             if i < len(gap_seqs):
                 # Print the gap line
-                out_line = []
-                out_line.append(new_ref_header)
-                out_line.append(str(pos))
+                out_agp_line = []
+                out_agp_line.append(new_ref_header)
+                out_agp_line.append(str(pos+1))
                 pos += gap_seqs[i]
+                out_agp_line.append(str(pos))
+                out_agp_line.append(str(pid))
                 gap_type = gap_types[i]
-                out_line.append(str(pos) + "\t" + gap_type + "\t" + str(gap_id))
-                gap_id += 1
-                out_line.append("NA\tNA\tNA\tNA")
-                all_out_lines.append("\t".join(out_line))
+                out_agp_line.append(gap_type)
+                out_agp_line.append(str(gap_seqs[i]))
+                out_agp_line.append("scaffold\tyes\talign_genus")
+                pid += 1
+                all_out_agp_lines.append("\t".join(out_agp_line))
 
     # Write unplaced sequences
     fai = pysam.FastaFile(query_file)
     all_seqs = set(fai.references)
-    unplaced_seqs = all_seqs - placed_seqs
+    unplaced_seqs = sorted(list(all_seqs - placed_seqs))
     if unplaced_seqs:
         if make_chr0:
             pos = 0
+            pid = 1
             new_ref_header = "Chr0_RaGOO2"
             for q in unplaced_seqs:
-                out_line = []
+                out_agp_line = []
                 qlen = fai.get_reference_length(q)
-                out_line.append(new_ref_header)
-                out_line.append(str(pos))
+                out_agp_line.append(new_ref_header)
+                out_agp_line.append(str(pos+1))
                 pos += qlen
-                out_line.append(str(pos) + "\tS")
-                out_line.append(q)
-                out_line.append("+")
-                out_line.append("NA")
-                out_line.append("NA")
-                out_line.append("NA")
-                all_out_lines.append("\t".join(out_line))
+                out_agp_line.append(str(pos))
+                out_agp_line.append(str(pid))
+                out_agp_line.append("W")
+                out_agp_line.append(q)
+                out_agp_line.append("1")
+                out_agp_line.append(str(qlen))
+                out_agp_line.append("+")
+
+                all_out_agp_lines.append("\t".join(out_agp_line))
+                pid += 1
 
                 # Now for the gap, since we are making a chr0
-                out_line = []
-                out_line.append(new_ref_header)
-                out_line.append(str(pos))
+                out_agp_line = []
+                out_agp_line.append(new_ref_header)
+                out_agp_line.append(str(pos+1))
                 pos += 100
-                out_line.append(str(pos) + "\tU\t" + str(gap_id))
-                gap_id += 1
-                out_line.append("NA\tNA\tNA\tNA")
-                all_out_lines.append("\t".join(out_line))
+                out_agp_line.append(str(pos))
+                out_agp_line.append(str(pid))
+                out_agp_line.append("U\t100\tcontig\tno\tna")
+
+                all_out_agp_lines.append("\t".join(out_agp_line))
+                pid += 1
 
             # Remove the final unecessary gap
-            all_out_lines = all_out_lines[:-1]
+            all_out_agp_lines = all_out_agp_lines[:-1]
         else:
             # List the unplaced contigs individually
             for q in unplaced_seqs:
-                out_line = []
+                out_agp_line = []
                 qlen = fai.get_reference_length(q)
-                gc, lc, oc = "NA", "NA", "NA"
-                out_line.append(q + "_RaGOO2")
-                out_line.append("0")
-                out_line.append(str(qlen) + "\tS")
-                out_line.append(q)
-                out_line.append("+")
-                out_line.append("NA")
-                out_line.append("NA")
-                out_line.append("NA")
-                all_out_lines.append("\t".join(out_line))
+                out_agp_line.append(q + "_RaGOO2")
+                out_agp_line.append("1")
+                out_agp_line.append(str(qlen) + "\t1\tW")
+                out_agp_line.append(q)
+                out_agp_line.append("1")
+                out_agp_line.append(str(qlen))
+                out_agp_line.append("+")
+                all_out_agp_lines.append("\t".join(out_agp_line))
 
-    with open(out_file, "w") as f:
-        f.write("\n".join(all_out_lines) + "\n")
+    with open(out_agp_file, "w") as f:
+        f.write("## agp-version 2.1\n")
+        f.write("# AGP created by RaGOO2\n")
+        f.write("\n".join(all_out_agp_lines) + "\n")
+
+    with open(out_confidence_file, "w") as f:
+        f.write("query\tgrouping_confidence\tlocation_confidence\torientation_confidence\n")
+        f.write("\n".join(all_out_cs_lines) + "\n")
 
 
 def main():
@@ -157,6 +181,7 @@ def main():
     io_options = parser.add_argument_group("input/output options")
     io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
+    io_options.add_argument("-u", action='store_true', default=False, help="don't add suffix to unaltered sequence headers")
 
     aln_options = parser.add_argument_group("mapping options")
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
@@ -174,7 +199,6 @@ def main():
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
 
-    output_path = args.o.replace("/", "").replace(".", "")
     min_ulen = args.f
     merge_dist = args.d
     group_score_thresh = args.i
@@ -182,8 +206,14 @@ def main():
     orient_score_thresh = args.s
     make_chr0 = args.C
     infer_gaps = args.r
-    overwrite_files = args.w
     num_threads = args.t
+
+    # I/O options
+    output_path = args.o.replace("/", "").replace(".", "")
+    overwrite_files = args.w
+    remove_suffix = args.u
+    if remove_suffix:
+        log("WARNING: with -u invoked, some component/object AGP pairs will share the same ID. Some external programs don't like this.")
 
     min_gap_size = args.g
     max_gap_size = args.m
@@ -365,28 +395,20 @@ def main():
         log("%d adjacent contig within min distance (%d) of each other" % (g_small, min_gap_size))
         log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
 
-    log("Writing: " + output_path + "scaffolding.placement.bed")
-    # Write the intermediate output file
-    write_orderings(output_path + "scaffolding.placement.bed", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files)
+    # Write the intermediate output file in AGP v2.1 format
+    log("Writing: " + output_path + "ragoo2.scaffolds.agp")
+    write_orderings(output_path + "ragoo2.scaffolds.agp", output_path + "ragoo2.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files)
 
     # Write the scaffolds
     log("Writing scaffolds")
 
-    # Make the AGP file
-    cmd = [
-        "ragoo2_bed2agp.py",
-        output_path + "scaffolding.placement.bed",
-        output_path + "ragoo2.agp"
-    ]
-    run(cmd)
-
     # Build a FASTA from the AGP
     cmd = [
         "ragoo2_agp2fasta.py",
-        output_path + "ragoo2.agp",
+        output_path + "ragoo2.scaffolds.agp",
         query_file
     ]
-    run_o(cmd, output_path + "ragoo2.fasta")
+    run_o(cmd, output_path + "ragoo2.scaffolds.fasta")
 
     # Calculate the stats
     cmd = [
@@ -394,7 +416,7 @@ def main():
         output_path + "scaffolding.placement.bed",
         output_path + "localization_stats.txt"
     ]
-    run(cmd)
+    #run(cmd)
 
 
 if __name__ == "__main__":
