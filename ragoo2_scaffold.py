@@ -181,7 +181,7 @@ def main():
     io_options = parser.add_argument_group("input/output options")
     io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
-    io_options.add_argument("-u", action='store_true', default=False, help="don't add suffix to unaltered sequence headers")
+    io_options.add_argument("-u", action='store_true', default=False, help="add suffix to unplaced sequence headers")
 
     aln_options = parser.add_argument_group("mapping options")
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
@@ -211,9 +211,9 @@ def main():
     # I/O options
     output_path = args.o.replace("/", "").replace(".", "")
     overwrite_files = args.w
-    remove_suffix = args.u
+    remove_suffix = not args.u
     if remove_suffix:
-        log("WARNING: with -u invoked, some component/object AGP pairs will share the same ID. Some external programs don't like this.")
+        log("WARNING: Without '-u' invoked, some component/object AGP pairs might share the same ID. Some external programs/databases don't like this. To ensure valid AGP format, use '-u'.")
 
     min_gap_size = args.g
     max_gap_size = args.m
