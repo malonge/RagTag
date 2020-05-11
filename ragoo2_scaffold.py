@@ -31,7 +31,7 @@ def remove_contained(a):
     return o
 
 
-def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict, ctg_dict, gap_dict, gap_type_dict, make_chr0, overwrite):
+def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict, ctg_dict, gap_dict, gap_type_dict, make_chr0, overwrite, add_suffix):
     # Check if the output file already exists
     if os.path.isfile(out_agp_file):
         if not overwrite:
@@ -142,7 +142,10 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
             for q in unplaced_seqs:
                 out_agp_line = []
                 qlen = fai.get_reference_length(q)
-                out_agp_line.append(q + "_RaGOO2")
+                if add_suffix:
+                    out_agp_line.append(q + "_RaGOO2")
+                else:
+                    out_agp_line.append(q)
                 out_agp_line.append("1")
                 out_agp_line.append(str(qlen) + "\t1\tW")
                 out_agp_line.append(q)
@@ -397,7 +400,7 @@ def main():
 
     # Write the intermediate output file in AGP v2.1 format
     log("Writing: " + output_path + "ragoo2.scaffolds.agp")
-    write_orderings(output_path + "ragoo2.scaffolds.agp", output_path + "ragoo2.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files)
+    write_orderings(output_path + "ragoo2.scaffolds.agp", output_path + "ragoo2.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files, not remove_suffix)
 
     # Write the scaffolds
     log("Writing scaffolds")
