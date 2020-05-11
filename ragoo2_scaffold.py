@@ -416,10 +416,10 @@ def main():
     # Calculate the stats
     cmd = [
         "ragoo2_stats.py",
-        output_path + "scaffolding.placement.bed",
-        output_path + "localization_stats.txt"
+        output_path + "ragoo2.scaffolds.agp",
+        output_path + "ragoo2.confidence.txt"
     ]
-    #run(cmd)
+    run_o(cmd, output_path + "ragoo2.stats.txt")
 
 
 if __name__ == "__main__":

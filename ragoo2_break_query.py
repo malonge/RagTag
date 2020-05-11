@@ -22,7 +22,7 @@ def main():
     # Iterate through the agp file
     with open(agp_file, "r") as f:
         for line in f:
-            obj, obj_start, obj_end, pid, ctype, comp, comp_beg, comp_end, strand = line.rstrip().split()
+            obj, obj_start, obj_end, pid, ctype, comp, comp_beg, comp_end, strand = line.rstrip().split("\t")
             start, end = int(obj_start)-1, int(obj_end)
             fout.write(">" + comp + "\n")
             fout.write(x.fetch(obj, start, end) + "\n")

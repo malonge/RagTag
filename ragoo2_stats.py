@@ -6,17 +6,17 @@ import argparse
 
 def main():
     parser = argparse.ArgumentParser(description="Calculate scaffolding statistics")
-    parser.add_argument("orderings", nargs='?', default="", metavar="<orderings.bed>", type=str, help="RaGOO ordering file")
-    parser.add_argument("output_file", nargs='?', default="", metavar="<stats.txt>", type=str, help="output file name")
+    parser.add_argument("agp", nargs='?', default="", metavar="<ragoo2.scaffolds.agp>", type=str, help="RaGOO2 scaffolding AGP file")
+    parser.add_argument("confidence", nargs='?', default="", metavar="<ragoo2.confidence.txt>", type=str, help="RaGOO2 scaffolding confidence scores file")
 
     args = parser.parse_args()
 
-    if not args.orderings or not args.output_file:
+    if not args.agp or not args.confidence:
         parser.print_help()
         sys.exit()
 
-    orderings_file = args.orderings
-    output_file = args.output_file
+    agp_file = args.agp
+    confidence_file = args.confidence
 
     placed_bp = 0
     placed_seq = 0
@@ -25,31 +25,46 @@ def main():
     gap_bp = 0
     gap_seq = 0
 
-    with open(orderings_file, "r") as f:
-        for line in f:
-            l = line.rstrip().split("\t")
-            seq_len = int(l[2]) - int(l[1])
-            if l[3] == "S":
-                if l[6] != "NA":
-                    placed_bp += seq_len
-                    placed_seq += 1
-                else:
-                    unplaced_bp += seq_len
-                    unplaced_seq += 1
-            else:
-                gap_bp += seq_len
-                gap_seq += 1
+    allowed_seq_types = {"A", "D", "F", "G", "O", "P", "W"}
+    allowed_gap_types = {"N", "U"}
 
-    with open(output_file, "w") as f:
-        f.write("placed_sequences\tplaced_bp\tunplaced_sequences\tunplaced_bp\tgap_bp\tgap_sequences\n")
-        f.write("\t".join([
-            str(placed_seq),
-            str(placed_bp),
-            str(unplaced_seq),
-            str(unplaced_bp),
-            str(gap_bp),
-            str(gap_seq)
-        ]) + "\n")
+    # Get the set of placed sequences from the confidence scores file
+    placed_seqs = set()
+    with open(confidence_file, "r") as f:
+        f.readline()  # discard header
+        for line in f:
+            header, g_score, l_score, o_score = line.rstrip().split("\t")
+            placed_seqs.add(header)
+
+    # Iterate through the AGP file
+    with open(agp_file, "r") as f:
+        for line in f:
+            if not line.startswith("#"):
+                obj, obj_start, obj_end, pid, ctype, comp, comp_beg, comp_end, strand = line.rstrip().split("\t")
+                if ctype in allowed_seq_types:
+                    seq_len = int(comp_end) - (int(comp_beg) - 1)
+                    if comp in placed_seqs:
+                        placed_bp += seq_len
+                        placed_seq += 1
+                    else:
+                        unplaced_bp += seq_len
+                        unplaced_seq += 1
+                elif ctype in allowed_gap_types:
+                    seq_len = int(comp)
+                    gap_bp += seq_len
+                    gap_seq += 1
+                else:
+                    raise ValueError("AGP is not properly formatted. Invalid component type.")
+
+    print("placed_sequences\tplaced_bp\tunplaced_sequences\tunplaced_bp\tgap_bp\tgap_sequences")
+    print("\t".join([
+        str(placed_seq),
+        str(placed_bp),
+        str(unplaced_seq),
+        str(unplaced_bp),
+        str(gap_bp),
+        str(gap_seq)
+    ]))
 
 
 if __name__ == "__main__":
