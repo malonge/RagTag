@@ -12,6 +12,7 @@ from intervaltree import IntervalTree
 import matplotlib.pyplot as plt
 
 from ragoo2_utilities.utilities import log, run_o
+from ragoo2_utilities.AGPFile import AGPFile
 from ragoo2_utilities.Aligner import Minimap2Aligner
 from ragoo2_utilities.Aligner import Minimap2SAMAligner
 from ragoo2_utilities.Aligner import NucmerAligner
@@ -194,7 +195,10 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
 
     x = pysam.FastaFile(query_file)
     all_q_seqs = set(x.references)
-    all_out_lines = []
+    agp = AGPFile(out_file)
+
+    agp.add_comment("## agp-version 2.1")
+    agp.add_comment("# AGP created by RaGOO2")
 
     for q in all_q_seqs:
 
@@ -206,8 +210,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
             if not remove_suffix:
                 unchanged_comp_header = q + ":0" + "-" + str(x.get_reference_length(q)) + "(+)"
 
-            all_out_lines.append(
-                "\t".join([
+            agp.add_seq_line(
                     q,
                     "1",
                     str(x.get_reference_length(q)),
@@ -217,15 +220,13 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
                     "1",
                     str(x.get_reference_length(q)),
                     "+"
-                ])
             )
         else:  # This query sequence was broken
             pid = 1
             sorted_breaks = sorted(ctg_breaks[q])
             start = 0
             for i in sorted_breaks:
-                all_out_lines.append(
-                    "\t".join([
+                agp.add_seq_line(
                         q,
                         str(start+1),
                         str(i),
@@ -235,14 +236,12 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
                         "1",
                         str(i-start),
                         "+"
-                    ])
                 )
                 start = i
                 pid += 1
 
             # Add one line for the last interval
-            all_out_lines.append(
-                "\t".join([
+            agp.add_seq_line(
                     q,
                     str(start+1),
                     str(x.get_reference_length(q)),
@@ -252,14 +251,10 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
                     "1",
                     str(x.get_reference_length(q)-start),
                     "+"
-                ])
             )
 
     log("Writing: " + out_file)
-    with open(out_file, "w") as f:
-        f.write("## agp-version 2.1\n")
-        f.write("# AGP created by RaGOO2\n")
-        f.write("\n".join(all_out_lines) + "\n")
+    agp.write()
 
 
 def main():

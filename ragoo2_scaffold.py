@@ -8,6 +8,7 @@ from collections import defaultdict
 import pysam
 
 from ragoo2_utilities.utilities import log, run, run_o
+from ragoo2_utilities.AGPFile import AGPFile
 from ragoo2_utilities.Aligner import Minimap2Aligner
 from ragoo2_utilities.Aligner import NucmerAligner
 from ragoo2_utilities.AlignmentReader import AlignmentReader
@@ -40,8 +41,11 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
 
     # Proceed with writing the intermediate output
     placed_seqs = set()
-    all_out_agp_lines = []
-    all_out_cs_lines = []
+    all_out_cs_lines = []  # For confidence scores
+    agp = AGPFile(out_agp_file)
+
+    agp.add_comment("## agp-version 2.1")
+    agp.add_comment("# AGP created by RaGOO2")
 
     # Go through the reference sequences in sorted order
     sorted_ref_headers = sorted(list(ordering_dict.keys()))
@@ -66,7 +70,8 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
             out_agp_line.append(str(pos+1))
             pos += qlen
             out_agp_line.append(str(pos))
-            out_agp_line.append(str(pid) + "\tW")
+            out_agp_line.append(str(pid))
+            out_agp_line.append("W")
             out_agp_line.append(q)
             out_agp_line.append("1")
             out_agp_line.append(str(ctg_dict[q].query_len))
@@ -78,7 +83,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
             out_cs_line.append(str(lc))
             out_cs_line.append(str(oc))
 
-            all_out_agp_lines.append("\t".join(out_agp_line))
+            agp.add_seq_line(*out_agp_line)
             all_out_cs_lines.append("\t".join(out_cs_line))
             pid += 1
 
@@ -93,9 +98,11 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 gap_type = gap_types[i]
                 out_agp_line.append(gap_type)
                 out_agp_line.append(str(gap_seqs[i]))
-                out_agp_line.append("scaffold\tyes\talign_genus")
+                out_agp_line.append("scaffold")
+                out_agp_line.append("yes")
+                out_agp_line.append("align_genus")
                 pid += 1
-                all_out_agp_lines.append("\t".join(out_agp_line))
+                agp.add_gap_line(*out_agp_line)
 
     # Write unplaced sequences
     fai = pysam.FastaFile(query_file)
@@ -120,7 +127,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 out_agp_line.append(str(qlen))
                 out_agp_line.append("+")
 
-                all_out_agp_lines.append("\t".join(out_agp_line))
+                agp.add_seq_line(*out_agp_line)
                 pid += 1
 
                 # Now for the gap, since we are making a chr0
@@ -130,13 +137,17 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 pos += 100
                 out_agp_line.append(str(pos))
                 out_agp_line.append(str(pid))
-                out_agp_line.append("U\t100\tcontig\tno\tna")
+                out_agp_line.append("U")
+                out_agp_line.append("100")
+                out_agp_line.append("contig")
+                out_agp_line.append("no")
+                out_agp_line.append("na")
 
-                all_out_agp_lines.append("\t".join(out_agp_line))
+                agp.add_gap_line(*out_agp_line)
                 pid += 1
 
             # Remove the final unecessary gap
-            all_out_agp_lines = all_out_agp_lines[:-1]
+            agp.pop_agp_line()
         else:
             # List the unplaced contigs individually
             for q in unplaced_seqs:
@@ -147,18 +158,18 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 else:
                     out_agp_line.append(q)
                 out_agp_line.append("1")
-                out_agp_line.append(str(qlen) + "\t1\tW")
+                out_agp_line.append(str(qlen))
+                out_agp_line.append("1")
+                out_agp_line.append("W")
                 out_agp_line.append(q)
                 out_agp_line.append("1")
                 out_agp_line.append(str(qlen))
                 out_agp_line.append("+")
-                all_out_agp_lines.append("\t".join(out_agp_line))
+                agp.add_seq_line(*out_agp_line)
 
-    with open(out_agp_file, "w") as f:
-        f.write("## agp-version 2.1\n")
-        f.write("# AGP created by RaGOO2\n")
-        f.write("\n".join(all_out_agp_lines) + "\n")
+    agp.write()
 
+    # Write the confidence scores
     with open(out_confidence_file, "w") as f:
         f.write("query\tgrouping_confidence\tlocation_confidence\torientation_confidence\n")
         f.write("\n".join(all_out_cs_lines) + "\n")

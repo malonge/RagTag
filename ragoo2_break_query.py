@@ -2,9 +2,9 @@
 
 import argparse
 
-from ragoo2_utilities.AGPFile import AGPFile
-
 import pysam
+
+from ragoo2_utilities.AGPFile import AGPFile
 
 
 def main():

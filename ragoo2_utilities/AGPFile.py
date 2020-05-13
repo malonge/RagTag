@@ -23,9 +23,15 @@ class AGPFile:
         self.agp_version = "v2.1"
         self.fn = os.path.abspath(in_file)
 
-        # Store header and AGP lines separately.
-        self.header_lines = []
+        # Store comment and AGP lines separately.
+        self.comment_lines = []
         self.agp_lines = []
+
+        # Store info enabling us to keep track of the state of the AGP file
+        self.previous_pid = 0
+        self.current_obj = None
+        self.obj_intervals = []  # Stores intervals as 0-indexed
+        self.seen_objs = set()
 
         # Read the contents of the AGP file
         self._read_file()
@@ -34,15 +40,6 @@ class AGPFile:
     def _raise_line_err(line_number, message):
         message = "line " + str(line_number) + ": " + message
         raise ValueError(message)
-
-    @staticmethod
-    def _is_covered(s):
-        s = sorted(s)
-        for j in range(1, len(s)):
-            if s[j - 1][1] != s[j][0]:
-                return False
-
-        return True
 
     def _read_file(self):
         """
@@ -55,22 +52,18 @@ class AGPFile:
             return
 
         # The AGP file exists. Initialize everything.
-        self.header_lines = []
+        self.comment_lines = []
         self.agp_lines = []
 
         line_number = 0
-        prev_pid = 0
         in_body = False
-        curr_obj = None
-        seen_objs = set()
-        curr_obj_intervals = []
         with open(self.fn, "r") as f:
             for line in f:
                 line_number += 1
                 line = line.rstrip()
                 if line.startswith("#"):
                     if not in_body:
-                        self.header_lines.append(line)
+                        self.comment_lines.append(line)
                     else:
                         self._raise_line_err(line_number, "illegal comment in AGP body")
                     continue
@@ -96,33 +89,127 @@ class AGPFile:
                 self.agp_lines.append(agp_line)
 
                 # Check if we are transitioning object identifiers
-                if agp_line.obj != curr_obj:
+                if agp_line.obj != self.current_obj:
                     if not agp_line.obj_beg == 1:
                         self._raise_line_err(line_number, "all objects should start with '1'")
 
-                    if agp_line.obj in seen_objs:
+                    if agp_line.obj in self.seen_objs:
                         self._raise_line_err(line_number, "object identifier out of order")
 
-                    # Check that the last object has been completely covered
-                    if not self._is_covered(curr_obj_intervals):
-                        self._raise_line_err(line_number, "some positions in %s are not accounted for or overlap" % curr_obj)
-
                     # Update all the info for this new object
-                    prev_pid = 0
-                    seen_objs.add(agp_line.obj)
-                    curr_obj = agp_line.obj
-                    curr_obj_intervals = []
+                    self.previous_pid = 0
+                    self.current_obj = agp_line.obj
+                    self.obj_intervals = []
+                    self.seen_objs.add(agp_line.obj)
 
-                if agp_line.pid - prev_pid != 1:
+                # Check that the pid is sequential
+                if agp_line.pid - self.previous_pid != 1:
                     self._raise_line_err(line_number, "non-sequential part_numbers")
 
-                prev_pid = agp_line.pid
-                curr_obj_intervals.append((agp_line.obj_beg - 1, agp_line.obj_end))
+                # Check that the object intervals are sequential
+                if self.obj_intervals:
+                    if self.obj_intervals[-1][1] != agp_line.obj_beg - 1:
+                        self._raise_line_err(line_number, "some positions in %s are not accounted for or overlapping" % agp_line.obj)
+
+                self.previous_pid = agp_line.pid
+                self.obj_intervals.append((agp_line.obj_beg - 1, agp_line.obj_end))
 
     def iterate_lines(self):
         """ Iterate over the non-comment lines of AGP file. """
         for i in self.agp_lines:
             yield i
+
+    def add_comment(self, c):
+        if not isinstance(c, str):
+            raise TypeError("Comment must be a string")
+
+        if not c.startswith("#"):
+            raise ValueError("Comment must start with a '#' character")
+
+        self.comment_lines.append(c)
+
+    def add_seq_line(self, obj, obj_beg, obj_end, pid, comp_type, comp, comp_beg, comp_end, orientation):
+        line_number = len(self.comment_lines) + len(self.agp_lines) + 1
+        agp_line = AGPSeqLine(obj, obj_beg, obj_end, pid, comp_type, comp, comp_beg, comp_end, orientation)
+
+        # Perform validity checks if this is a new object
+        if agp_line.obj != self.current_obj:
+            if not agp_line.obj_beg == 1:
+                self._raise_line_err(line_number, "all objects should start with '1'")
+
+            if agp_line.obj in self.seen_objs:
+                self._raise_line_err(line_number, "object identifier out of order")
+
+            # Initialize all the info for this new object
+            self.previous_pid = 0
+            self.current_obj = agp_line.obj
+            self.obj_intervals = []
+            self.seen_objs.add(agp_line.obj)
+
+        # Check that our PID is sequential
+        if agp_line.pid - self.previous_pid != 1:
+            self._raise_line_err(line_number, "non-sequential part_numbers")
+
+        # Check that the object intervals are sequential
+        if self.obj_intervals:
+            if self.obj_intervals[-1][1] != agp_line.obj_beg - 1:
+                self._raise_line_err(line_number, "some positions in %s are not accounted for or overlapping" % agp_line.obj)
+
+        self.previous_pid = agp_line.pid
+        self.obj_intervals.append((agp_line.obj_beg - 1, agp_line.obj_end))
+        self.agp_lines.append(agp_line)
+
+        #  Adding a new line triggers the necessity to perform end validation
+        self._is_validated = False
+
+    def add_gap_line(self, obj, obj_beg, obj_end, pid, comp_type, gap_len, gap_type, linkage, linkage_evidence):
+        line_number = len(self.comment_lines) + len(self.agp_lines) + 1
+        agp_line = AGPGapLine(obj, obj_beg, obj_end, pid, comp_type, gap_len, gap_type, linkage, linkage_evidence)
+
+        # Perform validity checks if this is a new object
+        if agp_line.obj != self.current_obj:
+            if not agp_line.obj_beg == 1:
+                self._raise_line_err(line_number, "all objects should start with '1'")
+
+            if agp_line.obj in self.seen_objs:
+                self._raise_line_err(line_number, "object identifier out of order")
+
+            # Initialize all the info for this new object
+            self.previous_pid = 0
+            self.current_obj = agp_line.obj
+            self.obj_intervals = []
+            self.seen_objs.add(agp_line.obj)
+
+        # Check that our PID is sequential
+        if agp_line.pid - self.previous_pid != 1:
+            self._raise_line_err(line_number, "non-sequential part_numbers")
+
+        # Check that the object intervals are sequential
+        if self.obj_intervals:
+            if self.obj_intervals[-1][1] != agp_line.obj_beg - 1:
+                self._raise_line_err(line_number, "some positions in %s are not accounted for or overlapping" % agp_line.obj)
+
+        self.previous_pid = agp_line.pid
+        self.obj_intervals.append((agp_line.obj_beg - 1, agp_line.obj_end))
+        self.agp_lines.append(agp_line)
+
+    def pop_agp_line(self):
+        """ Remove the last AGP line and update state info accordingly. """
+        if self.agp_lines[-1].pid == 1:
+            self.seen_objs.remove(self.agp_lines[-1].obj)
+
+        self.agp_lines = self.agp_lines[:-1]
+        self.previous_pid = self.agp_lines[-1].pid
+        self.current_obj = self.agp_lines[-1].obj
+        self.obj_intervals = self.obj_intervals[:-1]
+
+    def write(self):
+        """ Write the agp contents to a file. """
+        with open(self.fn, "w") as f:
+            if self.comment_lines:
+                f.write("\n".join(self.comment_lines) + "\n")
+            if self.agp_lines:
+                f.write("\n".join([str(i) for i in self.agp_lines]) + "\n")
 
 
 class AGPLine:
