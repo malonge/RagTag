@@ -3,6 +3,8 @@
 import sys
 import argparse
 
+from ragoo2_utilities.AGPFile import AGPFile
+
 
 def main():
     parser = argparse.ArgumentParser(description="Calculate scaffolding statistics")
@@ -37,24 +39,19 @@ def main():
             placed_seqs.add(header)
 
     # Iterate through the AGP file
-    with open(agp_file, "r") as f:
-        for line in f:
-            if not line.startswith("#"):
-                obj, obj_start, obj_end, pid, ctype, comp, comp_beg, comp_end, strand = line.rstrip().split("\t")
-                if ctype in allowed_seq_types:
-                    seq_len = int(comp_end) - (int(comp_beg) - 1)
-                    if comp in placed_seqs:
-                        placed_bp += seq_len
-                        placed_seq += 1
-                    else:
-                        unplaced_bp += seq_len
-                        unplaced_seq += 1
-                elif ctype in allowed_gap_types:
-                    seq_len = int(comp)
-                    gap_bp += seq_len
-                    gap_seq += 1
-                else:
-                    raise ValueError("AGP is not properly formatted. Invalid component type.")
+    agp = AGPFile(agp_file)
+    for line in agp.iterate_lines():
+        if line.is_gap:
+            gap_bp += line.gap_len
+            gap_seq += 1
+        else:
+            seq_len = line.comp_end - (line.comp_beg - 1)
+            if line.comp in placed_seqs:
+                placed_bp += seq_len
+                placed_seq += 1
+            else:
+                unplaced_bp += seq_len
+                unplaced_seq += 1
 
     print("placed_sequences\tplaced_bp\tunplaced_sequences\tunplaced_bp\tgap_bp\tgap_sequences")
     print("\t".join([

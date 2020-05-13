@@ -11,7 +11,7 @@ import numpy as np
 from intervaltree import IntervalTree
 import matplotlib.pyplot as plt
 
-from ragoo2_utilities.utilities import log, run, run_o
+from ragoo2_utilities.utilities import log, run_o
 from ragoo2_utilities.Aligner import Minimap2Aligner
 from ragoo2_utilities.Aligner import Minimap2SAMAligner
 from ragoo2_utilities.Aligner import NucmerAligner
@@ -528,10 +528,9 @@ def main():
     cmd = [
         "ragoo2_break_query.py",
         agp_file,
-        query_file,
-        output_path + qf_pref + ".corrected.fasta"
+        query_file
     ]
-    run(cmd)
+    run_o(cmd, output_path + qf_pref + ".corrected.fasta")
 
 
 if __name__ == "__main__":

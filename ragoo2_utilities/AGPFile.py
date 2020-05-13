@@ -119,6 +119,11 @@ class AGPFile:
                 prev_pid = agp_line.pid
                 curr_obj_intervals.append((agp_line.obj_beg - 1, agp_line.obj_end))
 
+    def iterate_lines(self):
+        """ Iterate over the non-comment lines of AGP file. """
+        for i in self.agp_lines:
+            yield i
+
 
 class AGPLine:
 
@@ -130,7 +135,7 @@ class AGPLine:
     allowed_comp_types = set()
 
     def __init__(self, obj, obj_beg, obj_end, pid, comp_type):
-        self.is_gap = False
+        self.is_gap = None
 
         # Object info
         self.obj = obj
@@ -186,6 +191,8 @@ class AGPSeqLine(AGPLine):
         # Set the object attributes and perform superclass-defined validations
         super(AGPSeqLine, self).__init__(obj, obj_beg, obj_end, pid, comp_type)
 
+        self.is_gap = False
+
     def __str__(self):
         return "\t".join([
             self.obj,
@@ -206,7 +213,7 @@ class AGPSeqLine(AGPLine):
             self.obj_end = int(self.obj_end)
             self.pid = int(self.pid)
             self.comp_beg = int(self.comp_beg)
-            self.com_end = int(self.comp_end)
+            self.comp_end = int(self.comp_end)
         except ValueError:
             raise ValueError("Encountered an invalid non-integer numeric AGP field.")
 
@@ -250,7 +257,6 @@ class AGPGapLine(AGPLine):
     }
 
     def __init__(self, obj, obj_beg, obj_end, pid, comp_type, gap_len, gap_type, linkage, linkage_evidence):
-        self.is_gap = True
         self.gap_len = gap_len
         self.gap_type = gap_type
         self.linkage = linkage
@@ -258,6 +264,8 @@ class AGPGapLine(AGPLine):
 
         # Set the object attributes and perform superclass-defined validations
         super(AGPGapLine, self).__init__(obj, obj_beg, obj_end, pid, comp_type)
+
+        self.is_gap = True
 
     def __str__(self):
         return "\t".join([
