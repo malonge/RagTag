@@ -7,19 +7,25 @@ from collections import defaultdict
 
 from intervaltree import IntervalTree
 
+from ragoo2_utilities.AGPFile import AGPFile
 
-def sub_update(gff_file, bed_file):
+
+def sub_update(gff_file, agp_file):
     # Make a dictionary associating each original sequence with an interval tree of component sequences
     trans = defaultdict(IntervalTree)
-    with open(bed_file, "r") as f:
-        for line in f:
-            fields = line.rstrip().split("\t")
-            oh, start, end, stype, nh, strand = fields[0], int(fields[1]), int(fields[2]), fields[3], fields[4], fields[5]
-            if not strand == "+":
-                raise ValueError("The placement BED file is not formatted correctly. All strand should be positive.")
-            if not stype == "S":
-                raise ValueError("The placement BED file is not formatted correctly. All lines should be sequence (S).")
-            trans[oh][int(start):int(end)] = nh
+    agp = AGPFile(agp_file)
+    for agp_line in agp.iterate_lines():
+
+        # Check that the agp file looks correct for this task
+        if agp_line.orientation == "-":
+            raise ValueError("The placement BED file is not formatted correctly. No sequences should be reverse complemented for misassembly correction.")
+        if not agp_line.comp_type == "W":
+            raise ValueError("The placement BED file is not formatted correctly. All lines should be WGS contig (W).")
+        if agp_line.is_gap:
+            raise ValueError("There should be no gaps in the correction AGP file.")
+
+        start, end = agp_line.obj_beg - 1, agp_line.obj_end
+        trans[agp_line.obj][start:end] = agp_line.comp
 
     # Iterate through the gff intervals and update them according to trans
     with open(gff_file, "r") as f:
@@ -53,18 +59,18 @@ def sub_update(gff_file, bed_file):
                 print("\t".join(fields))
 
 
-def sup_update(gff_file, bed_file):
+def sup_update(gff_file, agp_file):
     # Make a dictionary associating each original sequence with the destination sequence
     trans = {}
     strands = {}
     seq_lens = {}
-    with open(bed_file, "r") as f:
-        for line in f:
-            fields = line.rstrip().split("\t")
-            nh, start, end, stype, oh, strand = fields[0], int(fields[1]), int(fields[2]), fields[3], fields[4], fields[5]
-            trans[oh] = (start, end, nh)
-            strands[oh] = strand
-            seq_lens[oh] = end - start
+    agp = AGPFile(agp_file)
+    for agp_line in agp.iterate_lines():
+        if not agp_line.is_gap:
+            start, end = agp_line.obj_beg - 1, agp_line.obj_end
+            trans[agp_line.comp] = (start, end, agp_line.obj)
+            strands[agp_line.comp] = agp_line.orientation
+            seq_lens[agp_line.comp] = end - start
 
     # Iterate through the gff intervals and update them according to trans
     with open(gff_file, "r") as f:
@@ -103,23 +109,23 @@ def sup_update(gff_file, bed_file):
 def main():
     parser = argparse.ArgumentParser(description="Update gff intvervals given a RaGOO2 'placement' BED file", usage="ragoo2.py updategff [-c] <genes.gff> <placement.bed>")
     parser.add_argument("gff", nargs='?', default="", metavar="<genes.gff>", type=str, help="gff file")
-    parser.add_argument("bed", nargs='?', default="", metavar="<placement.bed>", type=str, help="placement BED file")
-    parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction")
+    parser.add_argument("agp", nargs='?', default="", metavar="<ragoo2.*.agp>", type=str, help="placement BED file")
+    parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction (ragoo2.correction.agp)")
 
     args = parser.parse_args()
 
-    if not args.gff or not args.bed:
+    if not args.gff or not args.agp:
         parser.print_help()
         sys.exit()
 
     gff_file = os.path.abspath(args.gff)
-    bed_file = os.path.abspath(args.bed)
+    agp_file = os.path.abspath(args.agp)
     is_sub = args.c
 
     if is_sub:
-        sub_update(gff_file, bed_file)
+        sub_update(gff_file, agp_file)
     else:
-        sup_update(gff_file, bed_file)
+        sup_update(gff_file, agp_file)
 
 
 if __name__ == "__main__":

@@ -24,23 +24,23 @@ def main():
     # Iterate over the lines of the AGP file
     prev_obj = None
     is_first = True
-    for line in agp.iterate_lines():
-        if line.obj != prev_obj:
+    for agp_line in agp.iterate_lines():
+        if agp_line.obj != prev_obj:
             if is_first:
-                print(">" + line.obj)
+                print(">" + agp_line.obj)
                 is_first = False
             else:
-                print("\n>" + line.obj)
+                print("\n>" + agp_line.obj)
 
-            prev_obj = line.obj
+            prev_obj = agp_line.obj
 
-        if line.is_gap:
-            sys.stdout.write("N"*line.gap_len)
+        if agp_line.is_gap:
+            sys.stdout.write("N"*agp_line.gap_len)
         else:
-            if line.orientation == "-":
-                sys.stdout.write(reverse_complement(fai.fetch(line.comp)))
+            if agp_line.orientation == "-":
+                sys.stdout.write(reverse_complement(fai.fetch(agp_line.comp)))
             else:
-                sys.stdout.write(fai.fetch(line.comp))
+                sys.stdout.write(fai.fetch(agp_line.comp))
 
     # End the FASTA file with a newline
     sys.stdout.write("\n")
