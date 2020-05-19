@@ -8,11 +8,11 @@ from collections import defaultdict
 import pysam
 
 from ragoo2_utilities.utilities import log, run, run_o
+from ragoo2_utilities.AlignmentReader import PAFReader
+from ragoo2_utilities.ContigAlignment import ContigAlignment
 from ragoo2_utilities.AGPFile import AGPFile
 from ragoo2_utilities.Aligner import Minimap2Aligner
 from ragoo2_utilities.Aligner import NucmerAligner
-from ragoo2_utilities.AlignmentReader import AlignmentReader
-from ragoo2_utilities.ContigAlignment import ContigAlignment
 
 
 def remove_contained(a):
@@ -175,6 +175,50 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
         f.write("\n".join(all_out_cs_lines) + "\n")
 
 
+def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
+    tmp_ctg_alns = dict()
+    aln_reader = PAFReader(aln_file)
+    for aln_line in aln_reader.parse_alignments():
+        # Check that the contig and reference in this alignment are allowed.
+        if aln_line.query_header not in query_blacklist and aln_line.ref_header not in ref_blacklist:
+            if aln_line.query_header not in tmp_ctg_alns:
+                tmp_ctg_alns[aln_line.query_header] = [aln_line.query_header, aln_line.query_len,
+                                                       [aln_line.query_start], [aln_line.query_end], [aln_line.strand],
+                                                       [aln_line.ref_header], [aln_line.ref_len],
+                                                       [aln_line.ref_start], [aln_line.ref_end],
+                                                       [aln_line.num_match], [aln_line.aln_len],
+                                                       [aln_line.mapq]]
+            else:
+                tmp_ctg_alns[aln_line.query_header][2].append(aln_line.query_start)
+                tmp_ctg_alns[aln_line.query_header][3].append(aln_line.query_end)
+                tmp_ctg_alns[aln_line.query_header][4].append(aln_line.strand)
+                tmp_ctg_alns[aln_line.query_header][5].append(aln_line.ref_header)
+                tmp_ctg_alns[aln_line.query_header][6].append(aln_line.ref_len)
+                tmp_ctg_alns[aln_line.query_header][7].append(aln_line.ref_start)
+                tmp_ctg_alns[aln_line.query_header][8].append(aln_line.ref_end)
+                tmp_ctg_alns[aln_line.query_header][9].append(aln_line.num_match)
+                tmp_ctg_alns[aln_line.query_header][10].append(aln_line.aln_len)
+                tmp_ctg_alns[aln_line.query_header][11].append(aln_line.mapq)
+
+    ctg_alns = dict()
+    for i in tmp_ctg_alns:
+        ctg_alns[i] = ContigAlignment(
+            tmp_ctg_alns[i][0],
+            tmp_ctg_alns[i][1],
+            tmp_ctg_alns[i][2],
+            tmp_ctg_alns[i][3],
+            tmp_ctg_alns[i][4],
+            tmp_ctg_alns[i][5],
+            tmp_ctg_alns[i][6],
+            tmp_ctg_alns[i][7],
+            tmp_ctg_alns[i][8],
+            tmp_ctg_alns[i][9],
+            tmp_ctg_alns[i][10],
+            tmp_ctg_alns[i][11]
+        )
+    return ctg_alns
+
+
 def main():
     parser = argparse.ArgumentParser(description='Reference-guided scaffolding', usage="ragoo2.py scaffold <reference.fa> <query.fa>")
     scaf_options = parser.add_argument_group("scaffolding options")
@@ -290,46 +334,9 @@ def main():
         run(cmd)
 
     # Read and organize the alignments
-    log('Reading alignments')
-    # Read all of the alignments into a temporary structure to save time on ContigAlignment instantiation
-    tmp_ctg_alns = dict()
-    aln_reader = AlignmentReader(output_path + "query_against_ref.paf")
-    for aln_line in aln_reader.parse_alignments():
-        # Check that the contig and reference in this alignment are allowed.
-        if aln_line.query_header not in query_blacklist and aln_line.ref_header not in ref_blacklist:
-            if aln_line.query_header not in tmp_ctg_alns:
-                tmp_ctg_alns[aln_line.query_header] = [aln_line.query_header, aln_line.query_len,
-                                                                  [aln_line.ref_header], [aln_line.ref_len],
-                                                                  [aln_line.ref_start], [aln_line.ref_end],
-                                                                  [aln_line.query_start], [aln_line.query_end],
-                                                                  [aln_line.strand], [aln_line.aln_len],
-                                                                  [aln_line.mapq]]
-            else:
-                tmp_ctg_alns[aln_line.query_header][2].append(aln_line.ref_header)
-                tmp_ctg_alns[aln_line.query_header][3].append(aln_line.ref_len)
-                tmp_ctg_alns[aln_line.query_header][4].append(aln_line.ref_start)
-                tmp_ctg_alns[aln_line.query_header][5].append(aln_line.ref_end)
-                tmp_ctg_alns[aln_line.query_header][6].append(aln_line.query_start)
-                tmp_ctg_alns[aln_line.query_header][7].append(aln_line.query_end)
-                tmp_ctg_alns[aln_line.query_header][8].append(aln_line.strand)
-                tmp_ctg_alns[aln_line.query_header][9].append(aln_line.aln_len)
-                tmp_ctg_alns[aln_line.query_header][10].append(aln_line.mapq)
-
-    ctg_alns = dict()
-    for i in tmp_ctg_alns:
-        ctg_alns[i] = ContigAlignment(
-            tmp_ctg_alns[i][0],
-            tmp_ctg_alns[i][1],
-            tmp_ctg_alns[i][2],
-            tmp_ctg_alns[i][3],
-            tmp_ctg_alns[i][4],
-            tmp_ctg_alns[i][5],
-            tmp_ctg_alns[i][6],
-            tmp_ctg_alns[i][7],
-            tmp_ctg_alns[i][8],
-            tmp_ctg_alns[i][9],
-            tmp_ctg_alns[i][10]
-        )
+    log('Reading whole genome alignments')
+    # ctg_alns = dict :: key=query header, value=ContigAlignment object
+    ctg_alns = read_genome_alignments(output_path + "query_against_ref.paf", query_blacklist, ref_blacklist)
 
     # Filter the alignments
     log("Filtering and merging alignments")

@@ -166,4 +166,3 @@ def summarize_planesweep(lines, unique_length_required, keep_small_uniques=False
         linecounter += 1
 
     return alignments_to_keep
-
