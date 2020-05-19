@@ -11,19 +11,17 @@ class ContigAlignment:
     Description
     """
 
-    def __init__(self, in_query_header, in_query_len, in_reference_headers, in_ref_lens, in_ref_starts, in_ref_ends, in_query_starts, in_query_ends, in_strands, in_aln_lens, in_mapqs):
-        # Query info
+    def __init__(self, in_query_header, in_query_len, in_query_starts, in_query_ends, in_strands, in_reference_headers, in_ref_lens, in_ref_starts, in_ref_ends, in_residue_matches, in_aln_lens, in_mapqs):
         self.query_header = in_query_header
         self.query_len = in_query_len
-
-        # Attributes describing alignments
+        self._query_starts = in_query_starts
+        self._query_ends = in_query_ends
+        self._strands = in_strands
         self._ref_headers = in_reference_headers
         self._ref_lens = in_ref_lens
         self._ref_starts = in_ref_starts
         self._ref_ends = in_ref_ends
-        self._query_starts = in_query_starts
-        self._query_ends = in_query_ends
-        self._strands = in_strands
+        self._residue_matches = in_residue_matches
         self._aln_lens = in_aln_lens
         self._mapqs = in_mapqs
 
@@ -33,6 +31,10 @@ class ContigAlignment:
             raise ValueError("The alignments are incomplete.")
         if not all_lens[0]:
             raise ValueError("ContigAlignment must contain at least one alignment.")
+
+        # Get alignment lengths with respect to the reference
+        self._ref_aln_lens = None
+        self._set_ref_aln_lens()
 
         # Attributes derived from alignments
         self.best_ref_header = None
@@ -61,24 +63,33 @@ class ContigAlignment:
                 str(self._ref_lens[i]),
                 str(self._ref_starts[i]),
                 str(self._ref_ends[i]),
+                str(self._residue_matches[i]),
                 str(self._aln_lens[i]),
                 str(self._mapqs[i])
             ]))
+
+        # TODO add attribute fields describing ContigAlignment info
+        # TODO fields that give the "best" ref header, the primary alignment, confidence scores ...
+        # TODO this way external programs can test if all the info matches.
         return "\n".join(alns)
 
     def _get_attr_lens(self):
         all_lens = [
+            len(self._query_starts),
+            len(self._query_ends),
+            len(self._strands),
             len(self._ref_headers),
             len(self._ref_lens),
             len(self._ref_starts),
             len(self._ref_ends),
-            len(self._query_starts),
-            len(self._query_ends),
-            len(self._strands),
+            len(self._residue_matches),
             len(self._aln_lens),
             len(self._mapqs)
         ]
         return all_lens
+
+    def _set_ref_aln_lens(self):
+        self._ref_aln_lens = [i-j for i, j in zip(self._ref_ends, self._ref_starts)]
 
     def _get_best_ref_header(self):
         """ From the alignments, determine the reference sequence that is the most covered by this query sequence. """
@@ -89,9 +100,6 @@ class ContigAlignment:
             self.grouping_confidence = 1.0
             return
 
-        # Initialize coverage counts for each chromosome
-        ranges = defaultdict(int)
-
         # Get all the alignment intervals for each reference sequence
         all_intervals = defaultdict(list)
         for i in range(len(self._ref_headers)):
@@ -100,6 +108,7 @@ class ContigAlignment:
             all_intervals[this_seq].append(this_range)
 
         # For each reference header, sort the intervals and get the union interval length.
+        ranges = defaultdict(int)
         for i in all_intervals.keys():
             sorted_intervals = sorted(all_intervals[i], key=lambda tup: tup[0])
             max_end = -1
@@ -108,7 +117,7 @@ class ContigAlignment:
                 ranges[i] += max(0, j[1] - start_new_terr)
                 max_end = max(max_end, j[1])
 
-        # I convert to a list and sort the ranges.items() in order to have ties broken in a deterministic way.
+        # Convert to a list and sort the ranges.items() in order to have ties broken in a deterministic way.
         max_seq = max(sorted(list(ranges.items())), key=operator.itemgetter(1))[0]
         self.best_ref_header = max_seq
 
@@ -116,12 +125,15 @@ class ContigAlignment:
         # Equal to the max range over all ranges
         self.grouping_confidence = ranges[max_seq] / sum(ranges.values())
 
+    def _get_best_ref_alns(self):
+        return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == self.best_ref_header]
+
     def _get_primary_alignment(self):
         # Needs to be primary of the alignments to the best
         max_index = -1
         max_len = -1
         for i in self._get_best_ref_alns():
-            this_len = self._aln_lens[i]
+            this_len = self._ref_aln_lens[i]
             if this_len > max_len:
                 max_len = this_len
                 max_index = i
@@ -132,7 +144,7 @@ class ContigAlignment:
         num = 0
         denom = 0
         for i in self._get_best_ref_alns():
-            aln_len = self._aln_lens[i]
+            aln_len = self._ref_aln_lens[i]
             if self._strands[i] == self.orientation:
                 num += aln_len
             denom += aln_len
@@ -164,25 +176,23 @@ class ContigAlignment:
 
         self.location_confidence = num/denom
 
-    def _get_best_ref_alns(self):
-        return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == self.best_ref_header]
-
     def _get_ref_alns(self, r):
         return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == r]
 
     def _update_alns(self, hits):
-        """ Order the alignments according to 'hits', an ordered list of indices. Return a new instance of the class. """
+        """ Order alignments according to 'hits', an ordered list of offsets. Return a new instance of the class. """
         if hits:
             return ContigAlignment(
                 self.query_header,
                 self.query_len,
+                [self._query_starts[i] for i in hits],
+                [self._query_ends[i] for i in hits],
+                [self._strands[i] for i in hits],
                 [self._ref_headers[i] for i in hits],
                 [self._ref_lens[i] for i in hits],
                 [self._ref_starts[i] for i in hits],
                 [self._ref_ends[i] for i in hits],
-                [self._query_starts[i] for i in hits],
-                [self._query_ends[i] for i in hits],
-                [self._strands[i] for i in hits],
+                [self._residue_matches[i] for i in hits],
                 [self._aln_lens[i] for i in hits],
                 [self._mapqs[i] for i in hits]
             )
@@ -192,17 +202,20 @@ class ContigAlignment:
     def _rearrange_alns(self, hits):
         """ Order the alignments according to 'hits', an ordered list of indices. """
         if len(hits) != len(self._ref_headers):
-            raise ValueError("Can only shuffle alignments. To update, use '_update_alns()'")
+            raise ValueError("Can only order alignments. To update, use '_update_alns()'")
 
+        self._query_starts = [self._query_starts[i] for i in hits]
+        self._query_ends = [self._query_ends[i] for i in hits]
+        self._strands = [self._strands[i] for i in hits]
         self._ref_headers = [self._ref_headers[i] for i in hits]
         self._ref_lens = [self._ref_lens[i] for i in hits]
         self._ref_starts = [self._ref_starts[i] for i in hits]
         self._ref_ends = [self._ref_ends[i] for i in hits]
-        self._query_starts = [self._query_starts[i] for i in hits]
-        self._query_ends = [self._query_ends[i] for i in hits]
-        self._strands = [self._strands[i] for i in hits]
+        self._residue_matches = [self._residue_matches[i] for i in hits]
         self._aln_lens = [self._aln_lens[i] for i in hits]
         self._mapqs = [self._mapqs[i] for i in hits]
+
+        self._set_ref_aln_lens()
 
     def _sort_by_ref(self):
         ref_pos = []
@@ -220,25 +233,26 @@ class ContigAlignment:
 
         self._rearrange_alns(hits)
 
-    def add_alignment(self, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_query_start, in_query_end, in_strand, in_aln_len, in_mapq):
+    def add_alignment(self, in_query_start, in_query_end, in_strand, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_residue_matches, in_aln_len, in_mapq):
         """ Add an alignment for this query. """
         return ContigAlignment(
             self.query_header,
             self.query_len,
+            self._query_starts + [in_query_start],
+            self._query_ends + [in_query_end],
+            self._strands + [in_strand],
             self._ref_headers + [in_reference_header],
             self._ref_lens + [in_ref_len],
             self._ref_starts + [in_ref_start],
             self._ref_ends + [in_ref_end],
-            self._query_starts + [in_query_start],
-            self._query_ends + [in_query_end],
-            self._strands + [in_strand],
+            self._residue_matches + [in_residue_matches],
             self._aln_lens + [in_aln_len],
             self._mapqs + [in_mapq]
         )
 
     def filter_lengths(self, l):
         """ Remove alignments shorter than l. """
-        hits = [i for i in range(len(self._ref_headers)) if self._aln_lens[i] >= l]
+        hits = [i for i in range(len(self._ref_headers)) if self._ref_aln_lens[i] >= l]
         return self._update_alns(hits)
 
     def filter_mapq(self, q):
@@ -284,9 +298,9 @@ class ContigAlignment:
 
     def filter_query_contained(self):
         """
-        Remove alignments that are contained (w.r.t the query) by other alignments.
+        Remove alignments that are contained (w.r.t the query) within other alignments.
         This does not consider alignments contained by chains of alignments.
-        Consider merging first (merge_alns) to account for that.
+        Consider merging first (merge_alns()) to account for that.
         """
         cidx = set()
         for i in range(len(self._ref_headers)):
@@ -309,13 +323,14 @@ class ContigAlignment:
         self._sort_by_ref()
 
         # Make a copy of the alignment info
+        query_starts = self._query_starts
+        query_ends = self._query_ends
+        strands = self._strands
         ref_headers = self._ref_headers
         ref_lens = self._ref_lens
         ref_starts = self._ref_starts
         ref_ends = self._ref_ends
-        query_starts = self._query_starts
-        query_ends = self._query_ends
-        strands = self._strands
+        residue_matches = self._residue_matches
         aln_lens = self._aln_lens
         mapqs = self._mapqs
 
@@ -329,11 +344,12 @@ class ContigAlignment:
                         ref_starts[j] - ref_ends[i] <= merge_dist
             ]):
                 # Merge the alignments in place of the first alignment
-                ref_starts[i] = min(ref_starts[i], ref_starts[j])
-                ref_ends[i] = max(ref_ends[i], ref_ends[j])
                 query_starts[i] = min(query_starts[i], query_starts[j])
                 query_ends[i] = max(query_ends[i], query_ends[j])
+                ref_starts[i] = min(ref_starts[i], ref_starts[j])
+                ref_ends[i] = max(ref_ends[i], ref_ends[j])
 
+                residue_matches[i] = residue_matches[i] + residue_matches[j]
                 aln_lens[i] = ref_ends[i] - ref_starts[i]
                 mapqs[i] = (mapqs[i] + mapqs[j]) // 2
 
@@ -345,6 +361,7 @@ class ContigAlignment:
                 ref_lens.pop(j)
                 ref_starts.pop(j)
                 ref_ends.pop(j)
+                residue_matches.pop(j)
                 aln_lens.pop(j)
                 mapqs.pop(j)
             else:
@@ -355,13 +372,14 @@ class ContigAlignment:
         x = ContigAlignment(
             self.query_header,
             self.query_len,
+            query_starts,
+            query_ends,
+            strands,
             ref_headers,
             ref_lens,
             ref_starts,
             ref_ends,
-            query_starts,
-            query_ends,
-            strands,
+            residue_matches,
             aln_lens,
             mapqs
         )
@@ -372,22 +390,22 @@ class ContigAlignment:
     def get_break_candidates(self, min_dist=5000):
         """
         Return coordinates of the query sequence between consecutive alignments.
-        Consider merging alignments first (merge_alns)
+        Consider merging alignments first (merge_alns())
         :return: Two lists of coordinates. One where consecutive alignments aligned to the
         same reference (intra) and one where the consecutive alignments aligned to different
         references (inter).
         """
         self._sort_by_query()
         intra_candidates = []
-        inter_candiats = []
+        inter_candidates = []
 
         # If there are more than two alignments, iterate through all but the first.
         for i in range(1, len(self._ref_headers)):
-            if min_dist < self._query_starts[i] < (self.query_len - 5000):
+            if min_dist < self._query_starts[i] < (self.query_len - min_dist):
                 if self._ref_headers[i] == self._ref_headers[i-1]:
                     intra_candidates.append(self._query_starts[i])
                 else:
-                    inter_candiats.append(self._query_starts[i])
+                    inter_candidates.append(self._query_starts[i])
 
-        return intra_candidates, inter_candiats
+        return intra_candidates, inter_candidates
 
