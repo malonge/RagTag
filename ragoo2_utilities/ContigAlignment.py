@@ -3,7 +3,7 @@
 import operator
 from collections import defaultdict
 
-from ragoo2_utilities.utilities import summarize_planesweep
+from ragoo2_utilities.utilities import summarize_planesweep, p2q, q2p
 
 
 class ContigAlignment:
@@ -68,10 +68,7 @@ class ContigAlignment:
                 str(self._mapqs[i])
             ]))
 
-        # TODO add attribute fields describing ContigAlignment info
-        # TODO fields that give the "best" ref header, the primary alignment, confidence scores ...
-        # TODO this way external programs can test if all the info matches.
-        return "\n".join(alns)
+        return "\n".join(alns) + "\n"
 
     def _get_attr_lens(self):
         all_lens = [

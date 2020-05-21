@@ -1,6 +1,7 @@
-import time
 import subprocess
 import operator
+import math
+import time
 
 """ A collection of various helper functions"""
 
@@ -166,3 +167,13 @@ def summarize_planesweep(lines, unique_length_required, keep_small_uniques=False
         linecounter += 1
 
     return alignments_to_keep
+
+
+def p2q(p):
+    """ Convert P(incorrect) to MAPQ. """
+    return round(-10 * math.log(p, 10))
+
+
+def q2p(q):
+    """ Convert MAPQ to P(incorrect). """
+    return 10**(q/-10)

@@ -320,6 +320,7 @@ def main():
     io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
     io_options.add_argument("-u", action='store_true', default=False, help="add suffix to unaltered sequence headers")
+    io_options.add_argument("--debug", action='store_true', default=False, help=argparse.SUPPRESS)
 
     aln_options = parser.add_argument_group("mapping options")
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
@@ -363,13 +364,22 @@ def main():
     if gff_file:
         gff_file = os.path.abspath(gff_file)
 
+    # Skip/exclude options
+    query_blacklist = set()
     skip_file = args.j
     if skip_file:
         skip_file = os.path.abspath(args.j)
+        with open(skip_file, "r") as f:
+            for line in f:
+                query_blacklist.add(line.rstrip())
 
+    ref_blacklist = set()
     exclude_file = args.e
     if exclude_file:
         exclude_file = os.path.abspath(args.e)
+        with open(exclude_file, "r") as f:
+            for line in f:
+                ref_blacklist.add(line.rstrip())
 
     # Get aligner arguments
     genome_aligner_path = args.aligner
@@ -423,24 +433,18 @@ def main():
     elif corr_reads:
         read_files.append(os.path.abspath(corr_reads))
 
-    # Get the skip and exclude sets.
-    query_blacklist = set()
-    if skip_file:
-        with open(skip_file, "r") as f:
-            for line in f:
-                query_blacklist.add(line.rstrip())
-
-    ref_blacklist = set()
-    if exclude_file:
-        with open(exclude_file, "r") as f:
-            for line in f:
-                ref_blacklist.add(line.rstrip())
-
     # Get the current working directory and output path.
     cwd = os.getcwd()
     output_path = cwd + "/" + output_path + "/"
     if not os.path.exists(output_path):
         os.mkdir(output_path)
+
+    # Debugging options
+    debug_mode = args.debug
+    debug_non_fltrd_file = output_path + "ragoo2.correction.debug.unfiltered.paf"
+    debug_fltrd_file = output_path + "ragoo2.correction.debug.filtered.paf"
+    debug_merged_file = output_path + "ragoo2.correction.debug.merged.paf"
+    debug_query_info_file = output_path + "ragoo2.correction.debug.query.info.txt"
 
     # Align the query to the reference.
     log("Mapping the query genome to the reference genome")
@@ -461,16 +465,50 @@ def main():
     ctg_alns = read_genome_alignments(output_path + "c_query_against_ref.paf", query_blacklist, ref_blacklist)
 
     # Filter and merge the alignments.
+    if debug_mode:
+        # create new empty copies of debugging output files
+        open(debug_non_fltrd_file, "w").close()
+        open(debug_fltrd_file, "w").close()
+        open(debug_merged_file, "w").close()
+        open(debug_query_info_file, "w").close()
+
     log("Filtering and merging alignments")
     for i in ctg_alns:
+
+        # Write unfiltered alignments
+        if debug_mode:
+            with open(debug_non_fltrd_file, "a") as f:
+                f.write(str(ctg_alns[i]))
+
         ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
         if ctg_alns[i] is not None:
+
+            # Write filtered alignments
+            if debug_mode:
+                with open(debug_fltrd_file, "a") as f:
+                    f.write(str(ctg_alns[i]))
+
             ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
 
     # Get the putative breakpoints for each query sequence, if any.
     ctg_breaks = dict()
     for i in ctg_alns:
         if ctg_alns[i] is not None:
+
+            # Write merged alignments and confidence scores
+            if debug_mode:
+                with open(debug_merged_file, "a") as f:
+                    f.write(str(ctg_alns[i]))
+
+                with open(debug_query_info_file, "a") as f:
+                    f.write("\t".join([
+                        i,
+                        ctg_alns[i].best_ref_header,
+                        str(ctg_alns[i].grouping_confidence),
+                        str(ctg_alns[i].location_confidence),
+                        str(ctg_alns[i].orientation_confidence),
+                    ]) + "\n")
+
             breaks = []
             intra_breaks, inter_breaks = ctg_alns[i].get_break_candidates(min_dist=min_break_end_dist)
             if break_intra:
