@@ -70,6 +70,11 @@ class ContigAlignment:
 
         return "\n".join(alns) + "\n"
 
+    @staticmethod
+    def _average_mapqs(q1, q2):
+        p1, p2 = q2p(q1), q2p(q2)
+        return p2q((p1 + p2) / 2)
+
     def _get_attr_lens(self):
         all_lens = [
             len(self._query_starts),
@@ -348,7 +353,7 @@ class ContigAlignment:
 
                 residue_matches[i] = residue_matches[i] + residue_matches[j]
                 aln_lens[i] = ref_ends[i] - ref_starts[i]
-                mapqs[i] = (mapqs[i] + mapqs[j]) // 2
+                mapqs[i] = self._average_mapqs(mapqs[i], mapqs[j])
 
                 # Remove the redundant alignment
                 query_starts.pop(j)
