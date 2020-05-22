@@ -335,8 +335,8 @@ def main():
 
     # If alignments are from Nucmer, need to convert from delta to paf
     if aligner == "nucmer":
-        cmd = ["ragoo2_delta2paf.py", output_path + "query_against_ref.delta", ">", output_path + "query_against_ref.paf"]
-        run(cmd)
+        cmd = ["ragoo2_delta2paf.py", output_path + "query_against_ref.delta"]
+        run_o(cmd, output_path + "query_against_ref.paf", )
 
     # Read and organize the alignments
     log('Reading whole genome alignments')

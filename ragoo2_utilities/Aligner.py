@@ -109,7 +109,8 @@ class NucmerAligner(Aligner):
         return [
             self.aligner,
             *self.params,
-            '-p ' + self.outfile_prefix,
+            '-p',
+            self.outfile_prefix,
             self.r_file,
             self.q_file
         ]
