@@ -11,8 +11,13 @@
 # Assumes fasta suffix is ".fasta"
 # Assumes gff suffix is ".gff"
 
-function Usage() {
+Usage() {
     echo "Usage: $0 pre.fa pre.gff post.fasta post.gff"
+}
+
+mecho() {
+    NAME=`basename $0`
+    echo "$NAME:" $1
 }
 
 if [ $# -lt 4 ] ; then

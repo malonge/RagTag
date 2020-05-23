@@ -2,7 +2,7 @@ import abc
 import os
 import shutil
 
-from ragoo2_utilities.utilities import run_oe, log
+from ragoo2_utilities.utilities import run_oe, run_e, log
 
 
 class Aligner:
@@ -114,6 +114,18 @@ class NucmerAligner(Aligner):
             self.r_file,
             self.q_file
         ]
+
+    def run_aligner(self):
+        """ Run the aligner. """
+        if all([self.params_are_valid(), self.exec_is_valid()]):
+            if not self.output_exists():
+                run_e(self.compile_command(), self.out_log)
+            else:
+                if self.overwrite:
+                    log("overwriting pre-existing file: " + self.out_file)
+                    run_e(self.compile_command(), self.out_log)
+                else:
+                    log("Retaining pre-existing file: " + self.out_file)
 
 
 class Minimap2Aligner(Aligner):

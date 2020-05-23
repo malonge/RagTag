@@ -7,8 +7,13 @@
 ## 2. filtered PAF file
 ## 2. unique alignment length
 
-function Usage() {
+Usage() {
     echo "Usage: $0 pre.fa pre.gff post.fasta post.gff"
+}
+
+mecho() {
+    NAME=`basename $0`
+    echo "$NAME:" $1
 }
 
 if [ $# -lt 3 ] ; then

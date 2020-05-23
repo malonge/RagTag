@@ -11,8 +11,13 @@
 # Assumes query suffix is ".fasta"
 # Assumes gff suffix is ".gff"
 
-function Usage() {
+Usage() {
     echo "Usage: $0 ref.fa query.fa genes.gff output_dir"
+}
+
+mecho() {
+    NAME=`basename $0`
+    echo "$NAME:" $1
 }
 
 if [ $# -lt 3 ] ; then

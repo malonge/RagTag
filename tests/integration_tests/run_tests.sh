@@ -16,7 +16,8 @@ Usage() {
 }
 
 mecho() {
-    echo "Master:" $1
+    NAME=`basename $0`
+    echo "$NAME:" $1
 }
 
 if [ $# -lt 6 ] ; then
@@ -86,9 +87,9 @@ bash scripts/validate_gff.sh ragoo2_output_tomato_default/$T_QUERY_PREF.correcte
 # Settings: with nucmer
 # Data: Arabidopsis
 echo ""
-echo "*************************************************************"
-echo "***       Running RaGOO2 on tomato data with Nucmer       ***"
-echo "*************************************************************"
+echo "**************************************************************"
+echo "***     Running RaGOO2 on Arabidopsis data with Nucmer     ***"
+echo "**************************************************************"
 echo ""
 
 bash scripts/run_nucmer.sh $A_REF \

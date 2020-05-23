@@ -64,6 +64,23 @@ def run_o(cmd, out):
     f_out.close()
 
 
+def run_e(cmd, err):
+    """ Run command and redirect stderr but not stdout. """
+
+    if not isinstance(err, str):
+        raise TypeError("err should be a file name (string)")
+
+    f_err = open(err, "w")
+
+    log('Running : %s 2> %s' % (" ".join(cmd), err))
+    if subprocess.call(cmd, stderr=f_err) != 0:
+        raise RuntimeError('Failed : %s 2> %s' % (" ".join(cmd), err))
+
+    log('Finished running : %s > %s' % (" ".join(cmd), err))
+
+    f_err.close()
+
+
 def log(message):
     """ Log messages to standard output. """
     print(time.ctime() + ' --- ' + message, flush=True)
