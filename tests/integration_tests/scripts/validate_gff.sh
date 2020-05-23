@@ -1,6 +1,6 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# run the ragoo2 pipeline with default settings
+# Validate that the GFF updating is accurate
 
 # position args:
 ## 1. pre fasta
