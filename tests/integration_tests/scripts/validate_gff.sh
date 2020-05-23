@@ -37,6 +37,20 @@ POST=${POSTFILE%.*}
 POSTGFILE=$4
 POSTG=${POSTGFILE%.*}
 
+echo ""
+mecho "****** DEBUG *******"
+mecho $PREFILE
+mecho $PRE
+
+mecho $PREGFILE
+mecho $PREG
+
+mecho $POSTFILE
+mecho $POST
+
+mecho $POSTGFILE
+mecho $POSTG
+
 
 python3 scripts/gff2fasta.py $PRE.fasta $PREG.gff > $PREG.fasta
 python3 scripts/sort_fasta.py $PREG.fasta > $PREG.s.fasta

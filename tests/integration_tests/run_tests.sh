@@ -121,7 +121,7 @@ bash scripts/validate_gff.sh $A_QUERY \
     ragoo2_output_Ara_nucmer/$A_GFF_PREF.corr.gff
 
 bash scripts/validate_gff.sh ragoo2_output_Ara_nucmer/$A_QUERY_PREF.corrected.fasta \
-    ragoo2_output_Ara_nucmer/$A_GFF_PREsF.corr.gff \
+    ragoo2_output_Ara_nucmer/$A_GFF_PREF.corr.gff \
     ragoo2_output_Ara_nucmer/ragoo2.scaffolds.fasta \
     ragoo2_output_Ara_nucmer/$A_GFF_PREF.scaf.gff
 

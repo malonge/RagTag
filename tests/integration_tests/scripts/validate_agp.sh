@@ -25,6 +25,9 @@ OBJS=$1
 COMPS=$2
 AGP=$3
 
+echo ""
+mecho "Running ncbi_tools AGP validator"
+
 agp_validate -comp -out objs.fasta $OBJS $COMPS $AGP
 
 echo ""
