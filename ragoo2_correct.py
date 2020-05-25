@@ -11,7 +11,7 @@ import numpy as np
 from intervaltree import IntervalTree
 import matplotlib.pyplot as plt
 
-from ragoo2_utilities.utilities import log, run_o
+from ragoo2_utilities.utilities import log, run_o, get_ragoo2_version
 from ragoo2_utilities.AlignmentReader import PAFReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 from ragoo2_utilities.AGPFile import AGPFile
@@ -342,7 +342,8 @@ def main():
         parser.print_help()
         sys.exit()
 
-    log("CMD:" + " ".join(sys.argv))
+    log("RaGOO2 " + get_ragoo2_version())
+    log("CMD: " + " ".join(sys.argv))
 
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)

@@ -7,6 +7,7 @@ from collections import defaultdict
 
 from intervaltree import IntervalTree
 
+from ragoo2_utilities.utilities import log, get_ragoo2_version
 from ragoo2_utilities.AGPFile import AGPFile
 
 
@@ -117,6 +118,9 @@ def main():
     if not args.gff or not args.agp:
         parser.print_help()
         sys.exit()
+
+    log("RaGOO2 " + get_ragoo2_version())
+    log("CMD: " + " ".join(sys.argv))
 
     gff_file = os.path.abspath(args.gff)
     agp_file = os.path.abspath(args.agp)

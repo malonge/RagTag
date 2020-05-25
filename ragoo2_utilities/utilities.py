@@ -2,10 +2,15 @@ import subprocess
 import operator
 import math
 import time
+import sys
 
 """ A collection of various helper functions"""
 
 complements = str.maketrans("ACGTNURYSWKMBVDHacgtnuryswkmbvdh", "TGCANAYRSWMKVBHDtgcanayrswmkvbhd")
+
+
+def get_ragoo2_version():
+    return 'v2.0.0'
 
 
 def reverse_complement(seq):
@@ -82,8 +87,9 @@ def run_e(cmd, err):
 
 
 def log(message):
-    """ Log messages to standard output. """
-    print(time.ctime() + ' --- ' + message, flush=True)
+    """ Log messages to standard error. """
+    sys.stderr.write(time.ctime() + ' --- ' + message + "\n")
+    sys.stderr.flush()
 
 
 def binary_search(query, numbers, left, right):

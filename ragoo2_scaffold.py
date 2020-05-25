@@ -7,7 +7,7 @@ from collections import defaultdict
 
 import pysam
 
-from ragoo2_utilities.utilities import log, run, run_o
+from ragoo2_utilities.utilities import log, run_o, get_ragoo2_version
 from ragoo2_utilities.AlignmentReader import PAFReader
 from ragoo2_utilities.ContigAlignment import ContigAlignment
 from ragoo2_utilities.AGPFile import AGPFile
@@ -254,7 +254,9 @@ def main():
         parser.print_help()
         sys.exit()
 
-    log("CMD:" + " ".join(sys.argv))
+    log("RaGOO2 " + get_ragoo2_version())
+    log("CMD: " + " ".join(sys.argv))
+
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
 
@@ -454,12 +456,12 @@ def main():
         log("%d adjacent contig within min distance (%d) of each other" % (g_small, min_gap_size))
         log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
 
+    # Write the scaffolds
+    log("Writing scaffolds")
+
     # Write the intermediate output file in AGP v2.1 format
     log("Writing: " + output_path + "ragoo2.scaffolds.agp")
     write_orderings(output_path + "ragoo2.scaffolds.agp", output_path + "ragoo2.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files, not remove_suffix)
-
-    # Write the scaffolds
-    log("Writing scaffolds")
 
     # Build a FASTA from the AGP
     cmd = [
