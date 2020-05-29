@@ -103,12 +103,11 @@ def get_median_read_coverage(output_path, num_threads, overwrite_files):
 
 def run_samtools(output_path, num_threads, overwrite_files):
     """ Compress, sort and index alignments with pysam. """
-    log("Compressing and sorting read alignments")
     if os.path.isfile(output_path + "c_reads_against_query.s.bam"):
         if not overwrite_files:
-            log("retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+            log("Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam")
         else:
-            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+            log("Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam")
             pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
             pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
     else:
@@ -118,9 +117,9 @@ def run_samtools(output_path, num_threads, overwrite_files):
     log("Indexing read alignments")
     if os.path.isfile(output_path + "c_reads_against_query.s.bam.bai"):
         if not overwrite_files:
-            log("retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
+            log("Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
         else:
-            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
+            log("Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
             pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
     else:
         pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
@@ -139,16 +138,21 @@ def clean_breaks(val_breaks, d):
     return breaks
 
 
-def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=10000, num_devs=3, clean_dist=1000):
+def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, max_cutoff, min_cutoff, window_size=10000, num_devs=3, clean_dist=1000, debug=False):
     """
     """
     # Get the median coverage over all bp
     glob_med = get_median_read_coverage(output_path, num_threads, overwrite_files)
-    dev = int(math.sqrt(glob_med))
-    max_cutoff = glob_med + (num_devs*dev)
-    min_cutoff = max(0, (glob_med - (num_devs*dev)))
+    dev = round(math.sqrt(glob_med))
+
+    if max_cutoff == -1:
+        max_cutoff = glob_med + (num_devs*dev)
+
+    if min_cutoff == -1:
+        min_cutoff = max(0, (glob_med - (num_devs*dev)))
+
     log("The global median read coverage is %dX" % glob_med)
-    #print("max and min cutoff: %f, %f" % (max_cutoff, min_cutoff))
+    log("The max and min coverage thresholds are %fX and %fX, respectively" % (max_cutoff, min_cutoff))
 
     # Go through each break point and query the coverage within the vicinity of the breakpoint.
     bam = pysam.AlignmentFile(output_path + "c_reads_against_query.s.bam")
@@ -187,8 +191,8 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, windo
                 new_break = np.argmax(covs) + min_range
                 status = "high cov"
 
-            # Temp logging
-            print("Contig: %s, break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
+            if debug:
+                log("Query: %s, original break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
 
             ####################
             ## TEMP PLOTTING ###
@@ -235,11 +239,11 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
-            log("retaining pre-existing file: " + out_file)
+            log("Retaining pre-existing file: " + out_file)
             return
 
         else:
-            log("overwriting pre-existing file: " + out_file)
+            log("Overwriting pre-existing file: " + out_file)
 
     x = pysam.FastaFile(query_file)
     all_q_seqs = set(x.references)
@@ -338,7 +342,9 @@ def main():
     val_options.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files.")
     val_options.add_argument("-T", metavar="sr", type=str, default="", help="read type. 'sr' and 'corr' accepted for short reads and error corrected long-reads, respectively.")
     val_options.add_argument("-v", metavar="INT", type=int, default=10000, help="coverage validation window size [10000]")
-    cor_options.add_argument("-m", metavar="INT", type=int, default=1000, help=argparse.SUPPRESS)  # Merge breakpoints within this distance after validation
+    val_options.add_argument("--max-cov", metavar="INT", type=int, default=-1, help="break sequences at regions at or above this coverage level [AUTO]")
+    val_options.add_argument("--min-cov", metavar="INT", type=int, default=-1, help="break sequences at regions at or below this coverage level [AUTO]")
+    val_options.add_argument("-m", metavar="INT", type=int, default=1000, help=argparse.SUPPRESS)  # Merge breakpoints within this distance after validation
 
     args = parser.parse_args()
 
@@ -438,6 +444,18 @@ def main():
     elif corr_reads:
         read_files.append(os.path.abspath(corr_reads))
 
+    # Coverage thresholds
+    max_cov = args.max_cov
+    min_cov = args.min_cov
+
+    if max_cov < 0:
+        if max_cov != -1:
+            raise ValueError("--max-cov must be >=0")
+
+    if min_cov < 0:
+        if min_cov != -1:
+            raise ValueError("--min-cov must be >=0")
+
     # Get the current working directory and output path.
     cwd = os.getcwd()
     output_path = cwd + "/" + output_path + "/"
@@ -526,8 +544,8 @@ def main():
     # If desired, validate the putative breakpoints by observing read coverage.
     if read_files:
         log("Validating putative query breakpoints via read alignment.")
+        log("Aligning reads to query sequences.")
         if not os.path.isfile(output_path + "c_reads_against_query.s.bam"):
-            log("Aligning reads to query sequences.")
             if corr_reads_tech == "sr":
                 al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr -t " + str(num_threads),
                                         output_path + "c_reads_against_query", in_overwrite=overwrite_files)
@@ -537,13 +555,16 @@ def main():
             else:
                 raise ValueError("'-T' must be either 'sr' or 'corr'.")
             al.run_aligner()
+        else:
+            log("Retaining pre-existing read alignments: " + output_path + "c_reads_against_query.s.bam")
 
         # Compress, sort and index the alignments.
+        log("Compressing, sorting, and indexing read alignments")
         run_samtools(output_path, num_threads, overwrite_files)
 
         # Validate the breakpoints
         log("Validating putative query breakpoints")
-        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, window_size=val_window_size, clean_dist=min_break_dist)
+        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, max_cov, min_cov, window_size=val_window_size, clean_dist=min_break_dist, debug=debug_mode)
 
     # Check if we need to avoid gff intervals
     if gff_file:
