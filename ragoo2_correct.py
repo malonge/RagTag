@@ -147,7 +147,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, windo
     dev = int(math.sqrt(glob_med))
     max_cutoff = glob_med + (num_devs*dev)
     min_cutoff = max(0, (glob_med - (num_devs*dev)))
-    log("The global median read coverage is %d" % glob_med)
+    log("The global median read coverage is %dX" % glob_med)
     #print("max and min cutoff: %f, %f" % (max_cutoff, min_cutoff))
 
     # Go through each break point and query the coverage within the vicinity of the breakpoint.
@@ -188,19 +188,20 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, windo
                 status = "high cov"
 
             # Temp logging
-            #print("Contig: %s, break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
+            print("Contig: %s, break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
 
             ####################
             ## TEMP PLOTTING ###
             ####################
 
 
-            #plt.figure(figsize=(10, 10))
-            #plt.plot(covs)
-            #plt.axvline(b-min_range, color="r", linestyle="--")
-            #plt.axvline(new_break-min_range, color="g", linestyle="--")
-            #plt.savefig(output_path + "plots/" + ctg + "_" + str(b) + ".png")
-            #plt.close()
+            plt.figure(figsize=(10, 10))
+            plt.plot(covs)
+            plt.axvline(b-min_range, color="r", linestyle="--")
+            if new_break is not None:
+                plt.axvline(new_break-min_range, color="g", linestyle="--")
+            plt.savefig(output_path + "plots/" + ctg + "_" + str(b) + ".png")
+            plt.close()
 
 
             ####################
@@ -407,7 +408,7 @@ def main():
     if only_inter:
         break_intra = False
 
-    # read alignment parameters
+    # read-alignment parameters
     corr_reads = args.R
     corr_reads_fofn = args.F
     corr_reads_tech = args.T

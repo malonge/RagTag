@@ -3,9 +3,11 @@
 import sys
 import subprocess
 
+from ragoo2_utilities.utilities import get_ragoo2_version
+
 
 def main():
-    VERSION = "2.0.0"
+    VERSION = get_ragoo2_version()
     CITATION = """
 Alonge, Michael, et al. "RaGOO: fast and accurate reference-guided scaffolding of draft genomes."
 Genome biology 20.1 (2019): 1-17.

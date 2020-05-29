@@ -8,7 +8,27 @@ from ragoo2_utilities.utilities import summarize_planesweep, p2q, q2p
 
 class ContigAlignment:
     """
-    Description
+    A ContigAlignment object stores and organizes all alignments pertaining to a single query sequence.
+
+    The alignment organization is guided by the PAF file format: https://github.com/lh3/miniasm/blob/master/PAF.md. The
+    only difference is that ContigAlignment uses the word "reference" instead of "target" to refer to the sequences
+    to which the query is aligned.
+
+    Each instance of a ContigAlignment object will refer to a single query sequence (self.query_header) and associated
+    query sequence length (self.query_len). The remaining PAF fields are stored in 10 lists for the 10 remaining fields:
+
+    1. query start,       2. query end,        3. strand
+    4. reference header,  5. reference length, 6. reference start,  7. reference end
+    8. # residue matches, 9. alignment length, 10. mapq
+
+    The offset in each of these lists corresponds to a single alignment. For example, the first element in each of the
+    above-mentioned lists provides the necessary information to describe the first alignment stored in the object.
+
+    The set of alignments organized in a ContigAlignment object is used to calculate metrics for the query sequence. For
+    example, self.best_ref_header gives the reference sequence which the query sequence most covers. For this reason,
+    the ContigAlignment object is pseudo-immutable. The order of alignments may change (e.g. _sort_by_ref() and
+    _sort_by_query()) but any addition/subtraction of alignments is not allowed. Any such addition/removal functionality
+    (e.g. add_alignment()) must return a new instance of the class.
     """
 
     def __init__(self, in_query_header, in_query_len, in_query_starts, in_query_ends, in_strands, in_reference_headers, in_ref_lens, in_ref_starts, in_ref_ends, in_residue_matches, in_aln_lens, in_mapqs):
@@ -72,10 +92,12 @@ class ContigAlignment:
 
     @staticmethod
     def _average_mapqs(q1, q2):
+        """ Calculate the average of two mapping quality values. """
         p1, p2 = q2p(q1), q2p(q2)
         return p2q((p1 + p2) / 2)
 
     def _get_attr_lens(self):
+        """ Return the lengths of all alignment field lists. """
         all_lens = [
             len(self._query_starts),
             len(self._query_ends),
@@ -91,11 +113,11 @@ class ContigAlignment:
         return all_lens
 
     def _set_ref_aln_lens(self):
+        """ For each alignment, set the alignment length w.r.t the reference coordinates."""
         self._ref_aln_lens = [i-j for i, j in zip(self._ref_ends, self._ref_starts)]
 
     def _get_best_ref_header(self):
         """ From the alignments, determine the reference sequence that is the most covered by this query sequence. """
-        # Get the set of all references chromosomes
         all_ref_headers = set(self._ref_headers)
         if len(all_ref_headers) == 1:
             self.best_ref_header = self._ref_headers[0]
@@ -127,11 +149,19 @@ class ContigAlignment:
         # Equal to the max range over all ranges
         self.grouping_confidence = ranges[max_seq] / sum(ranges.values())
 
+    def _get_ref_alns(self, r):
+        """ Provide the offsets for alignments to a specified reference sequence. """
+        return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == r]
+
     def _get_best_ref_alns(self):
-        return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == self.best_ref_header]
+        """ Provide the offsets for alignments to the 'best' reference sequence. """
+        return self._get_ref_alns(self.best_ref_header)
 
     def _get_primary_alignment(self):
-        # Needs to be primary of the alignments to the best
+        """
+        Get the offset corresponding to the 'primary' (longest) alignment.
+        Only consider alignments to the 'best' reference sequence.
+        """
         max_index = -1
         max_len = -1
         for i in self._get_best_ref_alns():
@@ -142,7 +172,7 @@ class ContigAlignment:
         self.primary_alignment = max_index
 
     def _get_orientation_confidence(self):
-        """ Get the orientation confidence score given these alignments for a given query sequence. """
+        """ Calculate the orientation confidence score. """
         num = 0
         denom = 0
         for i in self._get_best_ref_alns():
@@ -153,7 +183,7 @@ class ContigAlignment:
         self.orientation_confidence = num/denom
 
     def _get_location_confidence(self):
-        """ Get the location confidence score given these alignments for a given query sequence. """
+        """ Calculate the location confidence score. """
         best_ref_alns = self._get_best_ref_alns()
 
         # Get all the alignment reference intervals for alignments to the best reference sequence
@@ -177,9 +207,6 @@ class ContigAlignment:
             max_end = max(max_end, j[1])
 
         self.location_confidence = num/denom
-
-    def _get_ref_alns(self, r):
-        return [i for i in range(len(self._ref_headers)) if self._ref_headers[i] == r]
 
     def _update_alns(self, hits):
         """ Order alignments according to 'hits', an ordered list of offsets. Return a new instance of the class. """
@@ -220,6 +247,7 @@ class ContigAlignment:
         self._set_ref_aln_lens()
 
     def _sort_by_ref(self):
+        """ Sort the alignments by reference header/position. """
         ref_pos = []
         for i in range(len(self._ref_headers)):
             ref_pos.append((self._ref_headers[i], self._ref_starts[i], self._ref_ends[i], i))
@@ -228,6 +256,7 @@ class ContigAlignment:
         self._rearrange_alns(hits)
 
     def _sort_by_query(self):
+        """ Sort the alignments by query position. """
         q_pos = []
         for i in range(len(self._ref_headers)):
             q_pos.append((self._query_starts[i], self._query_ends[i], i))
@@ -236,7 +265,7 @@ class ContigAlignment:
         self._rearrange_alns(hits)
 
     def add_alignment(self, in_query_start, in_query_end, in_strand, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_residue_matches, in_aln_len, in_mapq):
-        """ Add an alignment for this query. """
+        """ Add an alignment for this query sequence. Return a new instance of the class. """
         return ContigAlignment(
             self.query_header,
             self.query_len,
@@ -264,7 +293,7 @@ class ContigAlignment:
 
     def unique_anchor_filter(self, l):
         """
-        Unique anchor filter the alignments. l is the minimum unique alignment length.
+        Unique anchor filter the alignments. l is the minimum unique alignment length. small_uniques are retained.
 
         The contents of this method are either influenced by or directly copied from "Assemblytics_uniq_anchor.py"
         written by Maria Nattestad. The original script can be found here:
@@ -311,7 +340,8 @@ class ContigAlignment:
                 if i == j:
                     continue
                 if self._query_starts[i] <= self._query_starts[j] and self._query_ends[i] >= self._query_ends[j]:
-                    cidx.add(j)
+                    if i not in cidx:  # Keeps at least one of many identical coordinates
+                        cidx.add(j)
 
         hits = [i for i in range(len(self._ref_headers)) if i not in cidx]
         return self._update_alns(hits)
