@@ -19,7 +19,10 @@ class AGPFile:
       "pid":  AGP part number
     """
 
-    def __init__(self, in_file):
+    def __init__(self, in_file, mode="r"):
+        if mode != "r" and mode != "w":
+            raise ValueError("AGPFile mode must be either read ('r') or write ('w').")
+
         self.agp_version = "v2.1"
         self.fn = os.path.abspath(in_file)
 
@@ -34,7 +37,8 @@ class AGPFile:
         self.seen_objs = set()
 
         # Read the contents of the AGP file
-        self._read_file()
+        if mode == "r":
+            self._read_file()
 
     @staticmethod
     def _raise_line_err(line_number, message):
@@ -46,7 +50,7 @@ class AGPFile:
         Read the agp file associated with this instance of the class. If that file doesn't exist yet,
         proceed without reading anything.
 
-        When reading, check the validitiy of individual AGP lines.
+        When reading, check the validity of individual AGP lines.
         """
         if not os.path.isfile(self.fn):
             return

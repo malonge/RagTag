@@ -238,9 +238,12 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
             log("retaining pre-existing file: " + out_file)
             return
 
+        else:
+            log("overwriting pre-existing file: " + out_file)
+
     x = pysam.FastaFile(query_file)
     all_q_seqs = set(x.references)
-    agp = AGPFile(out_file)
+    agp = AGPFile(out_file, "w")
 
     agp.add_comment("## agp-version 2.1")
     agp.add_comment("# AGP created by RaGOO2")
