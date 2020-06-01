@@ -152,7 +152,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
         min_cutoff = max(0, (glob_med - (num_devs*dev)))
 
     log("The global median read coverage is %dX" % glob_med)
-    log("The max and min coverage thresholds are %fX and %fX, respectively" % (max_cutoff, min_cutoff))
+    log("The max and min coverage thresholds are %dX and %dX, respectively" % (max_cutoff, min_cutoff))
 
     # Go through each break point and query the coverage within the vicinity of the breakpoint.
     bam = pysam.AlignmentFile(output_path + "c_reads_against_query.s.bam")
@@ -233,7 +233,8 @@ def make_gff_interval_tree(gff_file):
                 assert start < end
 
                 if end - start > 100000:
-                    log("WARNING: large interval in this gff file (>= 100 kbp). This could disproportionately invalidate putative query breakpoints.")
+                    coords = "%s:%d-%d" %(h, start+1, end)
+                    log("WARNING: large interval in this gff file (%s). This could disproportionately invalidate putative query breakpoints." % coords)
                 t[h][start:end] = (start, end)
 
     return t
@@ -423,9 +424,9 @@ def main():
         break_intra = False
 
     # read-alignment parameters
-    corr_reads = args.R
-    corr_reads_fofn = args.F
-    corr_reads_tech = args.T
+    val_reads = args.R
+    val_reads_fofn = args.F
+    val_reads_tech = args.T
     read_aligner_path = args.read_aligner
     read_aligner = read_aligner_path.split("/")[-1]
     if read_aligner != "minimap2":
@@ -436,18 +437,18 @@ def main():
         read_aligner_path = genome_aligner_path
 
     # Make sure that if -R or -F, -T has been specified.
-    if corr_reads or corr_reads_fofn:
-        if not corr_reads_tech:
+    if val_reads or val_reads_fofn:
+        if not val_reads_tech:
             raise ValueError("'-T' must be provided when using -R or -F.")
 
     # Make a list of read sequences.
     read_files = []
-    if corr_reads_fofn:
-        with open(corr_reads_fofn, "r") as f:
+    if val_reads_fofn:
+        with open(val_reads_fofn, "r") as f:
             for line in f:
                 read_files.append(os.path.abspath(line.rstrip()))
-    elif corr_reads:
-        read_files.append(os.path.abspath(corr_reads))
+    elif val_reads:
+        read_files.append(os.path.abspath(val_reads))
 
     # Coverage thresholds
     max_cov = args.max_cov
@@ -551,10 +552,10 @@ def main():
         log("Validating putative query breakpoints via read alignment.")
         log("Aligning reads to query sequences.")
         if not os.path.isfile(output_path + "c_reads_against_query.s.bam"):
-            if corr_reads_tech == "sr":
+            if val_reads_tech == "sr":
                 al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr -t " + str(num_threads),
                                         output_path + "c_reads_against_query", in_overwrite=overwrite_files)
-            elif corr_reads_tech == "corr":
+            elif val_reads_tech == "corr":
                 al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax asm5 -t " + str(num_threads),
                                         output_path + "c_reads_against_query", in_overwrite=overwrite_files)
             else:
@@ -569,7 +570,16 @@ def main():
 
         # Validate the breakpoints
         log("Validating putative query breakpoints")
-        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_break_end_dist, max_cov, min_cov, window_size=val_window_size, clean_dist=min_break_dist, debug=debug_mode)
+        
+        # Give at least 10k/1k from ctg ends for coverage to accumulate for corr and sr, respectively.
+        val_min_break_end_dist = min_break_end_dist
+        if val_reads_tech == "corr":
+            val_min_break_end_dist = max(10000, min_break_end_dist)
+        if val_reads_tech == "sr":
+            val_min_break_end_dist = max(1000, min_break_end_dist)
+            
+        # Validate the breakpoints
+        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, val_min_break_end_dist, max_cov, min_cov, window_size=val_window_size, clean_dist=min_break_dist, debug=debug_mode)
 
     # Check if we need to avoid gff intervals
     if gff_file:
