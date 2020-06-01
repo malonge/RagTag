@@ -138,7 +138,7 @@ def clean_breaks(val_breaks, d):
     return breaks
 
 
-def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, max_cutoff, min_cutoff, window_size=10000, num_devs=3, clean_dist=1000, debug=False):
+def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_break_end_dist, max_cutoff, min_cutoff, window_size=10000, num_devs=3, clean_dist=1000, debug=False):
     """
     """
     # Get the median coverage over all bp
@@ -162,8 +162,13 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, max_c
 
         # Iterate over each breakpoint for this query sequence
         for b in ctg_breaks[ctg]:
-            min_range = max(0, b - (window_size//2))
-            max_range = min(bam.get_reference_length(ctg), b + (window_size // 2))
+            # Don't extend the validation window too close to the contig ends (defined by min_break_end_dist)
+            min_range = max(min_break_end_dist, b - (window_size//2))
+            max_range = min((bam.get_reference_length(ctg) - min_break_end_dist), b + (window_size // 2))
+
+            if min_range >= max_range:
+                continue
+
             region = "%s:%d-%d" % (ctg, min_range, max_range-1)
             depth_out = pysam.samtools.depth("-aa", "-r", region, output_path + "c_reads_against_query.s.bam")
             covs = np.asarray(
@@ -564,7 +569,7 @@ def main():
 
         # Validate the breakpoints
         log("Validating putative query breakpoints")
-        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, max_cov, min_cov, window_size=val_window_size, clean_dist=min_break_dist, debug=debug_mode)
+        ctg_breaks = validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_break_end_dist, max_cov, min_cov, window_size=val_window_size, clean_dist=min_break_dist, debug=debug_mode)
 
     # Check if we need to avoid gff intervals
     if gff_file:
