@@ -7,8 +7,8 @@ from collections import defaultdict
 
 from intervaltree import IntervalTree
 
-from ragoo2_utilities.utilities import log, get_ragoo2_version
-from ragoo2_utilities.AGPFile import AGPFile
+from ragtag_utilities.utilities import log, get_ragtag_version
+from ragtag_utilities.AGPFile import AGPFile
 
 
 def sub_update(gff_file, agp_file):
@@ -45,7 +45,7 @@ def sub_update(gff_file, agp_file):
                 ovlps = trans[h][s:e]
                 if len(ovlps) > 1:
                     raise ValueError(
-                        "%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Make sure to run `ragoo correct` with '--gff'" % (h, s, e)
+                        "%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Make sure to run 'ragtag.py correct' with '--gff'" % (h, s, e)
                     )
                 if len(ovlps) < 1:
                     raise ValueError("The placement BED file is not formatted correctly.")
@@ -108,10 +108,10 @@ def sup_update(gff_file, agp_file):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Update gff intvervals given a RaGOO2 'placement' BED file", usage="ragoo2.py updategff [-c] <genes.gff> <placement.bed>")
+    parser = argparse.ArgumentParser(description="Update gff intvervals given a RagTag 'placement' BED file", usage="ragtag.py updategff [-c] <genes.gff> <ragtag.agp>")
     parser.add_argument("gff", nargs='?', default="", metavar="<genes.gff>", type=str, help="gff file")
-    parser.add_argument("agp", nargs='?', default="", metavar="<ragoo2.*.agp>", type=str, help="placement BED file")
-    parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction (ragoo2.correction.agp)")
+    parser.add_argument("agp", nargs='?', default="", metavar="<ragtag2.*.agp>", type=str, help="placement BED file")
+    parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction (ragtag2.correction.agp)")
 
     args = parser.parse_args()
 
@@ -119,7 +119,7 @@ def main():
         parser.print_help()
         sys.exit()
 
-    log("RaGOO2 " + get_ragoo2_version())
+    log("RagTag " + get_ragtag_version())
     log("CMD: " + " ".join(sys.argv))
 
     gff_file = os.path.abspath(args.gff)

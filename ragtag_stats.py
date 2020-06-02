@@ -3,13 +3,13 @@
 import sys
 import argparse
 
-from ragoo2_utilities.AGPFile import AGPFile
+from ragtag_utilities.AGPFile import AGPFile
 
 
 def main():
     parser = argparse.ArgumentParser(description="Calculate scaffolding statistics")
-    parser.add_argument("agp", nargs='?', default="", metavar="<ragoo2.scaffolds.agp>", type=str, help="RaGOO2 scaffolding AGP file")
-    parser.add_argument("confidence", nargs='?', default="", metavar="<ragoo2.confidence.txt>", type=str, help="RaGOO2 scaffolding confidence scores file")
+    parser.add_argument("agp", nargs='?', default="", metavar="<ragtag.scaffolds.agp>", type=str, help="RagTag scaffolding AGP file")
+    parser.add_argument("confidence", nargs='?', default="", metavar="<ragtag.confidence.txt>", type=str, help="RagTag scaffolding confidence scores file")
 
     args = parser.parse_args()
 

@@ -2,7 +2,7 @@ import abc
 import os
 import shutil
 
-from ragoo2_utilities.utilities import run_oe, run_e, log
+from ragtag_utilities.utilities import run_oe, run_e, log
 
 
 class Aligner:
@@ -40,7 +40,7 @@ class Aligner:
     @abc.abstractmethod
     def params_are_valid(self):
         """
-        Check to ensure that not illegal (for RaGOO) parameters are being passed to the aligner
+        Check to ensure that not illegal (for RagTag) parameters are being passed to the aligner
         :return: True if no illegal parameters
         """
         pass
@@ -97,11 +97,11 @@ class NucmerAligner(Aligner):
         """
         Do a basic check to make sure the nucmer parameters are valid.
         I won't check that every parameter is valid, but will check anything that can
-        cause a problem for RaGOO later on.
+        cause a problem for RagTag later on.
         :return: True if the parameters are valid. Raises appropriate errors otherwise
         """
         if "-p" in self.params_string:
-            raise ValueError("Please don't specify '-p' when using nucmer. RaGOO names its own alignment files.")
+            raise ValueError("Please don't specify '-p' when using nucmer. RagTag names its own alignment files.")
 
         return True
 
@@ -143,12 +143,12 @@ class Minimap2Aligner(Aligner):
         """
         Do a basic check to make sure the minimap2 parameters are valid.
         I won't check that every parameter is valid, but will check anything that can
-        cause a problem for RaGOO later on.
+        cause a problem for RagTag later on.
         :return: True if the parameters are valid. Raises appropriate errors otherwise
         """
         all_flags = "".join([i for i in self.params_string.split(" ") if i.startswith("-")])
         if "a" in all_flags:
-            raise ValueError("Please don't output Minimap2 alignments in SAM format (-a). RaGOO needs PAF format.")
+            raise ValueError("Please don't output Minimap2 alignments in SAM format (-a). RagTag needs PAF format.")
 
         if "c" in all_flags:
             log("WARNING: computing base alignments (-c) will slow down Minimap2 alignment.")
@@ -183,12 +183,12 @@ class Minimap2SAMAligner(Aligner):
         """
         Do a basic check to make sure the minimap2 parameters are valid.
         I won't check that every parameter is valid, but will check anything that can
-        cause a problem for RaGOO later on.
+        cause a problem for RagTag later on.
         :return: True if the parameters are valid. Raises appropriate errors otherwise
         """
         all_flags = "".join([i for i in self.params_string.split(" ") if i.startswith("-")])
         if "a" not in all_flags:
-            raise ValueError("Minimap2 alignments must be in SAM format (-a). RaGOO needs PAF format.")
+            raise ValueError("Minimap2 alignments must be in SAM format (-a). RagTag needs PAF format.")
 
         return True
 

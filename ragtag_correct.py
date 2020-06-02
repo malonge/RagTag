@@ -11,13 +11,13 @@ import numpy as np
 from intervaltree import IntervalTree
 import matplotlib.pyplot as plt
 
-from ragoo2_utilities.utilities import log, run_o, get_ragoo2_version
-from ragoo2_utilities.AlignmentReader import PAFReader
-from ragoo2_utilities.ContigAlignment import ContigAlignment
-from ragoo2_utilities.AGPFile import AGPFile
-from ragoo2_utilities.Aligner import Minimap2Aligner
-from ragoo2_utilities.Aligner import Minimap2SAMAligner
-from ragoo2_utilities.Aligner import NucmerAligner
+from ragtag_utilities.utilities import log, run_o, get_ragtag_version
+from ragtag_utilities.AlignmentReader import PAFReader
+from ragtag_utilities.ContigAlignment import ContigAlignment
+from ragtag_utilities.AGPFile import AGPFile
+from ragtag_utilities.Aligner import Minimap2Aligner
+from ragtag_utilities.Aligner import Minimap2SAMAligner
+from ragtag_utilities.Aligner import NucmerAligner
 
 
 def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
@@ -256,7 +256,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
     agp = AGPFile(out_file, "w")
 
     agp.add_comment("## agp-version 2.1")
-    agp.add_comment("# AGP created by RaGOO2")
+    agp.add_comment("# AGP created by RagTag")
 
     for q in all_q_seqs:
 
@@ -316,7 +316,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Reference-guided misassembly correction', usage="ragoo2.py correct <reference.fa> <query.fa>")
+    parser = argparse.ArgumentParser(description='Reference-guided misassembly correction', usage="ragtag.py correct <reference.fa> <query.fa>")
 
     cor_options = parser.add_argument_group("correction options")
     cor_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
@@ -332,7 +332,7 @@ def main():
     cor_options.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals")
 
     io_options = parser.add_argument_group("input/output options")
-    io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
+    io_options.add_argument("-o", metavar="STR", type=str, default="ragtag_output", help="output directory [ragtag_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
     io_options.add_argument("-u", action='store_true', default=False, help="add suffix to unaltered sequence headers")
     io_options.add_argument("--debug", action='store_true', default=False, help=argparse.SUPPRESS)
@@ -359,7 +359,7 @@ def main():
         parser.print_help()
         sys.exit()
 
-    log("RaGOO2 " + get_ragoo2_version())
+    log("RagTag " + get_ragtag_version())
     log("CMD: " + " ".join(sys.argv))
 
     reference_file = os.path.abspath(args.reference)
@@ -472,10 +472,10 @@ def main():
 
     # Debugging options
     debug_mode = args.debug
-    debug_non_fltrd_file = output_path + "ragoo2.correction.debug.unfiltered.paf"
-    debug_fltrd_file = output_path + "ragoo2.correction.debug.filtered.paf"
-    debug_merged_file = output_path + "ragoo2.correction.debug.merged.paf"
-    debug_query_info_file = output_path + "ragoo2.correction.debug.query.info.txt"
+    debug_non_fltrd_file = output_path + "ragtag.correction.debug.unfiltered.paf"
+    debug_fltrd_file = output_path + "ragtag.correction.debug.filtered.paf"
+    debug_merged_file = output_path + "ragtag.correction.debug.merged.paf"
+    debug_query_info_file = output_path + "ragtag.correction.debug.query.info.txt"
 
     # Align the query to the reference.
     log("Mapping the query genome to the reference genome")
@@ -487,7 +487,7 @@ def main():
 
     # If alignments are from Nucmer, convert from delta to paf.
     if genome_aligner == "nucmer":
-        cmd = ["ragoo2_delta2paf.py", output_path + "c_query_against_ref.delta"]
+        cmd = ["ragtag_delta2paf.py", output_path + "c_query_against_ref.delta"]
         run_o(cmd, output_path + "c_query_against_ref.paf", )
 
     # Read and organize the alignments.
@@ -602,7 +602,7 @@ def main():
         ctg_breaks = non_gff_breaks
 
     # Write the summary of query sequence breaks in AGP format
-    agp_file = output_path + "ragoo2.correction.agp"
+    agp_file = output_path + "ragtag.correction.agp"
     write_breaks(agp_file, query_file, ctg_breaks, overwrite_files, remove_suffix)
 
     # Write the scaffolds.
@@ -610,7 +610,7 @@ def main():
     qf_name = query_file.split("/")[-1]
     qf_pref = qf_name[:qf_name.rfind(".")]
     cmd = [
-        "ragoo2_break_query.py",
+        "ragtag_break_query.py",
         agp_file,
         query_file
     ]

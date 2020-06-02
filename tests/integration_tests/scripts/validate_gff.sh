@@ -37,21 +37,6 @@ POST=${POSTFILE%.*}
 POSTGFILE=$4
 POSTG=${POSTGFILE%.*}
 
-echo ""
-mecho "****** DEBUG *******"
-mecho $PREFILE
-mecho $PRE
-
-mecho $PREGFILE
-mecho $PREG
-
-mecho $POSTFILE
-mecho $POST
-
-mecho $POSTGFILE
-mecho $POSTG
-
-
 python3 scripts/gff2fasta.py $PRE.fasta $PREG.gff > $PREG.fasta
 python3 scripts/sort_fasta.py $PREG.fasta > $PREG.s.fasta
 
@@ -59,7 +44,7 @@ python3 scripts/gff2fasta.py $POST.fasta $POSTG.gff > $POSTG.fasta
 python3 scripts/sort_fasta.py $POSTG.fasta > $POSTG.s.fasta
 
 
-echo "Comparing gene fasta files with 'cmp':"
+mecho "Comparing gene fasta files with 'cmp':"
 cmp $PREG.s.fasta $POSTG.s.fasta
 
 rm $PREG.fasta $PREG.fasta.fai $PREG.s.fasta

@@ -2,7 +2,7 @@ import argparse
 
 import pysam
 
-from ragoo2_utilities.utilities import reverse_complement
+from ragtag_utilities.utilities import reverse_complement
 
 """
 Like bedtools getfasta, but use the gff ID attribute as the FASTA header and

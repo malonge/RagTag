@@ -9,8 +9,8 @@ import sys
 complements = str.maketrans("ACGTNURYSWKMBVDHacgtnuryswkmbvdh", "TGCANAYRSWMKVBHDtgcanayrswmkvbhd")
 
 
-def get_ragoo2_version():
-    return 'v2.0.0'
+def get_ragtag_version():
+    return 'v1.0.0'
 
 
 def reverse_complement(seq):

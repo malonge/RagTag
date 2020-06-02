@@ -3,21 +3,21 @@
 import sys
 import subprocess
 
-from ragoo2_utilities.utilities import get_ragoo2_version
+from ragtag_utilities.utilities import get_ragtag_version
 
 
 def main():
-    VERSION = get_ragoo2_version()
+    VERSION = get_ragtag_version()
     CITATION = """
 Alonge, Michael, et al. "RaGOO: fast and accurate reference-guided scaffolding of draft genomes."
 Genome biology 20.1 (2019): 1-17.
     """
 
     description = """
-RaGOO2: Reference-guided scaffolding and misassembly correction.
+RagTag: Reference-guided scaffolding and misassembly correction.
 Version: %s
 
-usage: ragoo2.py <command> [options]
+usage: ragtag.py <command> [options]
     
     commands:
       scaffold        scaffold contigs
@@ -45,15 +45,15 @@ usage: ragoo2.py <command> [options]
             print(CITATION)
 
         elif cmd == "scaffold":
-            subcmd = ["ragoo2_scaffold.py"] + sys.argv[2:]
+            subcmd = ["ragtag_scaffold.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         elif cmd == "correct":
-            subcmd = ["ragoo2_correct.py"] + sys.argv[2:]
+            subcmd = ["ragtag_correct.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         elif cmd == "updategff":
-            subcmd = ["ragoo2_update_gff.py"] + sys.argv[2:]
+            subcmd = ["ragtag_update_gff.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         else:

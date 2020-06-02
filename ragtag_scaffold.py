@@ -7,12 +7,12 @@ from collections import defaultdict
 
 import pysam
 
-from ragoo2_utilities.utilities import log, run_o, get_ragoo2_version
-from ragoo2_utilities.AlignmentReader import PAFReader
-from ragoo2_utilities.ContigAlignment import ContigAlignment
-from ragoo2_utilities.AGPFile import AGPFile
-from ragoo2_utilities.Aligner import Minimap2Aligner
-from ragoo2_utilities.Aligner import NucmerAligner
+from ragtag_utilities.utilities import log, run_o, get_ragtag_version
+from ragtag_utilities.AlignmentReader import PAFReader
+from ragtag_utilities.ContigAlignment import ContigAlignment
+from ragtag_utilities.AGPFile import AGPFile
+from ragtag_utilities.Aligner import Minimap2Aligner
+from ragtag_utilities.Aligner import NucmerAligner
 
 
 def remove_contained(a):
@@ -45,14 +45,14 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
     agp = AGPFile(out_agp_file)
 
     agp.add_comment("## agp-version 2.1")
-    agp.add_comment("# AGP created by RaGOO2")
+    agp.add_comment("# AGP created by RagTag")
 
     # Go through the reference sequences in sorted order
     sorted_ref_headers = sorted(list(ordering_dict.keys()))
     for ref_header in sorted_ref_headers:
         pid = 1
         pos = 0
-        new_ref_header = ref_header + "_RaGOO2"
+        new_ref_header = ref_header + "_RagTag"
         q_seqs = ordering_dict[ref_header]
         gap_seqs = gap_dict[ref_header]
         gap_types = gap_type_dict[ref_header]
@@ -112,7 +112,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
         if make_chr0:
             pos = 0
             pid = 1
-            new_ref_header = "Chr0_RaGOO2"
+            new_ref_header = "Chr0_RagTag"
             for q in unplaced_seqs:
                 out_agp_line = []
                 qlen = fai.get_reference_length(q)
@@ -154,7 +154,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 out_agp_line = []
                 qlen = fai.get_reference_length(q)
                 if add_suffix:
-                    out_agp_line.append(q + "_RaGOO2")
+                    out_agp_line.append(q + "_RagTag")
                 else:
                     out_agp_line.append(q)
                 out_agp_line.append("1")
@@ -220,7 +220,7 @@ def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Reference-guided scaffolding', usage="ragoo2.py scaffold <reference.fa> <query.fa>")
+    parser = argparse.ArgumentParser(description='Reference-guided scaffolding', usage="ragtag.py scaffold <reference.fa> <query.fa>")
     scaf_options = parser.add_argument_group("scaffolding options")
     scaf_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
     scaf_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
@@ -238,7 +238,7 @@ def main():
     scaf_options.add_argument("-m", metavar="INT", type=int, default=100000, help="maximum inferred gap size [100000]")
 
     io_options = parser.add_argument_group("input/output options")
-    io_options.add_argument("-o", metavar="STR", type=str, default="ragoo2_output", help="output directory [ragoo2_output]")
+    io_options.add_argument("-o", metavar="STR", type=str, default="ragtag_output", help="output directory [ragtag_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
     io_options.add_argument("-u", action='store_true', default=False, help="add suffix to unplaced sequence headers")
     io_options.add_argument("--debug", action='store_true', default=False, help=argparse.SUPPRESS)
@@ -249,13 +249,12 @@ def main():
     aln_options.add_argument("--mm2-params", metavar="STR", type=str, default="-k19 -w19", help="space delimted minimap2 parameters ['-k19 -w19 -t1']")
     aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer parameters ['-l 100 -c 500']")
 
-    # Get the command line arguments and ensure all paths are absolute.
     args = parser.parse_args()
     if not args.reference or not args.query:
         parser.print_help()
         sys.exit()
 
-    log("RaGOO2 " + get_ragoo2_version())
+    log("RagTag " + get_ragtag_version())
     log("CMD: " + " ".join(sys.argv))
 
     reference_file = os.path.abspath(args.reference)
@@ -324,10 +323,10 @@ def main():
 
     # Debugging options
     debug_mode = args.debug
-    debug_non_fltrd_file = output_path + "ragoo2.scaffolds.debug.unfiltered.paf"
-    debug_fltrd_file = output_path + "ragoo2.scaffolds.debug.filtered.paf"
-    debug_merged_file = output_path + "ragoo2.scaffolds.debug.merged.paf"
-    debug_query_info_file = output_path + "ragoo2.scaffolds.debug.query.info.txt"
+    debug_non_fltrd_file = output_path + "ragtag.scaffolds.debug.unfiltered.paf"
+    debug_fltrd_file = output_path + "ragtag.scaffolds.debug.filtered.paf"
+    debug_merged_file = output_path + "ragtag.scaffolds.debug.merged.paf"
+    debug_query_info_file = output_path + "ragtag.scaffolds.debug.query.info.txt"
 
     # Align the query to the reference
     log("Mapping the query genome to the reference genome")
@@ -339,7 +338,7 @@ def main():
 
     # If alignments are from Nucmer, need to convert from delta to paf
     if aligner == "nucmer":
-        cmd = ["ragoo2_delta2paf.py", output_path + "query_against_ref.delta"]
+        cmd = ["ragtag_delta2paf.py", output_path + "query_against_ref.delta"]
         run_o(cmd, output_path + "query_against_ref.paf", )
 
     # Read and organize the alignments
@@ -465,24 +464,24 @@ def main():
     log("Writing scaffolds")
 
     # Write the intermediate output file in AGP v2.1 format
-    log("Writing: " + output_path + "ragoo2.scaffolds.agp")
-    write_orderings(output_path + "ragoo2.scaffolds.agp", output_path + "ragoo2.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files, not remove_suffix)
+    log("Writing: " + output_path + "ragtag.scaffolds.agp")
+    write_orderings(output_path + "ragtag.scaffolds.agp", output_path + "ragtag.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files, not remove_suffix)
 
     # Build a FASTA from the AGP
     cmd = [
-        "ragoo2_agp2fasta.py",
-        output_path + "ragoo2.scaffolds.agp",
+        "ragtag_agp2fasta.py",
+        output_path + "ragtag.scaffolds.agp",
         query_file
     ]
-    run_o(cmd, output_path + "ragoo2.scaffolds.fasta")
+    run_o(cmd, output_path + "ragtag.scaffolds.fasta")
 
     # Calculate the stats
     cmd = [
-        "ragoo2_stats.py",
-        output_path + "ragoo2.scaffolds.agp",
-        output_path + "ragoo2.confidence.txt"
+        "ragtag_stats.py",
+        output_path + "ragtag.scaffolds.agp",
+        output_path + "ragtag.confidence.txt"
     ]
-    run_o(cmd, output_path + "ragoo2.stats.txt")
+    run_o(cmd, output_path + "ragtag.stats.txt")
 
 
 if __name__ == "__main__":

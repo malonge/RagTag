@@ -5,8 +5,8 @@ import argparse
 
 import pysam
 
-from ragoo2_utilities.utilities import reverse_complement
-from ragoo2_utilities.AGPFile import AGPFile
+from ragtag_utilities.utilities import reverse_complement
+from ragtag_utilities.AGPFile import AGPFile
 
 
 def main():

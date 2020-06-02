@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# run the ragoo2 pipeline with default settings
+# run the ragtag pipeline with default settings
 
 # position args:
 ## 1. objects
@@ -33,7 +33,7 @@ agp_validate -comp -out objs.fasta $OBJS $COMPS $AGP
 echo ""
 mecho "Building itermediate FASTA files"
 
-# Check that the generated fasta file is the same as the ragoo objects file
+# Check that the generated fasta file is the same as the ragtag objects file
 seqtk seq -A -U $OBJS > 1.fasta
 python3 scripts/sort_fasta.py 1.fasta > 1.s.fasta
 
