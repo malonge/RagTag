@@ -261,7 +261,6 @@ def main():
     query_file = os.path.abspath(args.query)
 
     min_ulen = args.f
-    min_mapq = args.q
     merge_dist = args.d
     group_score_thresh = args.i
     loc_score_thresh = args.a
@@ -308,8 +307,14 @@ def main():
     aligner = aligner_path.split("/")[-1]
     if aligner.split("/")[-1] not in {'minimap2', 'nucmer'}:
         raise ValueError("Must specify either 'minimap2' or 'nucmer' (PATHs allowed) with '--aligner'.")
+
     mm2_params = args.mm2_params
     nucmer_params = args.nucmer_params
+
+    # Mapq filtering params
+    min_mapq = args.q
+    if aligner == "nucmer":
+        min_mapq = 0
 
     # Add the number of mm2 threads if the mm2 params haven't been overridden.
     if mm2_params == "-k19 -w19":

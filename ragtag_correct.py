@@ -366,7 +366,6 @@ def main():
     query_file = os.path.abspath(args.query)
     num_threads = args.t
     min_ulen = args.f
-    min_mapq = args.q
     merge_dist = args.d
     min_break_dist = args.m
     min_break_end_dist = args.b
@@ -405,8 +404,14 @@ def main():
     genome_aligner = genome_aligner_path.split("/")[-1]
     if genome_aligner.split("/")[-1] not in {'minimap2', 'nucmer'}:
         raise ValueError("Must specify either 'minimap2' or 'nucmer' (PATHs allowed) with '--aligner'.")
+
     mm2_params = args.mm2_params
     nucmer_params = args.nucmer_params
+
+    # Mapq filtering params
+    min_mapq = args.q
+    if genome_aligner == "nucmer":
+        min_mapq = 0
 
     # Add the number of mm2 threads if the mm2 params haven't been overridden.
     if mm2_params == "-k19 -w19":
