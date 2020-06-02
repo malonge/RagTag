@@ -179,8 +179,8 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
 
             # Given the coverage in vicinity of the breakpoint, find the max and min coverage.
             cov_min, cov_max = np.min(covs), np.max(covs)
-            too_high = True if cov_max > max_cutoff else False
-            too_low = True if cov_min < min_cutoff else False
+            too_high = True if cov_max >= max_cutoff else False
+            too_low = True if cov_min <= min_cutoff else False
             new_break = None
             status = "not validated"
             if too_low and too_high:
@@ -197,7 +197,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
                 status = "high cov"
 
             if debug:
-                log("Query: %s, original break: %s, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, status, str(new_break), cov_max, cov_min))
+                log("query: %s, original break: %s, window start: %d, window end: %d, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, min_range, max_range, status, str(new_break), cov_max, cov_min))
 
             ####################
             ## TEMP PLOTTING ###
@@ -322,6 +322,7 @@ def main():
     cor_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
     cor_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
     cor_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
+    cor_options.add_argument("-q", metavar="INT", type=int, default=40, help="minimum mapq (NA for Nucmer alignments) [40]")
     cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
     cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
@@ -365,6 +366,7 @@ def main():
     query_file = os.path.abspath(args.query)
     num_threads = args.t
     min_ulen = args.f
+    min_mapq = args.q
     merge_dist = args.d
     min_break_dist = args.m
     min_break_end_dist = args.b
@@ -511,13 +513,15 @@ def main():
 
         ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
         if ctg_alns[i] is not None:
+            ctg_alns[i] = ctg_alns[i].filter_mapq(min_mapq)
+            if ctg_alns[i] is not None:
 
-            # Write filtered alignments
-            if debug_mode:
-                with open(debug_fltrd_file, "a") as f:
-                    f.write(str(ctg_alns[i]))
+                # Write filtered alignments
+                if debug_mode:
+                    with open(debug_fltrd_file, "a") as f:
+                        f.write(str(ctg_alns[i]))
 
-            ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
+                ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
 
     # Get the putative breakpoints for each query sequence, if any.
     ctg_breaks = dict()

@@ -227,6 +227,7 @@ def main():
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave unplaced")
     scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
+    scaf_options.add_argument("-q", metavar="INT", type=int, default=40, help="minimum mapq (NA for Nucmer alignments) [40]")
     scaf_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
@@ -261,6 +262,7 @@ def main():
     query_file = os.path.abspath(args.query)
 
     min_ulen = args.f
+    min_mapq = args.q
     merge_dist = args.d
     group_score_thresh = args.i
     loc_score_thresh = args.a
@@ -363,12 +365,15 @@ def main():
 
         ctg_alns[i] = ctg_alns[i].unique_anchor_filter(min_ulen)
         if ctg_alns[i] is not None:
+            ctg_alns[i] = ctg_alns[i].filter_mapq(min_mapq)
+            if ctg_alns[i] is not None:
 
-            # Write filtered alignments
-            if debug_mode:
-                with open(debug_fltrd_file, "a") as f:
-                    f.write(str(ctg_alns[i]))
-            ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
+                # Write filtered alignments
+                if debug_mode:
+                    with open(debug_fltrd_file, "a") as f:
+                        f.write(str(ctg_alns[i]))
+
+                ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
 
     # Remove query sequences which have no more qualifying alignments
     fltrd_ctg_alns = dict()
