@@ -9,7 +9,6 @@ from collections import defaultdict
 import pysam
 import numpy as np
 from intervaltree import IntervalTree
-import matplotlib.pyplot as plt
 
 from ragtag_utilities.utilities import log, run_o, get_ragtag_version
 from ragtag_utilities.AlignmentReader import PAFReader
@@ -199,21 +198,6 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
             if debug:
                 log("query: %s, original break: %s, window start: %d, window end: %d, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, min_range, max_range, status, str(new_break), cov_max, cov_min))
 
-            ####################
-            ## TEMP PLOTTING ###
-            ####################
-
-
-            plt.figure(figsize=(10, 10))
-            plt.plot(covs)
-            plt.axvline(b-min_range, color="r", linestyle="--")
-            if new_break is not None:
-                plt.axvline(new_break-min_range, color="g", linestyle="--")
-            plt.savefig(output_path + "plots/" + ctg + "_" + str(b) + ".png")
-            plt.close()
-
-
-            ####################
         validated_ctg_breaks[ctg] = clean_breaks(val_breaks, clean_dist)
 
     return validated_ctg_breaks
