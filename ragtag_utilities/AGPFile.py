@@ -10,7 +10,7 @@ class AGPFile:
 
     The class is able to read new AGP lines in order to sequentially build the complete file.
 
-    At any state, the class should be capable of checking the validity of the file, as well as writing the AGP contents
+    The class should be capable of checking the validity of the file, as well as writing the AGP contents
     to a file stream.
 
     Common abbreviations:
@@ -219,7 +219,9 @@ class AGPFile:
 class AGPLine:
 
     """
-    Description
+    An abstract base class representing a single AGP file line. Inhereting subclasses should
+    implement override or implement new methods to check the validity of a single
+    AFP line. Validity checks that involve multiple lines should not be considered.
     """
 
     __metaclass__ = abc.ABCMeta
@@ -267,7 +269,7 @@ class AGPLine:
 class AGPSeqLine(AGPLine):
 
     """
-    Description
+    A subclass of AGPLine specifically for AGP lines that represent sequences.
     """
 
     allowed_comp_types = {"A", "D", "F", "G", "O", "P", "W"}
@@ -333,7 +335,7 @@ class AGPSeqLine(AGPLine):
 class AGPGapLine(AGPLine):
 
     """
-    Description
+    A subclass of AGPLine specifically for AGP lines that represent sequence gaps.
     """
 
     allowed_comp_types = {"N", "U"}

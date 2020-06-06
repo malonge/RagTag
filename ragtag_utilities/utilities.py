@@ -16,25 +16,25 @@ def get_ragtag_version():
 def reverse_complement(seq):
     """
     Reverse complement a nucleotide sequence.
-    :param seq: Sequence to be reverse complemented
+    :param seq: A sequence to be reverse complemented
     :return: A reverse complemented sequence
     """
     return seq.translate(complements)[::-1]
 
 
 def run(cmd):
-    """ Run command and report status. """
+    """ Run a command and report the status. """
     if not isinstance(cmd, list):
         raise TypeError("'run' expects a list")
 
-    log('Running : %s' % " ".join(cmd))
+    log('Running: %s' % " ".join(cmd))
     if subprocess.call(cmd) != 0:
         raise RuntimeError('Failed : %s' % " ".join(cmd))
     log('Finished running : %s' % " ".join(cmd))
 
 
 def run_oe(cmd, out, err):
-    """ Run command and redirect stdout/stderr. """
+    """ Run a command and redirect stdout/stderr. """
 
     if not isinstance(out, str) or not isinstance(err, str):
         raise TypeError("out/err should be file names (strings)")
@@ -42,7 +42,7 @@ def run_oe(cmd, out, err):
     f_out = open(out, "w")
     f_err = open(err, "w")
 
-    log('Running : %s > %s 2> %s' % (" ".join(cmd), out, err))
+    log('Running: %s > %s 2> %s' % (" ".join(cmd), out, err))
     if subprocess.call(cmd, stdout=f_out, stderr=f_err) != 0:
         raise RuntimeError('Failed : %s > %s 2> %s' % (" ".join(cmd), out, err))
 
@@ -53,14 +53,14 @@ def run_oe(cmd, out, err):
 
 
 def run_o(cmd, out):
-    """ Run command and redirect stdout but not stderr. """
+    """ Run a command and redirect stdout but not stderr. """
 
     if not isinstance(out, str):
         raise TypeError("out should be a file name (string)")
 
     f_out = open(out, "w")
 
-    log('Running : %s > %s' % (" ".join(cmd), out))
+    log('Running: %s > %s' % (" ".join(cmd), out))
     if subprocess.call(cmd, stdout=f_out) != 0:
         raise RuntimeError('Failed : %s > %s' % (" ".join(cmd), out))
 
@@ -70,14 +70,14 @@ def run_o(cmd, out):
 
 
 def run_e(cmd, err):
-    """ Run command and redirect stderr but not stdout. """
+    """ Run a command and redirect stderr but not stdout. """
 
     if not isinstance(err, str):
         raise TypeError("err should be a file name (string)")
 
     f_err = open(err, "w")
 
-    log('Running : %s 2> %s' % (" ".join(cmd), err))
+    log('Running: %s 2> %s' % (" ".join(cmd), err))
     if subprocess.call(cmd, stderr=f_err) != 0:
         raise RuntimeError('Failed : %s 2> %s' % (" ".join(cmd), err))
 
@@ -193,10 +193,10 @@ def summarize_planesweep(lines, unique_length_required, keep_small_uniques=False
 
 
 def p2q(p):
-    """ Convert P(incorrect) to MAPQ. """
+    """ Convert Pr(incorrect) to MAPQ. """
     return round(-10 * math.log(p, 10))
 
 
 def q2p(q):
-    """ Convert MAPQ to P(incorrect). """
+    """ Convert MAPQ to Pr(incorrect). """
     return 10**(q/-10)
