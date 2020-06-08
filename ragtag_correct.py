@@ -330,7 +330,7 @@ def main():
     cor_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file. must not be gzipped.")
     cor_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
     cor_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
-    cor_options.add_argument("--remove-small-uniques", action="store_true", default=False, help="remove alignments shorter than -f, even if they are unique.")
+    cor_options.add_argument("--remove-small", action="store_true", default=False, help="remove alignments shorter than -f, even if they are unique.")
     cor_options.add_argument("-q", metavar="INT", type=int, default=40, help="minimum mapq (NA for Nucmer alignments) [40]")
     cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
@@ -383,7 +383,7 @@ def main():
 
     num_threads = args.t
     min_ulen = args.f
-    keep_small_uniques = not args.remove_small_uniques
+    keep_small_uniques = not args.remove_small
     merge_dist = args.d
     min_break_dist = args.m
     min_break_end_dist = args.b
