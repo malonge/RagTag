@@ -315,7 +315,7 @@ class ContigAlignment:
         hits = [i for i in range(len(self._ref_headers)) if self._mapqs[i] >= q]
         return self._update_alns(hits)
 
-    def unique_anchor_filter(self, l):
+    def unique_anchor_filter(self, l, keep_small=True):
         """
         Unique anchor filter the alignments. l is the minimum unique alignment length. small_uniques are retained.
 
@@ -334,7 +334,7 @@ class ContigAlignment:
         for i, j in zip(self._query_starts, self._query_ends):
             lines_by_query.append((i, j))
 
-        hits = summarize_planesweep(lines_by_query, l, keep_small_uniques=True)
+        hits = summarize_planesweep(lines_by_query, l, keep_small_uniques=keep_small)
         return self._update_alns(hits)
 
     def get_best_ref_pos(self):

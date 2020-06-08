@@ -1,6 +1,6 @@
 # RagTag
 
-#### Reference-guided genome assembly correction and scaffolding.
+#### Reference-guided genome assembly correction and scaffolding. RagTag is the successor to RaGOO.
 
 ## Getting Started
 
