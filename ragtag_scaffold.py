@@ -251,7 +251,7 @@ def main():
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave unplaced")
     scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
-    scaf_options.add_argument("--remove-small", action="store_true", default=False, help="remove alignments shorter than -f, even if they are unique.")
+    scaf_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than -f")
     scaf_options.add_argument("-q", metavar="INT", type=int, default=40, help="minimum mapq (NA for Nucmer alignments) [40]")
     scaf_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
