@@ -43,7 +43,7 @@ class PAFLine:
         self.mapq = in_mapq
 
         # Start positions should be before end positions for both query and target
-        if self.query_start <= self.query_end or self.ref_start <= self.ref_end:
+        if self.query_start > self.query_end or self.ref_start > self.ref_end:
             raise ValueError("Start coordinates should always be <= end coordinates")
 
 
