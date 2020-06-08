@@ -347,9 +347,10 @@ def main():
     io_options.add_argument("--debug", action='store_true', default=False, help=argparse.SUPPRESS)
 
     aln_options = parser.add_argument_group("mapping options")
+    mm2_default = "-x asm5"
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="whole genome aligner executable ('nucmer' or 'minimap2') [minimap2]")
-    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default="-x asm5", help="space delimited minimap2 whole genome alignment parameters ['-x asm5']")
+    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 whole genome alignment parameters ['%s']" % mm2_default)
     aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer whole genome alignment parameters ['-l 100 -c 500']")
 
     val_options = parser.add_argument_group("validation options")
@@ -432,8 +433,8 @@ def main():
         min_mapq = 0
 
     # Add the number of mm2 threads if the mm2 params haven't been overridden.
-    if mm2_params == "-k19 -w19":
-        mm2_params += " -t" + str(num_threads)
+    if mm2_params == mm2_default:
+        mm2_params += " -t " + str(num_threads)
 
     # Check if intra/inter breaking is desired
     break_intra = True
