@@ -405,8 +405,12 @@ class ContigAlignment:
                 ref_starts[i] = min(ref_starts[i], ref_starts[j])
                 ref_ends[i] = max(ref_ends[i], ref_ends[j])
 
-                residue_matches[i] = residue_matches[i] + residue_matches[j]
+                perc_r_match_i = residue_matches[i] / aln_lens[i]
+                perc_r_match_j = residue_matches[j] / aln_lens[j]
+                avg_perc_r_match = (perc_r_match_i + perc_r_match_j) / 2
                 aln_lens[i] = ref_ends[i] - ref_starts[i]
+                residue_matches[i] = round(avg_perc_r_match * aln_lens[i])
+
                 mapqs[i] = self._average_mapqs(mapqs[i], mapqs[j])
 
                 # Remove the redundant alignment
