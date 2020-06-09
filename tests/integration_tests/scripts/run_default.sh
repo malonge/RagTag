@@ -32,8 +32,6 @@ GENES=$3
 GENES_PREF=`basename $GENES .gff`
 OUTDIR=$4
 
-# TODO add '-w' to all commands
-
 ragtag.py correct --debug -t 2 -u --gff $GENES -o $OUTDIR $REF $QUERY
 ragtag.py scaffold --debug -t 2 -u -o $OUTDIR $REF $OUTDIR/$QUERY_PREF.corrected.fasta
 ragtag.py updategff -c $GENES $OUTDIR/ragtag.correction.agp > $OUTDIR/$GENES_PREF.corr.gff

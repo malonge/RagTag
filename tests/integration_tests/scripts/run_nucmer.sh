@@ -32,8 +32,6 @@ GENES=$3
 GENES_PREF=`basename $GENES .gff`
 OUTDIR=$4
 
-# TODO add '-w' flag to all commands
-
 ragtag.py correct --aligner nucmer --nucmer-params "-l 500 -c 1000" --debug -f 1000 -u --gff $GENES -o $OUTDIR $REF $QUERY
 ragtag.py scaffold --aligner nucmer --nucmer-params "-l 500 -c 1000" --debug -f 1000 -u -C -o $OUTDIR $REF $OUTDIR/$QUERY_PREF.corrected.fasta
 ragtag.py updategff -c $GENES $OUTDIR/ragtag.correction.agp > $OUTDIR/$GENES_PREF.corr.gff

@@ -331,7 +331,7 @@ def main():
     cor_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file. must not be gzipped.")
     cor_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     cor_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than -f")
-    cor_options.add_argument("-q", metavar="INT", type=int, default=40, help="minimum mapq (NA for Nucmer alignments) [40]")
+    cor_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
     cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
     cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
