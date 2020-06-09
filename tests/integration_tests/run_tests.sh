@@ -80,7 +80,16 @@ bash scripts/validate_gff.sh ragtag_output_tomato_default/$T_QUERY_PREF.correcte
     ragtag_output_tomato_default/$T_GFF_PREF.scaf.gff
 
 
+# Validate the results
+echo ""
+mecho "Validating results:"
+echo ""
 
+bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.correction.agp \
+    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.correction.agp
+
+bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.scaffolds.agp \
+    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.scaffolds.agp
 
 
 # Run RagTag
@@ -137,3 +146,14 @@ bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/c_query_against_ref.delta 
 bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/query_against_ref.delta \
     ragtag_output_Ara_nucmer/ragtag.scaffolds.debug.filtered.paf \
     1000
+
+# Validate the results
+echo ""
+mecho "Validating results:"
+echo ""
+
+bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.correction.agp \
+    ~/Projects/ragtag_workspace/static_results/ara/ragtag.correction.agp
+
+bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.scaffolds.agp \
+    ~/Projects/ragtag_workspace/static_results/ara/ragtag.scaffolds.agp
