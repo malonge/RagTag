@@ -335,7 +335,7 @@ def main():
     cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
     cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
-    cor_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of contigs to leave uncorrected")
+    cor_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave uncorrected")
     cor_options.add_argument("--inter", action="store_true", default=False, help="only break misassemblies between reference sequences")
     cor_options.add_argument("--intra", action="store_true", default=False, help="only break misassemblies within reference sequences")
     cor_options.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals")
