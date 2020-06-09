@@ -260,7 +260,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
             log("Overwriting pre-existing file: " + out_file)
 
     x = pysam.FastaFile(query_file)
-    all_q_seqs = set(x.references)
+    all_q_seqs = sorted(x.references)
     agp = AGPFile(out_file, "w")
 
     agp.add_comment("## agp-version 2.1")
