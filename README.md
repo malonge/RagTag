@@ -30,5 +30,8 @@ ragtag.py scaffold ref.fa ragtag_output/query.corrected.fasta
 
 Alonge, Michael, et al. ["RaGOO: fast and accurate reference-guided scaffolding of draft genomes."](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1829-6) Genome biology 20.1 (2019): 1-17.
 
+## Acknowledgments
+
+Many of the major algorithmic improvements relative to RaGOO's first release were provided by Aleksey Zimin, lead developer of the [MaSuRCA assembler](https://github.com/alekseyzimin/masurca). This includes the use of read-mapping for misassembly validation as well as the use of alignment merging for improved scaffolding. [Luca Venturini](https://github.com/lucventurini) also suggested and initially implemented many feature enhancments, such as pysam integration.
 
 ## \*More Docs Soon\*
