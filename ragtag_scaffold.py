@@ -521,7 +521,7 @@ def main():
         output_path + "ragtag.scaffolds.agp",
         output_path + "ragtag.confidence.txt"
     ]
-    run_o(cmd, output_path + "ragtag.stats.txt")
+    run_o(cmd, output_path + "ragtag.scaffolds.stats")
 
 
 if __name__ == "__main__":
