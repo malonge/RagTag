@@ -44,8 +44,8 @@ Version: %s
 usage: ragtag.py <command> [options]
     
     commands:
+      correct         correct contig misassemblies 
       scaffold        scaffold contigs
-      correct         correct contig misassemblies
       updategff       update gff intervals
 
     options:
