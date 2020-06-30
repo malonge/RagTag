@@ -8,6 +8,10 @@
 ## Getting Started
 
 ```bash
+# install with pip
+pip3 install RagTag
+
+# or install from source
 git clone https://github.com/malonge/RagTag
 cd RagTag
 python3 setup.py install
