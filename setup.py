@@ -17,7 +17,7 @@ setup(
     version=version,
     author='Michael Alonge',
     author_email='malonge11@gmail.com',
-    description='Fast reference-guided genome assembly scaffolding.',
+    description='Fast reference-guided genome assembly scaffolding',
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/malonge/RagTag",
