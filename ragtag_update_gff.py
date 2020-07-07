@@ -132,10 +132,10 @@ def sup_update(gff_file, agp_file):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Update gff intvervals given a RagTag 'placement' BED file", usage="ragtag.py updategff [-c] <genes.gff> <ragtag.agp>")
+    parser = argparse.ArgumentParser(description="Update gff intervals given a RagTag AGP file", usage="ragtag.py updategff [-c] <genes.gff> <ragtag.agp>")
     parser.add_argument("gff", nargs='?', default="", metavar="<genes.gff>", type=str, help="gff file")
-    parser.add_argument("agp", nargs='?', default="", metavar="<ragtag2.*.agp>", type=str, help="placement BED file")
-    parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction (ragtag2.correction.agp)")
+    parser.add_argument("agp", nargs='?', default="", metavar="<ragtag.*.agp>", type=str, help="agp file")
+    parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction (ragtag.correction.agp)")
 
     args = parser.parse_args()
 
