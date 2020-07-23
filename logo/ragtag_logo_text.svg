@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 16.0.5, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 width="432px" height="144px" viewBox="0 0 432 144" enable-background="new 0 0 432 144" xml:space="preserve">
+<g>
+	<text transform="matrix(1 0 0 1 9.765625e-04 69.7559)" fill="#F26539" font-family="'Athelas-Regular'" font-size="81.7588">R</text>
+	<text transform="matrix(1 0 0 1 7.0405 122.3691)" font-family="'Athelas-Regular'" font-size="81.7588">ag</text>
+	<g>
+		<line stroke="#000000" stroke-width="0.75" stroke-miterlimit="10" x1="8.33" y1="80.068" x2="84.311" y2="80.068"/>
+		<line stroke="#000000" stroke-width="0.75" stroke-miterlimit="10" x1="8.33" y1="77.799" x2="45.58" y2="77.799"/>
+		
+			<line fill="none" stroke="#2791D0" stroke-width="0.75" stroke-miterlimit="10" x1="47.061" y1="77.802" x2="84.311" y2="77.802"/>
+	</g>
+	<text transform="matrix(1 0 0 1 39.0186 69.7559)" font-family="'Athelas-Regular'" font-size="81.7588">T</text>
+</g>
+<text transform="matrix(1 0 0 1 111.2129 37.3652)"><tspan x="0" y="0" font-family="'Athelas-Bold'" font-size="23.693">RagTag: Reference-guided</tspan><tspan x="0" y="30.801" font-family="'Athelas-Bold'" font-size="23.693">genome assembly correction</tspan><tspan x="0" y="61.602" font-family="'Athelas-Bold'" font-size="23.693">and scaffolding. RagTag is</tspan><tspan x="0" y="92.402" font-family="'Athelas-Bold'" font-size="23.693">the successor to RaGOO.</tspan></text>
+</svg>

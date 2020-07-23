@@ -1,9 +1,7 @@
-# RagTag
-
 [![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) ![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=ff69b4)
 
 
-#### Reference-guided genome assembly correction and scaffolding. RagTag is the successor to RaGOO.
+![logo_text](logo/ragtag_logo_text.svg)
 
 ## Getting Started
 
