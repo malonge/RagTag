@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) ![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=ff69b4)
+[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) ![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=ff69b4) ![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=%230BE67&label=conda)
 
 
 ![logo_text](logo/ragtag_logo_text.svg)
@@ -6,8 +6,8 @@
 ## Getting Started
 
 ```bash
-# install with pip
-pip3 install RagTag
+# install with conda
+conda install -c bioconda ragtag
 
 # or install from source
 git clone https://github.com/malonge/RagTag
