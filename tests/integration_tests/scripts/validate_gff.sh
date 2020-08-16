@@ -37,11 +37,11 @@ POST=${POSTFILE%.*}
 POSTGFILE=$4
 POSTG=${POSTGFILE%.*}
 
-python3 scripts/gff2fasta.py $PRE.fasta $PREG.gff > $PREG.fasta
-python3 scripts/sort_fasta.py $PREG.fasta > $PREG.s.fasta
+/Library/Frameworks/Python.framework/Versions/3.6/bin/python3 scripts/gff2fasta.py $PRE.fasta $PREG.gff > $PREG.fasta
+/Library/Frameworks/Python.framework/Versions/3.6/bin/python3 scripts/sort_fasta.py $PREG.fasta > $PREG.s.fasta
 
-python3 scripts/gff2fasta.py $POST.fasta $POSTG.gff > $POSTG.fasta
-python3 scripts/sort_fasta.py $POSTG.fasta > $POSTG.s.fasta
+/Library/Frameworks/Python.framework/Versions/3.6/bin/python3 scripts/gff2fasta.py $POST.fasta $POSTG.gff > $POSTG.fasta
+/Library/Frameworks/Python.framework/Versions/3.6/bin/python3 scripts/sort_fasta.py $POSTG.fasta > $POSTG.s.fasta
 
 
 mecho "Comparing gene fasta files with 'cmp':"
