@@ -394,7 +394,7 @@ def main():
     output_path = args.o
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
-    output_path = os.path.abspath(output_path)
+    output_path = os.path.abspath(output_path) + "/"
 
     overwrite_files = args.w
     remove_suffix = not args.u
