@@ -263,7 +263,7 @@ def main():
     scaf_options.add_argument("-m", metavar="INT", type=int, default=100000, help="maximum inferred gap size [100000]")
 
     io_options = parser.add_argument_group("input/output options")
-    io_options.add_argument("-o", metavar="STR", type=str, default="ragtag_output", help="output directory [ragtag_output]")
+    io_options.add_argument("-o", metavar="PATH", type=str, default="ragtag_output", help="output directory [./ragtag_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
     io_options.add_argument("-u", action='store_true', default=False, help="add suffix to unplaced sequence headers")
     io_options.add_argument("--debug", action='store_true', default=False, help=argparse.SUPPRESS)
@@ -305,7 +305,11 @@ def main():
     num_threads = args.t
 
     # I/O options
-    output_path = args.o.replace("/", "").replace(".", "")
+    output_path = args.o
+    if not os.path.isdir(output_path):
+        os.mkdir(output_path)
+    output_path = os.path.abspath(output_path)
+
     overwrite_files = args.w
     remove_suffix = not args.u
     if remove_suffix:
@@ -354,12 +358,6 @@ def main():
     # Add the number of mm2 threads if the mm2 params haven't been overridden.
     if mm2_params == mm2_default:
         mm2_params += " -t " + str(num_threads)
-
-    # Get the current working directory and output path
-    cwd = os.getcwd()
-    output_path = cwd + "/" + output_path + "/"
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
 
     # Debugging options
     debug_mode = args.debug

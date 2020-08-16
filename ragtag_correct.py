@@ -341,7 +341,7 @@ def main():
     cor_options.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals")
 
     io_options = parser.add_argument_group("input/output options")
-    io_options.add_argument("-o", metavar="STR", type=str, default="ragtag_output", help="output directory [ragtag_output]")
+    io_options.add_argument("-o", metavar="PATH", type=str, default="ragtag_output", help="output directory [./ragtag_output]")
     io_options.add_argument("-w", action='store_true', default=False, help="overwrite intermediate files")
     io_options.add_argument("-u", action='store_true', default=False, help="add suffix to unaltered sequence headers")
     io_options.add_argument("--debug", action='store_true', default=False, help=argparse.SUPPRESS)
@@ -391,7 +391,11 @@ def main():
     val_window_size = args.v
 
     # I/O options
-    output_path = args.o.replace("/", "").replace(".", "")
+    output_path = args.o
+    if not os.path.isdir(output_path):
+        os.mkdir(output_path)
+    output_path = os.path.abspath(output_path)
+
     overwrite_files = args.w
     remove_suffix = not args.u
     if remove_suffix:
@@ -487,12 +491,6 @@ def main():
     if min_cov < 0:
         if min_cov != -1:
             raise ValueError("--min-cov must be >=0")
-
-    # Get the current working directory and output path.
-    cwd = os.getcwd()
-    output_path = cwd + "/" + output_path + "/"
-    if not os.path.exists(output_path):
-        os.mkdir(output_path)
 
     # Debugging options
     debug_mode = args.debug
