@@ -371,9 +371,9 @@ def main():
     # Align the query to the reference
     log("Mapping the query genome to the reference genome")
     if aligner == "minimap2":
-        al = Minimap2Aligner(reference_file, query_file, aligner_path, mm2_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
+        al = Minimap2Aligner(reference_file, [query_file], aligner_path, mm2_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
     else:
-        al = NucmerAligner(reference_file, query_file, aligner_path, nucmer_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
+        al = NucmerAligner(reference_file, [query_file], aligner_path, nucmer_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
     al.run_aligner()
 
     # If alignments are from Nucmer, need to convert from delta to paf

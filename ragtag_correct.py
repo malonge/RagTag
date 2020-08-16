@@ -504,9 +504,9 @@ def main():
     # Align the query to the reference.
     log("Mapping the query genome to the reference genome")
     if genome_aligner == "minimap2":
-        al = Minimap2Aligner(reference_file, query_file, genome_aligner_path, mm2_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
+        al = Minimap2Aligner(reference_file, [query_file], genome_aligner_path, mm2_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
     else:
-        al = NucmerAligner(reference_file, query_file, genome_aligner_path, nucmer_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
+        al = NucmerAligner(reference_file, [query_file], genome_aligner_path, nucmer_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
     al.run_aligner()
 
     # If alignments are from Nucmer, convert from delta to paf.
@@ -581,10 +581,10 @@ def main():
         log("Aligning reads to query sequences.")
         if not os.path.isfile(output_path + "c_reads_against_query.s.bam"):
             if val_reads_tech == "sr":
-                al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax sr -t " + str(num_threads),
+                al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax sr -t " + str(num_threads),
                                         output_path + "c_reads_against_query", in_overwrite=overwrite_files)
             elif val_reads_tech == "corr":
-                al = Minimap2SAMAligner(query_file, " ".join(read_files), read_aligner_path, "-ax asm5 -t " + str(num_threads),
+                al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax asm5 -t " + str(num_threads),
                                         output_path + "c_reads_against_query", in_overwrite=overwrite_files)
             else:
                 raise ValueError("'-T' must be either 'sr' or 'corr'.")

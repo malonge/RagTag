@@ -42,7 +42,7 @@ class Aligner:
     The generic information is as follows:
 
         1. A file handle pointing to a reference sequence
-        2. A file handle pointing to a query sequence
+        2. A file handle pointing to a set of query sequences
         3. Command line parameters
         4. A file handle (or sometimes prefix) for the output alignments
         5. A file handle for logging (i.e. stderr from the aligner)
@@ -61,9 +61,9 @@ class Aligner:
     """
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, in_ref_file, in_query_file, in_aligner, in_params, in_out_file, in_overwrite=False):
+    def __init__(self, in_ref_file, in_query_files, in_aligner, in_params, in_out_file, in_overwrite=False):
         self.r_file = in_ref_file
-        self.q_file = in_query_file
+        self.q_files = in_query_files
         self.aligner = in_aligner
         self.params_string = in_params
         self.params = self._split_params(in_params)
@@ -162,7 +162,7 @@ class NucmerAligner(Aligner):
             '-p',
             self.outfile_prefix,
             self.r_file,
-            self.q_file
+            *self.q_files
         ]
 
     def run_aligner(self):
@@ -212,7 +212,7 @@ class Minimap2Aligner(Aligner):
             self.aligner,
             *self.params,
             self.r_file,
-            self.q_file
+            *self.q_files
         ]
 
 
@@ -247,5 +247,5 @@ class Minimap2SAMAligner(Aligner):
             self.aligner,
             *self.params,
             self.r_file,
-            self.q_file
+            *self.q_files
         ]
