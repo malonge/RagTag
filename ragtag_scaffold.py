@@ -521,6 +521,8 @@ def main():
     ]
     run_o(cmd, output_path + "ragtag.scaffolds.stats")
 
+    log("Goodbye")
+
 
 if __name__ == "__main__":
     main()

@@ -155,6 +155,8 @@ def main():
     else:
         sup_update(gff_file, agp_file)
 
+    log("Goodbye")
+
 
 if __name__ == "__main__":
     main()

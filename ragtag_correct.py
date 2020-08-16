@@ -638,6 +638,8 @@ def main():
     ]
     run_o(cmd, output_path + qf_pref + ".corrected.fasta")
 
+    log("Goodbye")
+
 
 if __name__ == "__main__":
     main()
