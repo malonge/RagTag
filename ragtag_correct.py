@@ -121,7 +121,7 @@ def get_median_read_coverage(output_path, num_threads, overwrite_files):
         cs += covs[i]
         if cs >= mid:
             return i
-    raise ValueError()
+    raise ValueError("Unable to calculate read coverage. Check SAM/BAM files and stats file.")
 
 
 def run_samtools(output_path, num_threads, overwrite_files):
