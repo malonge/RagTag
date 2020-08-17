@@ -7,6 +7,9 @@
 ## 4. ara reference
 ## 5. ara query
 ## 6. ara gff
+## 7. E. coli reference
+## 8. E. coli query
+## 9. E.coli reads fofn
 
 # Assumes fasta suffixes are ".fasta"
 # Assumes gff suffixes are ".gff"
@@ -36,6 +39,11 @@ A_QUERY=$5
 A_QUERY_PREF=`basename $A_QUERY .fasta`
 A_GFF=$6
 A_GFF_PREF=`basename $A_GFF .gff`
+
+E_REF=$7
+E_QUERY=$8
+E_QUERY_PREF=`basename $E_QUERY .fasta`
+E_VAL_FOFN=$9
 
 
 # Run RagTag
@@ -157,3 +165,27 @@ bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.correction.agp 
 
 bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.scaffolds.agp \
     ~/Projects/ragtag_workspace/static_results/ara/ragtag.scaffolds.agp
+
+
+# Run RagTag
+# Settings: with error-corrected long-read validation
+# Data: E. coli
+echo ""
+echo "**************************************************************"
+echo "***     Running RagTag on E. coli data with validation     ***"
+echo "**************************************************************"
+echo ""
+
+bash scripts/run_val.sh $E_REF \
+    $E_QUERY \
+    $E_VAL_FOFN \
+    ragtag_output_ecoli_val
+
+# Validate the agp files
+echo ""
+mecho "Validating AGP files and associated fasta files:"
+echo ""
+
+bash scripts/validate_agp.sh $E_QUERY \
+    ragtag_output_ecoli_val/$E_QUERY_PREF.corrected.fasta \
+    ragtag_output_ecoli_val/ragtag.correction.agp
