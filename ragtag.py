@@ -47,6 +47,7 @@ usage: ragtag.py <command> [options]
       correct         correct contig misassemblies 
       scaffold        scaffold contigs
       updategff       update gff intervals
+      agp2fasta       build a FASTA file from an AGP file
 
     options:
       -c, --citation  
@@ -78,6 +79,10 @@ usage: ragtag.py <command> [options]
 
         elif cmd == "updategff":
             subcmd = ["ragtag_update_gff.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+
+        elif cmd == "agp2fasta":
+            subcmd = ["ragtag_agp2fasta.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         else:
