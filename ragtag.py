@@ -43,11 +43,16 @@ Version: %s
 
 usage: ragtag.py <command> [options]
     
-    commands:
-      correct         correct contig misassemblies 
-      scaffold        scaffold contigs
-      updategff       update gff intervals
+    assembly improvement:
+      correct         correct misassemblies 
+      scaffold        synteny scaffolding
+      
+    file utilities:
       agp2fasta       build a FASTA file from an AGP file
+      agpcheck       check for valid AGP file format
+      updategff       update gff intervals
+      
+    
 
     options:
       -c, --citation  
@@ -83,6 +88,10 @@ usage: ragtag.py <command> [options]
 
         elif cmd == "agp2fasta":
             subcmd = ["ragtag_agp2fasta.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+
+        elif cmd == "agpcheck":
+            subcmd = ["ragtag_agpcheck.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         else:
