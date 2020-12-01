@@ -32,9 +32,9 @@ from ragtag_utilities.AGPFile import AGPFile
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build scaffolds from an 'orderings.bed' file")
+    parser = argparse.ArgumentParser(description="Break corrected query sequences (objects) into components.")
     parser.add_argument("agp", metavar="<ragtag.correction.agp>", type=str, help="AGP v2.1 file produced by 'ragtag.py correct'")
-    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file to be scaffolded. must not be gzipped")
+    parser.add_argument("query", metavar="<query.fasta>", type=str, help="query fasta file corresponding to objects in <ragtag.correction.agp> (can be uncompressed or bgzipped")
 
     args = parser.parse_args()
     agp_file = args.agp
