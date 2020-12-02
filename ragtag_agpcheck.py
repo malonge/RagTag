@@ -25,7 +25,6 @@ SOFTWARE.
 """
 
 import os
-import sys
 import argparse
 
 from ragtag_utilities.utilities import log
@@ -33,7 +32,7 @@ from ragtag_utilities.AGPFile import AGPFile
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Check AGP v2.1 files for validity.", usage="reconcile.py <asm1.agp> [<asm2.agp> ... <asmN.agp>]")
+    parser = argparse.ArgumentParser(description="Check AGP v2.1 files for validity.", usage="ragtag.py agpcheck <asm1.agp> [<asm2.agp> ... <asmN.agp>]")
     parser.add_argument("agp", metavar="<asm1.agp> [<asm2.agp> ... <asmN.agp>]", nargs='+', default=[], type=str, help="AGP v2.1 files")
 
     DISCLAIMER = """

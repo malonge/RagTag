@@ -44,12 +44,12 @@ Version: %s
 usage: ragtag.py <command> [options]
     
     assembly improvement:
-      correct         correct misassemblies 
+      correct         misassembly correction 
       scaffold        synteny scaffolding
       
     file utilities:
       agp2fasta       build a FASTA file from an AGP file
-      agpcheck       check for valid AGP file format
+      agpcheck        check for valid AGP file format
       updategff       update gff intervals
       
     
