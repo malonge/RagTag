@@ -31,7 +31,7 @@ from collections import defaultdict
 
 import pysam
 
-from ragtag_utilities.utilities import log, run_o, get_ragtag_version
+from ragtag_utilities.utilities import log, run_oae, get_ragtag_version
 from ragtag_utilities.AlignmentReader import PAFReader
 from ragtag_utilities.ContigAlignment import ContigAlignment
 from ragtag_utilities.AGPFile import AGPFile
@@ -311,6 +311,10 @@ def main():
         os.mkdir(output_path)
     output_path = os.path.abspath(output_path) + "/"
 
+    # Setup a log file for external RagTag scripts
+    ragtag_log = output_path + "ragtag.scaffold.err"
+    open(ragtag_log, "w").close()  # Wipe the log file
+
     overwrite_files = args.w
     remove_suffix = not args.u
     if remove_suffix:
@@ -378,7 +382,7 @@ def main():
     # If alignments are from Nucmer, need to convert from delta to paf
     if aligner == "nucmer":
         cmd = ["ragtag_delta2paf.py", output_path + "query_against_ref.delta"]
-        run_o(cmd, output_path + "query_against_ref.paf", )
+        run_oae(cmd, output_path + "query_against_ref.paf", ragtag_log)
 
     # Read and organize the alignments
     log('Reading whole genome alignments')
@@ -512,7 +516,7 @@ def main():
         output_path + "ragtag.scaffolds.agp",
         query_file
     ]
-    run_o(cmd, output_path + "ragtag.scaffolds.fasta")
+    run_oae(cmd, output_path + "ragtag.scaffolds.fasta", ragtag_log)
 
     # Calculate the stats
     cmd = [
@@ -520,7 +524,7 @@ def main():
         output_path + "ragtag.scaffolds.agp",
         output_path + "ragtag.confidence.txt"
     ]
-    run_o(cmd, output_path + "ragtag.scaffolds.stats")
+    run_oae(cmd, output_path + "ragtag.scaffolds.stats", ragtag_log)
 
     log("Goodbye")
 

@@ -112,6 +112,25 @@ def run_e(cmd, err):
     f_err.close()
 
 
+def run_oae(cmd, out, err):
+    """ Run a command and redirect stdout/stderr. Append rather than write to err"""
+
+    if not isinstance(out, str) or not isinstance(err, str):
+        raise TypeError("out/err should be file names (strings)")
+
+    f_out = open(out, "w")
+    f_err = open(err, "a")
+
+    log('Running: %s > %s 2> %s' % (" ".join(cmd), out, err))
+    if subprocess.call(cmd, stdout=f_out, stderr=f_err) != 0:
+        raise RuntimeError('Failed : %s > %s 2> %s. Check stderr file for details.' % (" ".join(cmd), out, err))
+
+    log('Finished running : %s > %s 2> %s' % (" ".join(cmd), out, err))
+
+    f_out.close()
+    f_err.close()
+
+
 def log(message):
     """ Log messages to standard error. """
     sys.stderr.write(time.ctime() + ' --- ' + message + "\n")
