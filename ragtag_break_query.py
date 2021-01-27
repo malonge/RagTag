@@ -40,7 +40,7 @@ def main():
     agp_file = args.agp
     query_file = args.query
 
-    x = pysam.FastaFile(query_file)
+    fai = pysam.FastaFile(query_file)
     agp = AGPFile(agp_file)
 
     # Iterate through the agp file
@@ -51,7 +51,9 @@ def main():
             raise ValueError("No sequences should have a '-' orientation.")
         start, end = int(line.obj_beg) - 1, int(line.obj_end)
         print(">" + line.comp)
-        print(x.fetch(line.obj, start, end))
+        print(fai.fetch(line.obj, start, end))
+
+    fai.close()
 
 
 if __name__ == "__main__":

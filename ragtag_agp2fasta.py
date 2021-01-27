@@ -72,6 +72,7 @@ def main():
 
     # End the FASTA file with a newline
     sys.stdout.write("\n")
+    fai.close()
 
 
 if __name__ == "__main__":

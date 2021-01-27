@@ -259,8 +259,8 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
         else:
             log("Overwriting pre-existing file: " + out_file)
 
-    x = pysam.FastaFile(query_file)
-    all_q_seqs = sorted(x.references)
+    fai = pysam.FastaFile(query_file)
+    all_q_seqs = sorted(fai.references)
     agp = AGPFile(out_file, "w")
 
     agp.add_comment("## agp-version 2.1")
@@ -274,17 +274,17 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
             # Add suffix to query header, unless otherwise requested
             unchanged_comp_header = q
             if not remove_suffix:
-                unchanged_comp_header = q + ":0" + "-" + str(x.get_reference_length(q)) + "(+)"
+                unchanged_comp_header = q + ":0" + "-" + str(fai.get_reference_length(q)) + "(+)"
 
             agp.add_seq_line(
                     q,
                     "1",
-                    str(x.get_reference_length(q)),
+                    str(fai.get_reference_length(q)),
                     "1",
                     "W",
                     unchanged_comp_header,
                     "1",
-                    str(x.get_reference_length(q)),
+                    str(fai.get_reference_length(q)),
                     "+"
             )
         else:  # This query sequence was broken
@@ -310,17 +310,18 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
             agp.add_seq_line(
                     q,
                     str(start+1),
-                    str(x.get_reference_length(q)),
+                    str(fai.get_reference_length(q)),
                     str(pid),
                     "W",
-                    q + ":" + str(start) + "-" + str(x.get_reference_length(q)) + "(+)",
+                    q + ":" + str(start) + "-" + str(fai.get_reference_length(q)) + "(+)",
                     "1",
-                    str(x.get_reference_length(q)-start),
+                    str(fai.get_reference_length(q)-start),
                     "+"
             )
 
     log("Writing: " + out_file)
     agp.write()
+    fai.close()
 
 
 def main():

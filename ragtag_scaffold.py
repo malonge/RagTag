@@ -192,6 +192,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 agp.add_seq_line(*out_agp_line)
 
     agp.write()
+    fai.close()
 
     # Write the confidence scores
     with open(out_confidence_file, "w") as f:

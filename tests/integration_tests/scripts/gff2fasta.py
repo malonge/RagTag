@@ -46,5 +46,8 @@ def main():
                 else:
                     raise ValueError("Incorrect strand value")
 
+    x.close()
+
+
 if __name__ == "__main__":
     main()

@@ -9,3 +9,6 @@ x = pysam.FastaFile(sys.argv[1])
 for i in sorted(x.references):
     print(">" + i)
     print(x.fetch(i))
+
+x.close()
+
