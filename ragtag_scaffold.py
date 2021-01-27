@@ -63,6 +63,9 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
             log("Retaining pre-existing file: " + out_agp_file)
             return
 
+        else:
+            log("Overwriting pre-existing file: " + out_agp_file)
+
     # Proceed with writing the intermediate output
     placed_seqs = set()
     all_out_cs_lines = []  # For confidence scores
@@ -508,7 +511,7 @@ def main():
 
     # Write the intermediate output file in AGP v2.1 format
     log("Writing: " + output_path + "ragtag.scaffolds.agp")
-    write_orderings(output_path + "ragtag.scaffolds.agp", output_path + "ragtag.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, overwrite_files, not remove_suffix)
+    write_orderings(output_path + "ragtag.scaffolds.agp", output_path + "ragtag.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, True, not remove_suffix)
 
     # Build a FASTA from the AGP
     cmd = [

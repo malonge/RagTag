@@ -630,7 +630,7 @@ def main():
 
     # Write the summary of query sequence breaks in AGP format
     agp_file = output_path + "ragtag.correction.agp"
-    write_breaks(agp_file, query_file, ctg_breaks, overwrite_files, remove_suffix)
+    write_breaks(agp_file, query_file, ctg_breaks, True, remove_suffix)
 
     # Write the scaffolds.
     log("Writing broken contigs")
