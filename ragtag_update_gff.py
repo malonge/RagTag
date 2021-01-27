@@ -144,7 +144,7 @@ def main():
         sys.exit()
 
     log("RagTag " + get_ragtag_version())
-    log("CMD: " + " ".join(sys.argv))
+    log("CMD: ragtag.py updategff " + " ".join(sys.argv[1:]))
 
     gff_file = os.path.abspath(args.gff)
     agp_file = os.path.abspath(args.agp)

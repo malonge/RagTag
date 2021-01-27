@@ -282,7 +282,7 @@ def main():
         sys.exit()
 
     log("RagTag " + get_ragtag_version())
-    log("CMD: " + " ".join(sys.argv))
+    log("CMD: ragtag.py scaffold " + " ".join(sys.argv[1:]))
 
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
