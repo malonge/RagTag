@@ -89,7 +89,7 @@ class AGPFile:
         with open(self.fn, "r") as f:
             for line in f:
                 line_number += 1
-                line = line.rstrip()
+                line = line.rstrip("\n")
                 if line.startswith("#"):
                     if not in_body:
                         self.comment_lines.append(line)
