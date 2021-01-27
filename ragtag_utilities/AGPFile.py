@@ -188,9 +188,6 @@ class AGPFile:
         self.obj_intervals.append((agp_line.obj_beg - 1, agp_line.obj_end))
         self.agp_lines.append(agp_line)
 
-        #  Adding a new line triggers the necessity to perform end validation
-        self._is_validated = False
-
     def add_gap_line(self, obj, obj_beg, obj_end, pid, comp_type, gap_len, gap_type, linkage, linkage_evidence):
         line_number = len(self.comment_lines) + len(self.agp_lines) + 1
         agp_line = AGPGapLine(obj, obj_beg, obj_end, pid, comp_type, gap_len, gap_type, linkage, linkage_evidence)
@@ -437,5 +434,12 @@ class AGPGapLine(AGPLine):
             if e not in AGPGapLine.allowed_evidence_types:
                 raise ValueError("Invalid linkage evidence: %s" % e)
 
-        if self.linkage == "no" and self.gap_type == "scaffold":
-            raise ValueError("Invalid 'scaffold' gap without linkage evidence")
+        if self.linkage == "no":
+            if self.gap_type == "scaffold":
+                raise ValueError("Invalid 'scaffold' gap without linkage evidence")
+
+            if self.linkage_evidence != "na":
+                raise ValueError("Linkage evidence must be 'na' when not asserting linkage. Got {}".format(self.linkage_evidence))
+        else:
+            if "na" in all_evidence:
+                raise ValueError("'na' is invalid linkage evidence when asserting linkage")
