@@ -38,7 +38,7 @@ from ragtag_utilities.AGPFile import AGPFile
 def sub_update(gff_file, agp_file):
     # Make a dictionary associating each original sequence with an interval tree of component sequences
     trans = defaultdict(IntervalTree)
-    agp = AGPFile(agp_file)
+    agp = AGPFile(agp_file, mode="r")
     for agp_line in agp.iterate_lines():
 
         # Check that the agp file looks correct for this task
@@ -89,7 +89,7 @@ def sup_update(gff_file, agp_file):
     trans = {}
     strands = {}
     seq_lens = {}
-    agp = AGPFile(agp_file)
+    agp = AGPFile(agp_file, mode="r")
     for agp_line in agp.iterate_lines():
         if not agp_line.is_gap:
             start, end = agp_line.obj_beg - 1, agp_line.obj_end

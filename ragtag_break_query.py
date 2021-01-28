@@ -41,7 +41,7 @@ def main():
     query_file = args.query
 
     fai = pysam.FastaFile(query_file)
-    agp = AGPFile(agp_file)
+    agp = AGPFile(agp_file, mode="r")
 
     # Iterate through the agp file
     for line in agp.iterate_lines():

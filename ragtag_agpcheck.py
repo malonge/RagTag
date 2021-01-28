@@ -51,7 +51,7 @@ def main():
     for agp_file in agp_file_list:
         print()
         log("Checking {} ...".format(agp_file))
-        agp = AGPFile(agp_file)
+        agp = AGPFile(agp_file, mode="r")
         for _ in agp.iterate_lines():
             pass
         log("Check for {} is complete with no errors.".format(agp_file))

@@ -47,7 +47,7 @@ def main():
     components_file = args.components
 
     fai = pysam.FastaFile(components_file)
-    agp = AGPFile(agp_file)
+    agp = AGPFile(agp_file, mode="r")
 
     # Iterate over the lines of the AGP file
     prev_obj = None

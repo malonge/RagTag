@@ -63,7 +63,7 @@ def main():
             placed_seqs.add(header)
 
     # Iterate through the AGP file
-    agp = AGPFile(agp_file)
+    agp = AGPFile(agp_file, mode="r")
     for line in agp.iterate_lines():
         if line.is_gap:
             gap_bp += line.gap_len
