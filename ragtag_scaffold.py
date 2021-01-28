@@ -71,7 +71,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
     all_out_cs_lines = []  # For confidence scores
     agp = AGPFile(out_agp_file, mode="w")
 
-    agp.add_comment("## agp-version 2.1")
+    agp.add_pragma()
     agp.add_comment("# AGP created by RagTag")
 
     # Go through the reference sequences in sorted order

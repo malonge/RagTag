@@ -261,9 +261,9 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
 
     fai = pysam.FastaFile(query_file)
     all_q_seqs = sorted(fai.references)
-    agp = AGPFile(out_file, "w")
+    agp = AGPFile(out_file, mode="w")
 
-    agp.add_comment("## agp-version 2.1")
+    agp.add_pragma()
     agp.add_comment("# AGP created by RagTag")
 
     for q in all_q_seqs:
