@@ -32,7 +32,7 @@ import numbers
 import pysam
 import networkx as nx
 
-from AGPFile import AGPFile
+from ragtag_utilities.AGPFile import AGPFile
 
 
 """
