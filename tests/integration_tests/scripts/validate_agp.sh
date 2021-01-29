@@ -35,16 +35,23 @@ mecho "Building itermediate FASTA files"
 
 # Check that the generated fasta file is the same as the ragtag objects file
 seqtk seq -A -U $OBJS > 1.fasta
-/Library/Frameworks/Python.framework/Versions/3.6/bin/python3 scripts/sort_fasta.py 1.fasta > 1.s.fasta
+python3 scripts/sort_fasta.py 1.fasta > 1.s.fasta
 
 sed 's/>lcl|/>/g' objs.fasta > 2.fasta
 seqtk seq -A -U 2.fasta > 2.r.fasta
-/Library/Frameworks/Python.framework/Versions/3.6/bin/python3 scripts/sort_fasta.py 2.r.fasta > 2.s.fasta
+python3 scripts/sort_fasta.py 2.r.fasta > 2.s.fasta
 
 echo ""
 mecho "Comparing fasta files with 'cmp':"
 
 cmp 1.s.fasta 2.s.fasta
+
+echo ""
+mecho "Checking that all components are in the output"
+mecho "printing any inconsistent components: "
+samtools faidx $COMPS
+comm -3 <(awk '$5 == "W"' $AGP | cut -f 6 | sort) <(cut -f1 $COMPS.fai | sort)
+mecho "done"
 
 rm objs.fasta
 rm 1.fasta 1.s.fasta 1.fasta.fai
