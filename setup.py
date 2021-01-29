@@ -32,6 +32,7 @@ setup(
               'intervaltree',
               'numpy',
               'pysam',
+              'networkx',
           ],
     python_requires='>=3.6',
     scripts=scripts,

@@ -9,16 +9,19 @@
 # install with conda
 conda install -c bioconda ragtag
 
-# or install from source
-git clone https://github.com/malonge/RagTag
-cd RagTag
-python3 setup.py install
-
 # correct contigs
 ragtag.py correct ref.fasta query.fasta
 
 # scaffold contigs
 ragtag.py scaffold ref.fa ragtag_output/query.corrected.fasta
+
+# scaffold with multiple references
+ragtag.py scaffold -o out_1 ref1.fasta query.fasta
+ragtag.py scaffold -o out_2 ref2.fasta query.fasta
+ragtag.py merge query.fasta out_*/*.agp
+
+# use Hi-C to resolve conflicts
+ragtag.py merge -b hic.bam query.fasta out_*/*.agp
 ```
 
 ## Docs
@@ -30,6 +33,7 @@ Please see the [Wiki](https://github.com/malonge/RagTag/wiki) for detailed docum
     - numpy
     - intervaltree
     - pysam
+    - networkx
     
 ## Citation
 
@@ -37,4 +41,4 @@ Alonge, Michael, et al. ["RaGOO: fast and accurate reference-guided scaffolding 
 
 ## Acknowledgments
 
-Many of the major algorithmic improvements relative to RaGOO's first release were provided by Aleksey Zimin, lead developer of the [MaSuRCA assembler](https://github.com/alekseyzimin/masurca). This includes the use of read-mapping for misassembly validation as well as the use of alignment merging for improved scaffolding. [Luca Venturini](https://github.com/lucventurini) also suggested and initially implemented many feature enhancments, such as pysam integration.
+Many of the major algorithmic improvements relative to RaGOO's first release were provided by Aleksey Zimin, lead developer of the [MaSuRCA assembler](https://github.com/alekseyzimin/masurca). This includes the use of read-mapping for misassembly validation as well as the use of alignment merging for improved scaffolding. [Luca Venturini](https://github.com/lucventurini) also suggested and initially implemented many feature enhancments, such as pysam integration. RagTag "merge" was inspired by [CAMSA](https://doi.org/10.1186/s12859-017-1919-y). The developer of CAMSA, [Sergey Aganezov](https://github.com/aganezov), helped review relevant RagTag code.  

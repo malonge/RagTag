@@ -46,6 +46,7 @@ usage: ragtag.py <command> [options]
     assembly improvement:
       correct         misassembly correction 
       scaffold        synteny scaffolding
+      merge           scaffold merging
       
     file utilities:
       agp2fasta       build a FASTA file from an AGP file
@@ -74,16 +75,16 @@ usage: ragtag.py <command> [options]
         elif cmd == "-c" or cmd == "--citation":
             print(CITATION)
 
-        elif cmd == "scaffold":
-            subcmd = ["ragtag_scaffold.py"] + sys.argv[2:]
-            subprocess.call(subcmd)
-
         elif cmd == "correct":
             subcmd = ["ragtag_correct.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
-        elif cmd == "updategff":
-            subcmd = ["ragtag_update_gff.py"] + sys.argv[2:]
+        elif cmd == "scaffold":
+            subcmd = ["ragtag_scaffold.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+
+        elif cmd == "merge":
+            subcmd = ["ragtag_merge.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         elif cmd == "agp2fasta":
@@ -94,9 +95,13 @@ usage: ragtag.py <command> [options]
             subcmd = ["ragtag_agpcheck.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
+        elif cmd == "updategff":
+            subcmd = ["ragtag_update_gff.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+
         else:
             print(description)
-            print("\n** unrecognized command: %s" % cmd)
+            print("\n** unrecognized command: %s **" % cmd)
 
 
 if __name__ == "__main__":
