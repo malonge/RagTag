@@ -369,6 +369,7 @@ def main():
 
     if not args.reference or not args.query:
         parser.print_help()
+        print("\n** The reference and query FASTA files are required **")
         sys.exit()
 
     log("RagTag " + get_ragtag_version())
