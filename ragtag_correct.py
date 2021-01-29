@@ -327,8 +327,8 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
 def main():
     parser = argparse.ArgumentParser(description='Reference-guided misassembly correction', usage="ragtag.py correct <reference.fa> <query.fa>")
 
-    parser.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file (can be uncompressed or bgzipped)")
-    parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (can be uncompressed or bgzipped)")
+    parser.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file (uncompressed or bgzipped)")
+    parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (uncompressed or bgzipped)")
 
     cor_options = parser.add_argument_group("correction options")
     cor_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
@@ -336,11 +336,11 @@ def main():
     cor_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
     cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
-    cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
-    cor_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave uncorrected")
+    cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore [null]")
+    cor_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave uncorrected [null]")
     cor_options.add_argument("--inter", action="store_true", default=False, help="only break misassemblies between reference sequences")
     cor_options.add_argument("--intra", action="store_true", default=False, help="only break misassemblies within reference sequences")
-    cor_options.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals")
+    cor_options.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals [null]")
 
     io_options = parser.add_argument_group("input/output options")
     io_options.add_argument("-o", metavar="PATH", type=str, default="ragtag_output", help="output directory [./ragtag_output]")
@@ -357,9 +357,9 @@ def main():
 
     val_options = parser.add_argument_group("validation options")
     val_options.add_argument("--read-aligner", metavar="PATH", type=str, default="minimap2", help="read aligner executable (only 'minimap2' is allowed) [minimap2]")
-    val_options.add_argument("-R", metavar="<reads.fasta>", type=str, default="", help="validation reads. gzipped fastq or fasta allowed.")
-    val_options.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files.")
-    val_options.add_argument("-T", metavar="sr", type=str, default="", help="read type. 'sr' and 'corr' accepted for short reads and error corrected long-reads, respectively.")
+    val_options.add_argument("-R", metavar="<reads.fasta>", type=str, default="", help="validation reads (uncompressed or gzipped) [null]")
+    val_options.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files [null]")
+    val_options.add_argument("-T", metavar="STR", type=str, default="", help="read type. 'sr' and 'corr' accepted for short reads and error corrected long-reads, respectively [null]")
     val_options.add_argument("-v", metavar="INT", type=int, default=10000, help="coverage validation window size [10000]")
     val_options.add_argument("--max-cov", metavar="INT", type=int, default=-1, help="break sequences at regions at or above this coverage level [AUTO]")
     val_options.add_argument("--min-cov", metavar="INT", type=int, default=-1, help="break sequences at regions at or below this coverage level [AUTO]")
