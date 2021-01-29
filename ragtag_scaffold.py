@@ -249,9 +249,11 @@ def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
 
 def main():
     parser = argparse.ArgumentParser(description='Reference-guided scaffolding', usage="ragtag.py scaffold <reference.fa> <query.fa>")
+
+    parser.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file (can be uncompressed or bgzipped)")
+    parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (can be uncompressed or bgzipped)")
+
     scaf_options = parser.add_argument_group("scaffolding options")
-    scaf_options.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file (can be uncompressed or bgzipped)")
-    scaf_options.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (can be uncompressed or bgzipped)")
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave unplaced")
     scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
