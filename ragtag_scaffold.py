@@ -72,7 +72,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
     agp = AGPFile(out_agp_file, mode="w")
 
     agp.add_pragma()
-    agp.add_comment("# AGP created by RagTag")
+    agp.add_comment("# AGP created by RagTag {}".format(get_ragtag_version()))
 
     # Go through the reference sequences in sorted order
     sorted_ref_headers = sorted(list(ordering_dict.keys()))

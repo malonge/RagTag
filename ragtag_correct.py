@@ -264,7 +264,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
     agp = AGPFile(out_file, mode="w")
 
     agp.add_pragma()
-    agp.add_comment("# AGP created by RagTag")
+    agp.add_comment("# AGP created by RagTag {}".format(get_ragtag_version()))
 
     for q in all_q_seqs:
 
