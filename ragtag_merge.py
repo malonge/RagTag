@@ -244,7 +244,7 @@ def write_agp_solution(cover_graph, scaffold_graph, agp_fname, gap_func="MIN", a
 def main():
     parser = argparse.ArgumentParser(description="Merging and reconciling scaffolds", usage="ragtag.py merge <asm.fa> <scf1.agp> <scf2.agp> [...]")
     parser.add_argument("components", metavar="<asm.fasta>", nargs='?', default="", type=str, help="assembly fasta file (uncompressed or bgzipped)")
-    parser.add_argument("agps", metavar="<scf.agp> [...]", nargs='*', default=[], type=str, help="scaffolding AGP")
+    parser.add_argument("agps", metavar="<scf1.agp> <scf2.agp> [...]", nargs='*', default=[], type=str, help="scaffolding AGP files")
 
     merge_options = parser.add_argument_group("merging options")
     merge_options.add_argument("-f", metavar="FILE", default="", type=str, help="CSV list of (AGP file,weight) [null]")
@@ -279,7 +279,7 @@ def main():
 
     if not args.agps and not args.f:
         parser.print_help()
-        print("\n** At least one AGP file is required **")
+        print("\n** At least two AGP files are required **")
         sys.exit()
 
     log("RagTag " + get_ragtag_version())
@@ -352,6 +352,9 @@ def main():
                 fields = line.rstrip().split(",")
                 agp_list.append(fields[0])
                 weight_list.append(float(fields[1]))
+
+    if len(agp_list) < 2:
+        raise ValueError("At least two AGP files are required for merging")
 
     # Build the graph and filter nodes by sequence length
     log("Building the scaffold graph from the AGP files")

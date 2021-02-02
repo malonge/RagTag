@@ -45,6 +45,10 @@ E_QUERY=$8
 E_QUERY_PREF=`basename $E_QUERY .fasta`
 E_VAL_FOFN=$9
 
+M_ASM=$A_QUERY
+M_AGP_1=${10}
+M_AGP_2=${11}
+
 
 # Run RagTag
 # Settings: default
@@ -189,3 +193,40 @@ echo ""
 bash scripts/validate_agp.sh $E_QUERY \
     ragtag_output_ecoli_val/$E_QUERY_PREF.corrected.fasta \
     ragtag_output_ecoli_val/ragtag.correction.agp
+
+
+# Run ragtag merge
+# Settings: default
+# Data: Arabidopsis, same AGP twice
+echo ""
+echo "********************************************************************************"
+echo "***     Running ragtag merge on Arabidopsis data with default parameters     ***"
+echo "********************************************************************************"
+echo ""
+
+bash scripts/run_merge_default.sh ragtag_output_merge_same \
+    $M_ASM
+    $M_AGP_1
+    $M_AGP_2
+
+# Validate the agp files
+echo ""
+mecho "Validating AGP files and associated fasta files:"
+echo ""
+
+bash scripts/validate_agp.sh ragtag_output_merge_same/ragtag.merge.fasta \
+    $M_ASM \
+    ragtag_output_merge_same/ragtag.merge.agp
+
+# Since the input files define the same objects, check that the input and output AGPs define the same objects
+bash scripts/validate_agp_eq.sh $M_ASM \
+    $M_AGP_1 \
+    $M_AGP_2
+
+bash scripts/validate_agp_eq.sh $M_ASM \
+    $M_AGP_1 \
+    ragtag_output_merge_same/ragtag.merge.agp
+
+bash scripts/validate_agp_eq.sh $M_ASM \
+    $M_AGP_2 \
+    ragtag_output_merge_same/ragtag.merge.agp
