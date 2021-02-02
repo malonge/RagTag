@@ -26,18 +26,22 @@ AGP1=$2
 AGP2=$3
 
 # Prep the objects for the first AGP file
-ragtag.py agp2fasta $ASM $AGP1 > 1.fasta
-ptyhon3 scripts/choose_strand.py 1.fasta > 1.s.fasta
-python3 scripts/sort_fasta.py 1.s.fasta > 1.s.s.fasta
+ragtag.py agp2fasta $AGP1 $ASM > 1.fasta
+python3 scripts/choose_strand.py 1.fasta > 1.s.fasta
+grep -v ">"  1.s.fasta | sort > 1.seq
 
 # Prep the objects for the second AGP file
-ragtag.py agp2fasta $ASM $AGP2 > 2.fasta
-ptyhon3 scripts/choose_strand.py 2.fasta > 2.s.fasta
-python3 scripts/sort_fasta.py 2.s.fasta > 2.s.s.fasta
+ragtag.py agp2fasta $AGP2 $ASM > 2.fasta
+python3 scripts/choose_strand.py 2.fasta > 2.s.fasta
+grep -v ">"  2.s.fasta | sort > 2.seq
 
 echo ""
-mecho "Comparing fasta files with 'cmp':"
+mecho "Comparing sequence files with 'cmp':"
 
-cmp 1.s.s.fasta 2.s.s.fasta
+cmp 1.seq 2.seq
 
-rm 1.fasta 1.s.fasta 1.s.s.fasta 2.fasta 2.s.fasta 2.s.s.fasta
+mecho "done"
+
+rm 1.fasta.fai 2.fasta.fai
+#rm 1.fasta 1.s.fasta 2.fasta 2.s.fasta
+#rm 1.seq 2.seq

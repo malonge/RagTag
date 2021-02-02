@@ -26,4 +26,4 @@ OUTDIR=$1
 ASM=$2
 AGP="${*:3}"
 
-ragtag.py merge --debug -u -o $OUTDIR $ASM $AGP
+ragtag.py merge --debug -u -l 0 -o $OUTDIR $ASM $AGP

@@ -206,8 +206,8 @@ echo "**************************************************************************
 echo ""
 
 bash scripts/run_merge_default.sh ragtag_output_merge_same \
-    $M_ASM
-    $M_AGP_1
+    $M_ASM \
+    $M_AGP_1 \
     $M_AGP_2
 
 # Validate the agp files
@@ -243,8 +243,8 @@ echo "**************************************************************************
 echo ""
 
 bash scripts/run_merge_default.sh ragtag_output_merge_diff \
-    $M_ASM
-    $M_AGP_1
+    $M_ASM \
+    $M_AGP_1 \
     $M_AGP_3
 
 # Validate the agp files
@@ -254,4 +254,4 @@ echo ""
 
 bash scripts/validate_agp.sh ragtag_output_merge_diff/ragtag.merge.fasta \
     $M_ASM \
-    ragtag_output_merge_same/ragtag.merge.agp
+    ragtag_output_merge_diff/ragtag.merge.agp

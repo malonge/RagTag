@@ -283,7 +283,7 @@ def main():
         sys.exit()
 
     log("RagTag " + get_ragtag_version())
-    log("This is the beta version of `ragtag merge`")
+    log("This is a beta version of `ragtag merge`")
     log("CMD: ragtag.py merge " + " ".join(sys.argv[1:]))
 
     # Check that the components FASTA file exists
