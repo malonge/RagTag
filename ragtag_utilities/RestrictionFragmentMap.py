@@ -87,33 +87,30 @@ class RestrictionEnzymes:
         """
         msg = """
     Below is a list of all accepted restriction enzymes and
-    their restriction sites:
-        """
-        print(msg + "\n")
+    their restriction sites:\n"""
+
+        print(msg)
         pairs = []
         for i, j in zip(RestrictionEnzymes.enzymes_raw, RestrictionEnzymes.sites):
             pairs.append("        {}: {}".format(i, j))
 
-        print("\n".join(pairs) + "\n")
+        print("\n".join(pairs))
 
         msg = """
     For RagTag, use a comma separated list of enzymes or
     sites (or a mix). For example, for Arima Hi-C, use
-    'Sau3AI,HinfI' or 'GATC,GA[ATCG]TC'.
-    """
+    'Sau3AI,HinfI' or 'GATC,GA[ATCG]TC'."""
         print(msg)
 
         msg = """
     Note that for restriction sites, wildcards are
     represented with python regex syntax, not IUPAC
-    ambiguity codes. e.g. '[ATCG]' instead of 'N'.
-    """
+    ambiguity codes. e.g. '[ATCG]' instead of 'N'."""
         print(msg)
 
         msg = """
     Please contact the developers if you would like to add
-    more enzymes/sites.
-        """
+    more enzymes/sites."""
         print(msg)
 
     def add(self, r):
