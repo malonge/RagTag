@@ -43,5 +43,5 @@ cmp 1.seq 2.seq
 mecho "done"
 
 rm 1.fasta.fai 2.fasta.fai
-#rm 1.fasta 1.s.fasta 2.fasta 2.s.fasta
-#rm 1.seq 2.seq
+rm 1.fasta 1.s.fasta 2.fasta 2.s.fasta
+rm 1.seq 2.seq
