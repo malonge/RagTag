@@ -8,7 +8,7 @@
 ## 3. second AGP file
 
 Usage() {
-    echo "Usage: $0 ref.fa query.fa genes.gff output_dir"
+    echo "Usage: $0 asm.fasta scf1.agp scf2.agp"
 }
 
 mecho() {
@@ -16,13 +16,28 @@ mecho() {
     echo "$NAME:" $1
 }
 
-if [ $# -lt 3 ] ; then
+if [ $# -lt 2 ] ; then
     Usage
     exit 1
 fi
 
-OUTDIR=$1
-ASM=$2
-AGP="${*:3}"
+ASM=$1
+AGP1=$2
+AGP2=$3
 
-ragtag.py merge --debug -u -o $OUTDIR $ASM $AGP
+# Prep the objects for the first AGP file
+ragtag.py agp2fasta $ASM $AGP1 > 1.fasta
+ptyhon3 scripts/choose_strand.py 1.fasta > 1.s.fasta
+python3 scripts/sort_fasta.py 1.s.fasta > 1.s.s.fasta
+
+# Prep the objects for the second AGP file
+ragtag.py agp2fasta $ASM $AGP2 > 2.fasta
+ptyhon3 scripts/choose_strand.py 2.fasta > 2.s.fasta
+python3 scripts/sort_fasta.py 2.s.fasta > 2.s.s.fasta
+
+echo ""
+mecho "Comparing fasta files with 'cmp':"
+
+cmp 1.s.s.fasta 2.s.s.fasta
+
+rm 1.fasta 1.s.fasta 1.s.s.fasta 2.fasta 2.s.fasta 2.s.s.fasta

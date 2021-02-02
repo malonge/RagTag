@@ -12,7 +12,7 @@
 # Assumes gff suffix is ".gff"
 
 Usage() {
-    echo "Usage: $0 ref.fa query.fa genes.gff output_dir"
+    echo "Usage: $0 ref.fasta query.fasta genes.gff output_dir"
 }
 
 mecho() {

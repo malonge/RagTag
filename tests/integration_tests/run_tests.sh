@@ -48,6 +48,7 @@ E_VAL_FOFN=$9
 M_ASM=$A_QUERY
 M_AGP_1=${10}
 M_AGP_2=${11}
+M_AGP_3=${12}
 
 
 # Run RagTag
@@ -199,9 +200,9 @@ bash scripts/validate_agp.sh $E_QUERY \
 # Settings: default
 # Data: Arabidopsis, same AGP twice
 echo ""
-echo "********************************************************************************"
-echo "***     Running ragtag merge on Arabidopsis data with default parameters     ***"
-echo "********************************************************************************"
+echo "*******************************************************************************"
+echo "***     Running ragtag merge on identical AGPs with default parameters     ***"
+echo "*******************************************************************************"
 echo ""
 
 bash scripts/run_merge_default.sh ragtag_output_merge_same \
@@ -229,4 +230,28 @@ bash scripts/validate_agp_eq.sh $M_ASM \
 
 bash scripts/validate_agp_eq.sh $M_ASM \
     $M_AGP_2 \
+    ragtag_output_merge_same/ragtag.merge.agp
+
+
+# Run ragtag merge
+# Settings: default
+# Data: Arabidopsis, two different references
+echo ""
+echo "*****************************************************************************************************"
+echo "***     Running ragtag merge on combing scaffolds from two references with default parameters     ***"
+echo "*****************************************************************************************************"
+echo ""
+
+bash scripts/run_merge_default.sh ragtag_output_merge_diff \
+    $M_ASM
+    $M_AGP_1
+    $M_AGP_3
+
+# Validate the agp files
+echo ""
+mecho "Validating AGP files and associated fasta files:"
+echo ""
+
+bash scripts/validate_agp.sh ragtag_output_merge_diff/ragtag.merge.fasta \
+    $M_ASM \
     ragtag_output_merge_same/ragtag.merge.agp
