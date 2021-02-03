@@ -23,4 +23,4 @@ OLD=$2
 
 mecho "comparing AGP files with cmp:"
 
-cmp $1 $2
+cmp <(grep -v ^"#" $1) <(grep -v ^"#" $2)
