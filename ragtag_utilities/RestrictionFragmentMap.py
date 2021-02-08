@@ -39,7 +39,9 @@ class RestrictionEnzymes:
         'Sau3AI',
         'MboI',
         'DpnII',
-        'HinfI'
+        'HinfI',
+        'DdeI',
+        'MseI'
     ]
 
     # Use python regex syntax, not IUPAC ambiguity codes for wildcards
@@ -50,7 +52,9 @@ class RestrictionEnzymes:
         r'GATC',
         r'GATC',
         r'GATC',
-        r'GA[ATCG]TC'
+        r'GA[ATCG]TC',
+        r'CT[ATCG]AG',
+        r'TTAA'
     ]
 
     # Keep everything upper case
@@ -98,14 +102,23 @@ class RestrictionEnzymes:
 
         msg = """
     For RagTag, use a comma separated list of enzymes or
-    sites (or a mix). For example, for Arima Hi-C, use
-    'Sau3AI,HinfI' or 'GATC,GA[ATCG]TC'."""
+    sites (or a mix). For example:
+    
+    -- Arima Hi-C v1.0
+        'Sau3AI,HinfI' or 'GATC,GA[ATCG]TC'.
+    
+    -- Arima Hi-C v2.0 ("Arima High Coverage Hi-C")
+        'Sau3AI,HinfI,DdeI,MseI' or 'GATC,GA[ATCG]TC,CT[ATCG]AG,TTAA'."""
         print(msg)
 
-        msg = """
+        msg = """ 
     Note that for restriction sites, wildcards are
     represented with python regex syntax, not IUPAC
-    ambiguity codes. e.g. '[ATCG]' instead of 'N'."""
+    ambiguity codes. e.g. '[ATCG]' instead of 'N'.
+    
+    Restriction enzymes are not necessarily _the_ enzyme
+    used for sample prep. Each is only _a_ enzyme that
+    cuts at the corresponding restriction site."""
         print(msg)
 
         msg = """
