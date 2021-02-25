@@ -52,6 +52,7 @@ usage: ragtag.py <command> [options]
       agp2fasta       build a FASTA file from an AGP file
       agpcheck        check for valid AGP file format
       updategff       update gff intervals
+      asmstats        assembly statistics
       
     
 
@@ -97,6 +98,10 @@ usage: ragtag.py <command> [options]
 
         elif cmd == "updategff":
             subcmd = ["ragtag_update_gff.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+
+        elif cmd == "asmstats":
+            subcmd = ["ragtag_asmstats.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         else:

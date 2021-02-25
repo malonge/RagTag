@@ -163,7 +163,7 @@ class AGPFile:
         return sum([len(self._comment_lines)] + [obj.num_lines for obj in self._objects])
 
     @property
-    def run_objs(self):
+    def num_objs(self):
         return len(self._objects)
 
     def add_pragma(self):
@@ -177,9 +177,14 @@ class AGPFile:
         else:
             self._comment_lines.append(pragma)
 
+    def iterate_objs(self):
+        """ Iterate over the objects of the AGP file. """
+        for obj in self._objects:
+            yield obj
+
     def iterate_lines(self):
         """ Iterate over the non-comment lines of AGP file. """
-        for obj in self._objects:
+        for obj in self.iterate_objs():
             for j in obj.iterate_lines():
                 yield j
 
