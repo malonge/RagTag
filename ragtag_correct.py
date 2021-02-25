@@ -380,10 +380,10 @@ def main():
 
     # Check that the reference/query file exists
     if not os.path.isfile(reference_file):
-        raise ValueError("Could not find file: %s" % reference_file)
+        raise FileNotFoundError("Could not find file: %s" % reference_file)
 
     if not os.path.isfile(query_file):
-        raise ValueError("Could not find file: %s" % query_file)
+        raise FileNotFoundError("Could not find file: %s" % query_file)
 
     num_threads = args.t
     min_ulen = args.f

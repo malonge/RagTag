@@ -53,6 +53,7 @@ def lens_from_gfa(fname):
     re_ln = re.compile(r'LN:i:\d+')
     l = []
 
+    # Iterate through the GFA looking for sequence lines
     with open(fname) as f:
         for line in f:
             if line.startswith("S"):
@@ -73,20 +74,20 @@ def lens_from_agp(fname):
 
 
 def print_header(NG=False):
-    header = ["file", "n", "sum", "genome_size", "min", "max", "auN"]
+    header = ["n", "sum", "genome_size", "min", "max", "auN"]
     if NG:
         header = header + ["NG50", "NG90", "LG50", "LG90"]
     else:
         header = header + ["N50", "N90", "L50", "L90"]
+    header.append("file")
     print("\t".join(header))
 
 
 def print_stats(fname, seq_lens, genome_size=0):
     seq_lens = sorted(seq_lens, reverse=True)
 
-    # Store the initial easy stats
+    # Add the initial stats
     stats = [
-        fname,  # file
         len(seq_lens),  # n
         sum(seq_lens)  # sum
     ]
@@ -105,7 +106,7 @@ def print_stats(fname, seq_lens, genome_size=0):
     if genome_size:
         total = genome_size
 
-    auN = 0
+    aun = 0
     n50 = None
     l50 = None
     n90 = None
@@ -114,7 +115,7 @@ def print_stats(fname, seq_lens, genome_size=0):
     found_n90 = False
 
     for i, l in enumerate(seq_lens):
-        auN += l * (l/(sum(seq_lens)))
+        aun += l * (l/total)
         csum += l
 
         # N50
@@ -131,18 +132,19 @@ def print_stats(fname, seq_lens, genome_size=0):
                 n90 = l
                 found_n90 = True
 
-    stats.append("{:.4f}".format(auN))
-    stats.append(n50)
-    stats.append(n90)
-    stats.append(l50)
-    stats.append(l90)
+    stats.append(round(aun))  # auN
+    stats.append(n50)  # N50
+    stats.append(n90)  # N90
+    stats.append(l50)  # L50
+    stats.append(l90)  # L90
+    stats.append(fname)  # file
 
     print("\t".join([str(i) for i in stats]))
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Calculate assembly sequence stats.", usage="ragtag.py asmstats [options] <in.fa>|<in.fai>|<in.sizes>|<in.gfa>|<in.agp> [...]")
-    parser.add_argument("asm", metavar="<in.fa>|<in.fai>|<in.sizes>|<in.gfa>|<in.agp> [...]", nargs='*', default=[], type=str, help="assembly files (bgzipped or uncompressed for FASTA)")
+    parser = argparse.ArgumentParser(description="Calculate assembly sequence stats.", usage="ragtag.py asmstats [options] <in.fa>|<in.fa.fai>|<in.fa.sizes>|<in.gfa>|<in.agp> [...]")
+    parser.add_argument("asm", metavar="<in.fa>|<in.fa.fai>|<in.fa.sizes>|<in.gfa>|<in.agp> [...]", nargs='*', default=[], type=str, help="assembly files (bgzipped or uncompressed for FASTA)")
     parser.add_argument("-g", metavar="INT", default=0, type=int, help="genome size for NGx [null]")
 
     args = parser.parse_args()
@@ -154,8 +156,10 @@ def main():
 
     print_header(NG=args.g)
 
-    seq_lens = []
     for asm_file in asm_file_list:
+        if not os.path.isfile(asm_file):
+            raise FileNotFoundError("File not found: {}".format(asm_file))
+
         if any([
             asm_file.endswith(".fasta"),
             asm_file.endswith(".fasta.gz"),
@@ -188,4 +192,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # TODO check if auN changes given genome size
