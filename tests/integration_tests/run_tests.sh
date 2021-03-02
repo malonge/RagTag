@@ -70,12 +70,12 @@ mecho "Validating AGP files and associated fasta files:"
 echo ""
 
 bash scripts/validate_agp.sh $T_QUERY \
-    ragtag_output_tomato_default/$T_QUERY_PREF.corrected.fasta \
-    ragtag_output_tomato_default/ragtag.correction.agp
+    ragtag_output_tomato_default/ragtag.correct.fasta \
+    ragtag_output_tomato_default/ragtag.correct.agp
 
-bash scripts/validate_agp.sh ragtag_output_tomato_default/ragtag.scaffolds.fasta \
-    ragtag_output_tomato_default/$T_QUERY_PREF.corrected.fasta \
-    ragtag_output_tomato_default/ragtag.scaffolds.agp
+bash scripts/validate_agp.sh ragtag_output_tomato_default/ragtag.scaffold.fasta \
+    ragtag_output_tomato_default/ragtag.correct.fasta \
+    ragtag_output_tomato_default/ragtag.scaffold.agp
 
 # Validate the gff files
 echo ""
@@ -84,12 +84,12 @@ echo ""
 
 bash scripts/validate_gff.sh $T_QUERY \
     $T_GFF \
-    ragtag_output_tomato_default/$T_QUERY_PREF.corrected.fasta \
+    ragtag_output_tomato_default/ragtag.correct.fasta \
     ragtag_output_tomato_default/$T_GFF_PREF.corr.gff
 
-bash scripts/validate_gff.sh ragtag_output_tomato_default/$T_QUERY_PREF.corrected.fasta \
+bash scripts/validate_gff.sh ragtag_output_tomato_default/ragtag.correct.fasta \
     ragtag_output_tomato_default/$T_GFF_PREF.corr.gff \
-    ragtag_output_tomato_default/ragtag.scaffolds.fasta \
+    ragtag_output_tomato_default/ragtag.scaffold.fasta \
     ragtag_output_tomato_default/$T_GFF_PREF.scaf.gff
 
 
@@ -98,10 +98,10 @@ echo ""
 mecho "Validating results:"
 echo ""
 
-bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.correction.agp \
+bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.correct.agp \
     ~/Projects/ragtag_workspace/static_results/tomato/ragtag.correction.agp
 
-bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.scaffolds.agp \
+bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.scaffold.agp \
     ~/Projects/ragtag_workspace/static_results/tomato/ragtag.scaffolds.agp
 
 
