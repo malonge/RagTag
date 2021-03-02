@@ -38,15 +38,16 @@ Genome biology 20.1 (2019): 1-17.
     """
 
     description = """
-RagTag: Reference-guided scaffolding and misassembly correction.
+RagTag: Fast and flexible genome assembly scaffolding.
 Version: %s
 
 usage: ragtag.py <command> [options]
     
     assembly improvement:
-      correct         misassembly correction 
+      correct         misassembly correction
       scaffold        synteny scaffolding
       merge           scaffold merging
+      patch           continuous scaffolding & gap filling
       
     file utilities:
       agp2fasta       build a FASTA file from an AGP file
@@ -54,7 +55,6 @@ usage: ragtag.py <command> [options]
       updategff       update gff intervals
       asmstats        assembly statistics
       
-    
 
     options:
       -c, --citation  
@@ -86,6 +86,10 @@ usage: ragtag.py <command> [options]
 
         elif cmd == "merge":
             subcmd = ["ragtag_merge.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+
+        elif cmd == "patch":
+            subcmd = ["ragtag_patch.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         elif cmd == "agp2fasta":
