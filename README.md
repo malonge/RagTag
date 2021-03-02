@@ -1,4 +1,4 @@
-[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=ff69b4)](https://github.com/malonge/RagTag/releases/tag/v1.1.1) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=%230BE67&label=conda)](https://anaconda.org/bioconda/ragtag)
+[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=ff69b4)](https://github.com/malonge/RagTag/releases/tag/v2.0.0) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=%230BE67&label=conda)](https://anaconda.org/bioconda/ragtag)
 
 
 ![logo_text](logo/ragtag_logo_text.svg)

@@ -36,7 +36,7 @@ complements = str.maketrans("ACGTNURYSWKMBVDHacgtnuryswkmbvdh", "TGCANAYRSWMKVBH
 
 
 def get_ragtag_version():
-    return 'v1.1.1'
+    return 'v2.0.0'
 
 
 def reverse_complement(seq):
