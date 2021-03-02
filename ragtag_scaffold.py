@@ -316,9 +316,10 @@ def main():
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
     output_path = os.path.abspath(output_path) + "/"
+    file_prefix = "ragtag.scaffold"
 
     # Setup a log file for external RagTag scripts
-    ragtag_log = output_path + "ragtag.scaffold.err"
+    ragtag_log = output_path + file_prefix + ".err"
     open(ragtag_log, "w").close()  # Wipe the log file
 
     overwrite_files = args.w
@@ -372,28 +373,28 @@ def main():
 
     # Debugging options
     debug_mode = args.debug
-    debug_non_fltrd_file = output_path + "ragtag.scaffolds.debug.unfiltered.paf"
-    debug_fltrd_file = output_path + "ragtag.scaffolds.debug.filtered.paf"
-    debug_merged_file = output_path + "ragtag.scaffolds.debug.merged.paf"
-    debug_query_info_file = output_path + "ragtag.scaffolds.debug.query.info.txt"
+    debug_non_fltrd_file = output_path + file_prefix + ".debug.unfiltered.paf"
+    debug_fltrd_file = output_path + file_prefix + ".debug.filtered.paf"
+    debug_merged_file = output_path + file_prefix + ".debug.merged.paf"
+    debug_query_info_file = output_path + file_prefix + ".debug.query.info.txt"
 
     # Align the query to the reference
     log("Mapping the query genome to the reference genome")
     if aligner == "minimap2":
-        al = Minimap2Aligner(reference_file, [query_file], aligner_path, mm2_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
+        al = Minimap2Aligner(reference_file, [query_file], aligner_path, mm2_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     else:
-        al = NucmerAligner(reference_file, [query_file], aligner_path, nucmer_params, output_path + "query_against_ref", in_overwrite=overwrite_files)
+        al = NucmerAligner(reference_file, [query_file], aligner_path, nucmer_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     al.run_aligner()
 
     # If alignments are from Nucmer, need to convert from delta to paf
     if aligner == "nucmer":
-        cmd = ["ragtag_delta2paf.py", output_path + "query_against_ref.delta"]
-        run_oae(cmd, output_path + "query_against_ref.paf", ragtag_log)
+        cmd = ["ragtag_delta2paf.py", output_path + file_prefix + ".asm.delta"]
+        run_oae(cmd, output_path + file_prefix + ".asm.paf", ragtag_log)
 
     # Read and organize the alignments
     log('Reading whole genome alignments')
     # ctg_alns = dict :: key=query header, value=ContigAlignment object
-    ctg_alns = read_genome_alignments(output_path + "query_against_ref.paf", query_blacklist, ref_blacklist)
+    ctg_alns = read_genome_alignments(output_path + file_prefix + ".asm.paf", query_blacklist, ref_blacklist)
 
     # Filter the alignments
     if debug_mode:
@@ -513,24 +514,24 @@ def main():
     log("Writing scaffolds")
 
     # Write the intermediate output file in AGP v2.1 format
-    log("Writing: " + output_path + "ragtag.scaffolds.agp")
-    write_orderings(output_path + "ragtag.scaffolds.agp", output_path + "ragtag.confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, True, not remove_suffix)
+    log("Writing: " + output_path + file_prefix + ".agp")
+    write_orderings(output_path + file_prefix + ".agp", output_path + file_prefix + ".confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, True, not remove_suffix)
 
     # Build a FASTA from the AGP
     cmd = [
         "ragtag_agp2fasta.py",
-        output_path + "ragtag.scaffolds.agp",
+        output_path + file_prefix + ".agp",
         query_file
     ]
-    run_oae(cmd, output_path + "ragtag.scaffolds.fasta", ragtag_log)
+    run_oae(cmd, output_path + file_prefix + ".fasta", ragtag_log)
 
     # Calculate the stats
     cmd = [
         "ragtag_stats.py",
-        output_path + "ragtag.scaffolds.agp",
-        output_path + "ragtag.confidence.txt"
+        output_path + file_prefix + ".agp",
+        output_path + file_prefix + ".confidence.txt"
     ]
-    run_oae(cmd, output_path + "ragtag.scaffolds.stats", ragtag_log)
+    run_oae(cmd, output_path + file_prefix + ".stats", ragtag_log)
 
     log("Goodbye")
 
