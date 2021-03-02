@@ -398,9 +398,10 @@ def main():
     if not os.path.isdir(output_path):
         os.mkdir(output_path)
     output_path = os.path.abspath(output_path) + "/"
+    file_prefix = "ragtag.correct"
 
     # Setup a log file for external RagTag scripts
-    ragtag_log = output_path + "ragtag.correct.err"
+    ragtag_log = output_path + file_prefix + ".err"
     open(ragtag_log, "w").close()  # Wipe the log file
 
     overwrite_files = args.w
@@ -501,28 +502,28 @@ def main():
 
     # Debugging options
     debug_mode = args.debug
-    debug_non_fltrd_file = output_path + "ragtag.correction.debug.unfiltered.paf"
-    debug_fltrd_file = output_path + "ragtag.correction.debug.filtered.paf"
-    debug_merged_file = output_path + "ragtag.correction.debug.merged.paf"
-    debug_query_info_file = output_path + "ragtag.correction.debug.query.info.txt"
+    debug_non_fltrd_file = output_path + file_prefix + ".debug.unfiltered.paf"
+    debug_fltrd_file = output_path + file_prefix + ".debug.filtered.paf"
+    debug_merged_file = output_path + file_prefix + ".debug.merged.paf"
+    debug_query_info_file = output_path + file_prefix + ".debug.query.info.txt"
 
     # Align the query to the reference.
     log("Mapping the query genome to the reference genome")
     if genome_aligner == "minimap2":
-        al = Minimap2Aligner(reference_file, [query_file], genome_aligner_path, mm2_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
+        al = Minimap2Aligner(reference_file, [query_file], genome_aligner_path, mm2_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     else:
-        al = NucmerAligner(reference_file, [query_file], genome_aligner_path, nucmer_params, output_path + "c_query_against_ref", in_overwrite=overwrite_files)
+        al = NucmerAligner(reference_file, [query_file], genome_aligner_path, nucmer_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     al.run_aligner()
 
     # If alignments are from Nucmer, convert from delta to paf.
     if genome_aligner == "nucmer":
-        cmd = ["ragtag_delta2paf.py", output_path + "c_query_against_ref.delta"]
-        run_oae(cmd, output_path + "c_query_against_ref.paf", ragtag_log)
+        cmd = ["ragtag_delta2paf.py", output_path + file_prefix + ".asm.delta"]
+        run_oae(cmd, output_path + file_prefix + ".asm.paf", ragtag_log)
 
     # Read and organize the alignments.
     log('Reading whole genome alignments')
     # ctg_alns = dict :: key=query header, value=ContigAlignment object
-    ctg_alns = read_genome_alignments(output_path + "c_query_against_ref.paf", query_blacklist, ref_blacklist)
+    ctg_alns = read_genome_alignments(output_path + file_prefix + ".asm.paf", query_blacklist, ref_blacklist)
 
     # Filter and merge the alignments.
     if debug_mode:
@@ -584,18 +585,18 @@ def main():
     if read_files:
         log("Validating putative query breakpoints via read alignment.")
         log("Aligning reads to query sequences.")
-        if not os.path.isfile(output_path + "c_reads_against_query.s.bam"):
+        if not os.path.isfile(output_path + file_prefix + ".reads.s.bam"):
             if val_reads_tech == "sr":
                 al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax sr -t " + str(num_threads),
-                                        output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+                                        output_path + file_prefix + ".reads", in_overwrite=overwrite_files)
             elif val_reads_tech == "corr":
                 al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax asm5 -t " + str(num_threads),
-                                        output_path + "c_reads_against_query", in_overwrite=overwrite_files)
+                                        output_path + file_prefix + ".reads", in_overwrite=overwrite_files)
             else:
                 raise ValueError("'-T' must be either 'sr' or 'corr'.")
             al.run_aligner()
         else:
-            log("Retaining pre-existing read alignments: " + output_path + "c_reads_against_query.s.bam")
+            log("Retaining pre-existing read alignments: " + output_path + file_prefix + ".reads.s.bam")
 
         # Compress, sort and index the alignments.
         log("Compressing, sorting, and indexing read alignments")
@@ -631,7 +632,7 @@ def main():
         ctg_breaks = non_gff_breaks
 
     # Write the summary of query sequence breaks in AGP format
-    agp_file = output_path + "ragtag.correction.agp"
+    agp_file = output_path + file_prefix + ".agp"
     write_breaks(agp_file, query_file, ctg_breaks, True, remove_suffix)
 
     # Write the scaffolds.
@@ -643,7 +644,7 @@ def main():
         agp_file,
         query_file
     ]
-    run_oae(cmd, output_path + qf_pref + ".corrected.fasta", ragtag_log)
+    run_oae(cmd, output_path + file_prefix + ".fasta", ragtag_log)
 
     log("Goodbye")
 
