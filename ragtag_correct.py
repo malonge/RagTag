@@ -274,7 +274,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
             # Add suffix to query header, unless otherwise requested
             unchanged_comp_header = q
             if not remove_suffix:
-                unchanged_comp_header = q + ":0" + "-" + str(fai.get_reference_length(q)) + "(+)"
+                unchanged_comp_header = q + "_1" + "_" + str(fai.get_reference_length(q)) + "_+"
 
             agp.add_seq_line(
                     q,
@@ -298,7 +298,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
                         str(i),
                         str(pid),
                         "W",
-                        q + ":" + str(start) + "-" + str(i) + "(+)",
+                        q + "_" + str(start+1) + "_" + str(i) + "_+",
                         "1",
                         str(i-start),
                         "+"
@@ -313,7 +313,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
                     str(fai.get_reference_length(q)),
                     str(pid),
                     "W",
-                    q + ":" + str(start) + "-" + str(fai.get_reference_length(q)) + "(+)",
+                    q + "_" + str(start+1) + "_" + str(fai.get_reference_length(q)) + "_+",
                     "1",
                     str(fai.get_reference_length(q)-start),
                     "+"
@@ -644,8 +644,6 @@ def main():
 
     # Write the scaffolds.
     log("Writing broken contigs")
-    qf_name = query_file.split("/")[-1]
-    qf_pref = qf_name[:qf_name.rfind(".")]
     cmd = [
         "ragtag_break_query.py",
         agp_file,
