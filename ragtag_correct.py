@@ -359,7 +359,7 @@ def main():
     val_options.add_argument("--read-aligner", metavar="PATH", type=str, default="minimap2", help="read aligner executable (only 'minimap2' is allowed) [minimap2]")
     val_options.add_argument("-R", metavar="<reads.fasta>", type=str, default="", help="validation reads (uncompressed or gzipped) [null]")
     val_options.add_argument("-F", metavar="<reads.fofn>", type=str, default="", help="same as '-R', but a list of files [null]")
-    val_options.add_argument("-T", metavar="STR", type=str, default="", help="read type. 'sr' and 'corr' accepted for short reads and error corrected long-reads, respectively [null]")
+    val_options.add_argument("-T", metavar="STR", type=str, default="", help="read type. 'sr', 'ont' and 'corr' accepted for Illumina, nanopore and error corrected long-reads, respectively [null]")
     val_options.add_argument("-v", metavar="INT", type=int, default=10000, help="coverage validation window size [10000]")
     val_options.add_argument("--max-cov", metavar="INT", type=int, default=-1, help="break sequences at regions at or above this coverage level [AUTO]")
     val_options.add_argument("--min-cov", metavar="INT", type=int, default=-1, help="break sequences at regions at or below this coverage level [AUTO]")
@@ -464,7 +464,7 @@ def main():
     # read-alignment parameters
     val_reads = args.R
     val_reads_fofn = args.F
-    val_reads_tech = args.T
+    val_reads_tech = args.T.upper()
     read_aligner_path = args.read_aligner
     read_aligner = read_aligner_path.split("/")[-1]
     if read_aligner != "minimap2":
@@ -586,14 +586,19 @@ def main():
         log("Validating putative query breakpoints via read alignment.")
         log("Aligning reads to query sequences.")
         if not os.path.isfile(output_path + file_prefix + ".reads.s.bam"):
-            if val_reads_tech == "sr":
+            if val_reads_tech == "SR":
                 al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax sr -t " + str(num_threads),
                                         output_path + file_prefix + ".reads", in_overwrite=overwrite_files)
-            elif val_reads_tech == "corr":
-                al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax asm5 -t " + str(num_threads),
+
+            elif val_reads_tech == "ONT":
+                al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax map-ont -t " + str(num_threads),
+                                        output_path + file_prefix + ".reads", in_overwrite=overwrite_files)
+
+            elif val_reads_tech == "CORR":
+                al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax asm20 -t " + str(num_threads),
                                         output_path + file_prefix + ".reads", in_overwrite=overwrite_files)
             else:
-                raise ValueError("'-T' must be either 'sr' or 'corr'.")
+                raise ValueError("'-T' must be either 'sr', 'ont' or 'corr'.")
             al.run_aligner()
         else:
             log("Retaining pre-existing read alignments: " + output_path + file_prefix + ".reads.s.bam")
@@ -605,11 +610,13 @@ def main():
         # Validate the breakpoints
         log("Validating putative query breakpoints")
         
-        # Give at least 10k/1k from ctg ends for coverage to accumulate for corr and sr, respectively.
+        # Give at least 10k/1k from ctg ends for coverage to accumulate for long and short reads, respectively.
         val_min_break_end_dist = min_break_end_dist
-        if val_reads_tech == "corr":
+        if val_reads_tech == "CORR":
             val_min_break_end_dist = max(10000, min_break_end_dist)
-        if val_reads_tech == "sr":
+        if val_reads_tech == "ONT":
+            val_min_break_end_dist = max(10000, min_break_end_dist)
+        if val_reads_tech == "SR":
             val_min_break_end_dist = max(1000, min_break_end_dist)
             
         # Validate the breakpoints
