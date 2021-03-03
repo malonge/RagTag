@@ -161,7 +161,7 @@ def clean_breaks(val_breaks, d):
     return breaks
 
 
-def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_break_end_dist, max_cutoff, min_cutoff, window_size=10000, num_devs=3, clean_dist=1000, debug=False):
+def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_break_end_dist, max_cutoff, min_cutoff, window_size=10000, num_devs=5, clean_dist=1000, debug=False):
     """
     """
     # Get the median coverage over all bp
@@ -169,10 +169,10 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
     dev = round(math.sqrt(glob_med))
 
     if max_cutoff == -1:
-        max_cutoff = glob_med + (num_devs*dev)
+        max_cutoff = glob_med*12
 
     if min_cutoff == -1:
-        min_cutoff = max(0, (glob_med - (num_devs*dev)))
+        min_cutoff = max(5, (glob_med - (num_devs*dev)))
 
     log("The global median read coverage is %dX" % glob_med)
     log("The max and min coverage thresholds are %dX and %dX, respectively" % (max_cutoff, min_cutoff))
