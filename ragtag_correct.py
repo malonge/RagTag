@@ -39,6 +39,7 @@ from ragtag_utilities.AlignmentReader import PAFReader
 from ragtag_utilities.ContigAlignment import ContigAlignment
 from ragtag_utilities.AGPFile import AGPFile
 from ragtag_utilities.Aligner import Minimap2Aligner
+from ragtag_utilities.Aligner import UnimapAligner
 from ragtag_utilities.Aligner import Minimap2SAMAligner
 from ragtag_utilities.Aligner import NucmerAligner
 
@@ -220,7 +221,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
                 status = "high cov"
 
             if debug:
-                log("query: %s, original break: %s, window start: %d, window end: %d, status: %s, new_break: %s, cov max: %d, cov min: %d" %(ctg, b, min_range, max_range, status, str(new_break), cov_max, cov_min))
+                log("query: %s, original break: %s, window start: %d, window end: %d, status: %s, new_break: %s, cov max: %d, cov min: %d" % (ctg, b, min_range, max_range, status, str(new_break), cov_max, cov_min))
 
         validated_ctg_breaks[ctg] = clean_breaks(val_breaks, clean_dist)
 
@@ -241,7 +242,7 @@ def make_gff_interval_tree(gff_file):
                 assert start < end
 
                 if end - start > 100000:
-                    coords = "%s:%d-%d" %(h, start+1, end)
+                    coords = "%s:%d-%d" % (h, start+1, end)
                     log("WARNING: large interval in this gff file (%s). This could disproportionately invalidate putative query breakpoints." % coords)
                 t[h][start:end] = (start, end)
 
@@ -353,6 +354,7 @@ def main():
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="whole genome aligner executable ('nucmer' or 'minimap2') [minimap2]")
     aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 whole genome alignment parameters ['%s']" % mm2_default)
+    aln_options.add_argument("--unimap-params", metavar="STR", type=str, default=mm2_default, help="space delimited unimap parameters ['%s']" % mm2_default)
     aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer whole genome alignment parameters ['-l 100 -c 500']")
 
     val_options = parser.add_argument_group("validation options")
@@ -433,10 +435,11 @@ def main():
     # Get aligner arguments
     genome_aligner_path = args.aligner
     genome_aligner = genome_aligner_path.split("/")[-1]
-    if genome_aligner.split("/")[-1] not in {'minimap2', 'nucmer'}:
-        raise ValueError("Must specify either 'minimap2' or 'nucmer' (PATHs allowed) with '--aligner'.")
+    if genome_aligner.split("/")[-1] not in {'minimap2', 'unimap', 'nucmer'}:
+        raise ValueError("Must specify either 'minimap2', 'unimap', or 'nucmer' (PATHs allowed) with '--aligner'.")
 
     mm2_params = args.mm2_params
+    unimap_params = args.unimap_params
     nucmer_params = args.nucmer_params
 
     # Mapq filtering params
@@ -447,6 +450,8 @@ def main():
     # Add the number of mm2 threads if the mm2 params haven't been overridden.
     if mm2_params == mm2_default:
         mm2_params += " -t " + str(num_threads)
+    if unimap_params == mm2_default:
+        unimap_params += " -t " + str(num_threads)
 
     # Check if intra/inter breaking is desired
     break_intra = True
@@ -511,6 +516,8 @@ def main():
     log("Mapping the query genome to the reference genome")
     if genome_aligner == "minimap2":
         al = Minimap2Aligner(reference_file, [query_file], genome_aligner_path, mm2_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
+    elif genome_aligner == "unimap":
+        al = UnimapAligner(reference_file, [query_file], genome_aligner_path, unimap_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     else:
         al = NucmerAligner(reference_file, [query_file], genome_aligner_path, nucmer_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     al.run_aligner()

@@ -36,6 +36,7 @@ from ragtag_utilities.AlignmentReader import PAFReader
 from ragtag_utilities.ContigAlignment import ContigAlignment
 from ragtag_utilities.AGPFile import AGPFile
 from ragtag_utilities.Aligner import Minimap2Aligner
+from ragtag_utilities.Aligner import UnimapAligner
 from ragtag_utilities.Aligner import NucmerAligner
 
 
@@ -279,6 +280,7 @@ def main():
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="aligner executable ('nucmer' or 'minimap2') [minimap2]")
     mm2_default = "-x asm5"
     aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 parameters ['%s']" % mm2_default)
+    aln_options.add_argument("--unimap-params", metavar="STR", type=str, default=mm2_default, help="space delimited unimap parameters ['%s']" % mm2_default)
     aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer parameters ['-l 100 -c 500']")
 
     args = parser.parse_args()
@@ -356,10 +358,11 @@ def main():
     # Get aligner arguments
     aligner_path = args.aligner
     aligner = aligner_path.split("/")[-1]
-    if aligner.split("/")[-1] not in {'minimap2', 'nucmer'}:
-        raise ValueError("Must specify either 'minimap2' or 'nucmer' (PATHs allowed) with '--aligner'.")
+    if aligner.split("/")[-1] not in {'minimap2', 'unimap', 'nucmer'}:
+        raise ValueError("Must specify either 'minimap2', 'unimap', or 'nucmer' (PATHs allowed) with '--aligner'.")
 
     mm2_params = args.mm2_params
+    unimap_params = args.unimap_params
     nucmer_params = args.nucmer_params
 
     # Mapq filtering params
@@ -367,9 +370,11 @@ def main():
     if aligner == "nucmer":
         min_mapq = 0
 
-    # Add the number of mm2 threads if the mm2 params haven't been overridden.
+    # Add the number of mm2/unimap threads if the mm2 params haven't been overridden.
     if mm2_params == mm2_default:
         mm2_params += " -t " + str(num_threads)
+    if unimap_params == mm2_default:
+        unimap_params += " -t " + str(num_threads)
 
     # Debugging options
     debug_mode = args.debug
@@ -382,6 +387,8 @@ def main():
     log("Mapping the query genome to the reference genome")
     if aligner == "minimap2":
         al = Minimap2Aligner(reference_file, [query_file], aligner_path, mm2_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
+    elif aligner == "unimap":
+        al = UnimapAligner(reference_file, [query_file], aligner_path, unimap_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     else:
         al = NucmerAligner(reference_file, [query_file], aligner_path, nucmer_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     al.run_aligner()
