@@ -216,6 +216,44 @@ class Minimap2Aligner(Aligner):
         ]
 
 
+class UnimapAligner(Aligner):
+    """ The 'Aligner' subclass specific to Unimap alignments in PAF format. """
+
+    def _update_attrs(self):
+        """ Update class attributes for a specific aligner. """
+        self.aligner_exec = "unimap"
+        self.out_file = self.outfile_prefix + ".paf"
+        self.out_log = self.out_file + ".log"
+
+    def params_are_valid(self):
+        """
+        Do a basic check to make sure the unimap parameters are valid.
+        I won't check that every parameter is valid, but will check anything that can
+        cause a problem for RagTag later on.
+        :return: True if the parameters are valid. Raises appropriate errors otherwise
+        """
+        all_flags = "".join([i for i in self.params_string.split(" ") if i.startswith("-")])
+        if "a" in all_flags:
+            raise ValueError("Alignments must not be in SAM format (-a).")
+
+        if "c" in all_flags:
+            log("WARNING: computing base-alignments (-c) will slow down Unimap alignment.")
+
+        return True
+
+    def compile_command(self):
+        """
+        Compile the space delimited command to be executed.
+        :return: The command as a string
+        """
+        return [
+            self.aligner,
+            *self.params,
+            self.r_file,
+            *self.q_files
+        ]
+
+
 class Minimap2SAMAligner(Aligner):
     """ The 'Aligner' subclass specific to Minimap2 alignments in SAM format. """
 
