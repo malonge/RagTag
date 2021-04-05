@@ -57,7 +57,7 @@ def remove_contained(a):
     return o
 
 
-def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict, ctg_dict, gap_dict, gap_type_dict, make_chr0, overwrite, add_suffix):
+def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict, ctg_dict, gap_dict, gap_type_dict, make_chr0, overwrite, add_suffix, skip_no_cat):
     # Check if the output file already exists
     if os.path.isfile(out_agp_file):
         if not overwrite:
@@ -138,44 +138,59 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
     unplaced_seqs = sorted(list(all_seqs - placed_seqs))
     if unplaced_seqs:
         if make_chr0:
-            pos = 0
-            pid = 1
-            new_ref_header = "Chr0_RagTag"
-            for q in unplaced_seqs:
-                out_agp_line = []
-                qlen = fai.get_reference_length(q)
-                out_agp_line.append(new_ref_header)
-                out_agp_line.append(str(pos+1))
-                pos += qlen
-                out_agp_line.append(str(pos))
-                out_agp_line.append(str(pid))
-                out_agp_line.append("W")
-                out_agp_line.append(q)
-                out_agp_line.append("1")
-                out_agp_line.append(str(qlen))
-                out_agp_line.append("+")
+            cat_seqs = all_seqs - placed_seqs - skip_no_cat
+            if cat_seqs:
+                pos = 0
+                pid = 1
+                new_ref_header = "Chr0_RagTag"
+                for q in cat_seqs:
+                    out_agp_line = []
+                    qlen = fai.get_reference_length(q)
+                    out_agp_line.append(new_ref_header)
+                    out_agp_line.append(str(pos+1))
+                    pos += qlen
+                    out_agp_line.append(str(pos))
+                    out_agp_line.append(str(pid))
+                    out_agp_line.append("W")
+                    out_agp_line.append(q)
+                    out_agp_line.append("1")
+                    out_agp_line.append(str(qlen))
+                    out_agp_line.append("+")
 
-                agp.add_seq_line(*out_agp_line)
-                pid += 1
+                    agp.add_seq_line(*out_agp_line)
+                    pid += 1
 
-                # Now for the gap, since we are making a chr0
-                out_agp_line = []
-                out_agp_line.append(new_ref_header)
-                out_agp_line.append(str(pos+1))
-                pos += 100
-                out_agp_line.append(str(pos))
-                out_agp_line.append(str(pid))
-                out_agp_line.append("U")
-                out_agp_line.append("100")
-                out_agp_line.append("contig")
-                out_agp_line.append("no")
-                out_agp_line.append("na")
+                    # Now for the gap, since we are making a chr0
+                    out_agp_line = []
+                    out_agp_line.append(new_ref_header)
+                    out_agp_line.append(str(pos+1))
+                    pos += 100
+                    out_agp_line.append(str(pos))
+                    out_agp_line.append(str(pid))
+                    out_agp_line = out_agp_line + ["U", "100", "contig", "no", "na"]
+                    agp.add_gap_line(*out_agp_line)
+                    pid += 1
 
-                agp.add_gap_line(*out_agp_line)
-                pid += 1
-
-            # Remove the final unecessary gap
-            agp.pop_agp_line()
+                # Remove the final unnecessary gap
+                agp.pop_agp_line()
+            if skip_no_cat:
+                # List these unplaced contigs individually
+                for q in skip_no_cat:
+                    out_agp_line = []
+                    qlen = fai.get_reference_length(q)
+                    if add_suffix:
+                        out_agp_line.append(q + "_RagTag")
+                    else:
+                        out_agp_line.append(q)
+                    out_agp_line.append("1")
+                    out_agp_line.append(str(qlen))
+                    out_agp_line.append("1")
+                    out_agp_line.append("W")
+                    out_agp_line.append(q)
+                    out_agp_line.append("1")
+                    out_agp_line.append(str(qlen))
+                    out_agp_line.append("+")
+                    agp.add_seq_line(*out_agp_line)
         else:
             # List the unplaced contigs individually
             for q in unplaced_seqs:
@@ -257,6 +272,7 @@ def main():
     scaf_options = parser.add_argument_group("scaffolding options")
     scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore [null]")
     scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave unplaced [null]")
+    scaf_options.add_argument("-J", metavar="<hard-skip.txt>", type=str, default="", help="list of query headers to leave unplaced and exclude from `chr0` (`-C`) [null]")
     scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     scaf_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than -f")
     scaf_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
@@ -342,10 +358,20 @@ def main():
     query_blacklist = set()
     skip_file = args.j
     if skip_file:
-        skip_file = os.path.abspath(args.j)
+        skip_file = os.path.abspath(skip_file)
         with open(skip_file, "r") as f:
             for line in f:
                 query_blacklist.add(line.rstrip())
+
+    skip_no_cat = set()
+    skip_no_cat_file = args.J
+    if skip_no_cat_file:
+        skip_no_cat_file = os.path.abspath(skip_no_cat_file)
+        with open(skip_no_cat_file, "r") as f:
+            for line in f:
+                skip_no_cat.add(line.rstrip())
+
+    query_blacklist = query_blacklist.union(skip_no_cat)
 
     ref_blacklist = set()
     exclude_file = args.e
@@ -522,7 +548,7 @@ def main():
 
     # Write the intermediate output file in AGP v2.1 format
     log("Writing: " + output_path + file_prefix + ".agp")
-    write_orderings(output_path + file_prefix + ".agp", output_path + file_prefix + ".confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, True, not remove_suffix)
+    write_orderings(output_path + file_prefix + ".agp", output_path + file_prefix + ".confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, True, not remove_suffix, skip_no_cat)
 
     # Build a FASTA from the AGP
     cmd = [
