@@ -485,6 +485,10 @@ def main():
             ]):
                 fltrd_ctg_alns[i] = ctg_alns[i]
 
+    # Check if any alignments are left
+    if not fltrd_ctg_alns:
+        raise RuntimeError("There are no useful alignments. Check output alignment files.")
+
     # For each reference sequence which has at least one assigned query sequence, get the list of
     # all query sequences assigned to that reference sequence.
     log("INFO", "Ordering and orienting query sequences")
