@@ -370,7 +370,7 @@ class ContigAlignment:
         hits = [i for i in range(len(self._ref_headers)) if i not in cidx]
         return self._update_alns(hits)
 
-    def merge_alns(self, merge_dist=100000):
+    def merge_alns(self, merge_dist=100000, careful_merge=False):
         """
         Merge adjacent alignments that have the same reference sequence, the same orientation, and are less than
         merge_dist away from each other.
@@ -394,11 +394,15 @@ class ContigAlignment:
         i = 0
         j = 1
         while j < len(ref_headers):
-            if all([
-                        ref_headers[i] == ref_headers[j],
-                        strands[i] == strands[j],
-                        ref_starts[j] - ref_ends[i] <= merge_dist
-            ]):
+            conditions = [
+                ref_headers[i] == ref_headers[j],
+                strands[i] == strands[j],
+                ref_starts[j] - ref_ends[i] <= merge_dist
+            ]
+            if careful_merge:
+                conditions.append(query_starts[j] - query_ends[i] <= merge_dist)
+
+            if all(conditions):
                 # Merge the alignments in place of the first alignment
                 query_starts[i] = min(query_starts[i], query_starts[j])
                 query_ends[i] = max(query_ends[i], query_ends[j])

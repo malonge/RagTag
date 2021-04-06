@@ -335,7 +335,8 @@ def main():
     cor_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     cor_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than -f")
     cor_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
-    cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="alignment merge distance [100000]")
+    cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="max reference alignment merge distance [100000]")
+    cor_options.add_argument("--careful-merge", action="store_true", default=False, help="apply '-d' to the query and reference coordinates")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
     cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore [null]")
     cor_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave uncorrected [null]")
@@ -391,6 +392,7 @@ def main():
     min_ulen = args.f
     keep_small_uniques = not args.remove_small
     merge_dist = args.d
+    careful_merge = args.careful_merge
     min_break_dist = args.m
     min_break_end_dist = args.b
     val_window_size = args.v
@@ -558,7 +560,7 @@ def main():
                     with open(debug_fltrd_file, "a") as f:
                         f.write(str(ctg_alns[i]))
 
-                ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist)
+                ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist, careful_merge=careful_merge)
 
     # Get the putative breakpoints for each query sequence, if any.
     ctg_breaks = dict()
