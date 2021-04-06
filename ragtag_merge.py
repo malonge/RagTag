@@ -282,9 +282,9 @@ def main():
         print("\n** At least two AGP files are required **")
         sys.exit()
 
-    log("RagTag " + get_ragtag_version())
-    log("This is a beta version of `ragtag merge`")
-    log("CMD: ragtag.py merge " + " ".join(sys.argv[1:]))
+    log("VERSION", "RagTag " + get_ragtag_version())
+    log("WARNING", "This is a beta version of `ragtag merge`")
+    log("CMD", "ragtag.py merge " + " ".join(sys.argv[1:]))
 
     # Check that the components FASTA file exists
     comp_fname = args.components
@@ -325,8 +325,7 @@ def main():
     overwrite_files = args.w
     add_suffix = args.u
     if not add_suffix:
-        log(
-            "WARNING: Without '-u' invoked, some component/object AGP pairs might share the same ID. Some external programs/databases don't like this. To ensure valid AGP format, use '-u'.")
+        log("WARNING", "Without '-u' invoked, some component/object AGP pairs might share the same ID. Some external programs/databases don't like this. To ensure valid AGP format, use '-u'.")
 
     # get the set of contigs to skip
     comp_exclusion_set = set()
@@ -358,7 +357,7 @@ def main():
         raise ValueError("At least two AGP files are required for merging")
 
     # Build the graph and filter nodes by sequence length
-    log("Building the scaffold graph from the AGP files")
+    log("INFO", "Building the scaffold graph from the AGP files")
     agp_multi_sg = AGPMultiScaffoldGraph(comp_fname)
     agp_multi_sg.add_agps(agp_list, in_weights=weight_list, exclusion_set=comp_exclusion_set)
     if min_comp_len:
@@ -367,12 +366,12 @@ def main():
         agp_multi_sg.connect_and_write_gml(output_path + "ragtag.merge.msg.gml")
 
     # Merge the SAG
-    log("Merging the scaffold graph")
+    log("INFO", "Merging the scaffold graph")
     agp_sg = agp_multi_sg.merge()
 
     # Check if we are using Hi-C links to weight the graph.
     if hic_bam_fname:
-        log("Weighting the scaffold graph with Hi-C links")
+        log("INFO", "Weighting the scaffold graph with Hi-C links")
         if not comp_fname or not re_string:
             raise RuntimeError("Hi-C requires alignments (-b) assembly sequences (-a) and restriction sites (-r)")
 
@@ -387,7 +386,7 @@ def main():
         out_links_fname = output_path + file_prefix + ".links"
         if os.path.isfile(out_links_fname):
             if not overwrite_files:
-                log("Retaining pre-existing file: " + out_links_fname)
+                log("INFO", "Retaining pre-existing file: " + out_links_fname)
             else:
                 run_oae(cmd, out_links_fname, merge_log)
         else:
@@ -404,13 +403,13 @@ def main():
         agp_sg.connect_and_write_gml(output_path + file_prefix + ".sg.gml")
 
     # Compute a solution to the ScaffoldGraph
-    log("Computing a scaffolding solution")
+    log("INFO", "Computing a scaffolding solution")
     cover_graph = get_maximal_matching(agp_sg)
     if debug_mode:
         nx.readwrite.gml.write_gml(cover_graph, output_path + file_prefix + ".covergraph.gml")
 
     # Write the scaffolding output to an AGP file
-    log("Writing results")
+    log("INFO", "Writing results")
     write_agp_solution(cover_graph, agp_sg, output_path + file_prefix + ".agp", gap_func=gap_func, add_suffix_to_unplaced=add_suffix)
 
     # Generate a FASTA file corresponding to the AGP

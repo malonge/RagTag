@@ -53,10 +53,10 @@ def run(cmd):
     if not isinstance(cmd, list):
         raise TypeError("'run' expects a list")
 
-    log('Running: %s' % " ".join(cmd))
+    log("INFO", "Running: %s" % " ".join(cmd))
     if subprocess.call(cmd) != 0:
-        raise RuntimeError('Failed : %s' % " ".join(cmd))
-    log('Finished running : %s' % " ".join(cmd))
+        raise RuntimeError("Failed : %s" % " ".join(cmd))
+    log("INFO", "Finished running : %s" % " ".join(cmd))
 
 
 def run_oe(cmd, out, err):
@@ -68,11 +68,11 @@ def run_oe(cmd, out, err):
     f_out = open(out, "w")
     f_err = open(err, "w")
 
-    log('Running: %s > %s 2> %s' % (" ".join(cmd), out, err))
+    log("INFO", "Running: %s > %s 2> %s" % (" ".join(cmd), out, err))
     if subprocess.call(cmd, stdout=f_out, stderr=f_err) != 0:
-        raise RuntimeError('Failed : %s > %s 2> %s' % (" ".join(cmd), out, err))
+        raise RuntimeError("Failed : %s > %s 2> %s" % (" ".join(cmd), out, err))
 
-    log('Finished running : %s > %s 2> %s' % (" ".join(cmd), out, err))
+    log("INFO", "Finished running : %s > %s 2> %s" % (" ".join(cmd), out, err))
 
     f_out.close()
     f_err.close()
@@ -86,11 +86,11 @@ def run_o(cmd, out):
 
     f_out = open(out, "w")
 
-    log('Running: %s > %s' % (" ".join(cmd), out))
+    log("INFO", "Running: %s > %s" % (" ".join(cmd), out))
     if subprocess.call(cmd, stdout=f_out) != 0:
-        raise RuntimeError('Failed : %s > %s' % (" ".join(cmd), out))
+        raise RuntimeError("Failed : %s > %s" % (" ".join(cmd), out))
 
-    log('Finished running : %s > %s' % (" ".join(cmd), out))
+    log("INFO", "Finished running : %s > %s" % (" ".join(cmd), out))
 
     f_out.close()
 
@@ -103,11 +103,11 @@ def run_e(cmd, err):
 
     f_err = open(err, "w")
 
-    log('Running: %s 2> %s' % (" ".join(cmd), err))
+    log("INFO", "Running: %s 2> %s" % (" ".join(cmd), err))
     if subprocess.call(cmd, stderr=f_err) != 0:
         raise RuntimeError('Failed : %s 2> %s' % (" ".join(cmd), err))
 
-    log('Finished running : %s > %s' % (" ".join(cmd), err))
+    log("INFO", "Finished running : %s > %s" % (" ".join(cmd), err))
 
     f_err.close()
 
@@ -121,19 +121,23 @@ def run_oae(cmd, out, err):
     f_out = open(out, "w")
     f_err = open(err, "a")
 
-    log('Running: %s > %s 2> %s' % (" ".join(cmd), out, err))
+    log("INFO", "Running: %s > %s 2> %s" % (" ".join(cmd), out, err))
     if subprocess.call(cmd, stdout=f_out, stderr=f_err) != 0:
         raise RuntimeError('Failed : %s > %s 2> %s. Check stderr file for details.' % (" ".join(cmd), out, err))
 
-    log('Finished running : %s > %s 2> %s' % (" ".join(cmd), out, err))
+    log("INFO", "Finished running : %s > %s 2> %s" % (" ".join(cmd), out, err))
 
     f_out.close()
     f_err.close()
 
 
-def log(message):
+def log(level, message):
     """ Log messages to standard error. """
-    sys.stderr.write(time.ctime() + ' --- ' + message + "\n")
+    level = level.upper()
+    if level not in {"VERSION", "CMD", "INFO", "WARNING", "DEBUG"}:
+        raise ValueError("Invalid logging level: {}".format(level))
+
+    sys.stderr.write(time.ctime() + " --- " + level + ": " + message + "\n")
     sys.stderr.flush()
 
 

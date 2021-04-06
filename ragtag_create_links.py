@@ -183,7 +183,7 @@ def main():
     re_string = args.r.upper()
     if "DNASE" in re_string:
         dnase_mode = True
-        log("Running in DNase mode.")
+        log("INFO", "Running in DNase mode.")
 
     re_set = set()
     if not dnase_mode:
@@ -209,7 +209,7 @@ def main():
         r_cutoffs[ref] = asm_lens[ref] - round(r * portion)
 
     # Get the raw Hi-C links
-    log("Computing raw Hi-C links from: {}".format(bam_file))
+    log("INFO", "Computing raw Hi-C links from: {}".format(bam_file))
     raw_links = count_links(bam_file, l_cutoffs, r_cutoffs)
 
     # Normalize the Hi-C links
@@ -223,9 +223,9 @@ def main():
 
         # Set the restriction enzymes
         RE = RestrictionEnzymes(re_set)
-        log("Using the following restriction sites:\n{}".format(str(RE)))
+        log("INFO", "Using the following restriction sites:\n{}".format(str(RE)))
 
-        log("Counting restriction sites")
+        log("INFO", "Counting restriction sites")
         rfm = RestrictionFragmentMap(asm_file, RE)
 
         # Get the number of sites for each contig terminus (l/b and r/e)
@@ -233,7 +233,7 @@ def main():
             l_norm_factors[ref] = rfm.count_sites_lte(ref, l_cutoffs[ref])
             r_norm_factors[ref] = rfm.count_sites_gt(ref, r_cutoffs[ref])
 
-    log("Normalizing raw Hi-C links")
+    log("INFO", "Normalizing raw Hi-C links")
     norm_links = normalize_links(raw_links, l_norm_factors, r_norm_factors)
     write_links(raw_links, norm_links)
 

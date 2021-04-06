@@ -90,12 +90,12 @@ def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
 
 def get_median_read_coverage(output_path, num_threads, overwrite_files):
     """ Given the read alignments, use samtools stats to return an approximate median coverage value. """
-    log("Calculating global read coverage")
+    log("INFO", "Calculating global read coverage")
     if os.path.isfile(output_path + "c_reads_against_query.s.bam.stats"):
         if not overwrite_files:
-            log("retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
+            log("INFO", "Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
         else:
-            log("overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
+            log("INFO", "Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
             st = pysam.stats("-@", str(num_threads), output_path + "c_reads_against_query.s.bam")
             with open(output_path + "c_reads_against_query.s.bam.stats", "w") as f:
                 f.write(st)
@@ -129,21 +129,21 @@ def run_samtools(output_path, num_threads, overwrite_files):
     """ Compress, sort and index alignments with pysam. """
     if os.path.isfile(output_path + "c_reads_against_query.s.bam"):
         if not overwrite_files:
-            log("Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+            log("INFO", "Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam")
         else:
-            log("Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+            log("INFO", "Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam")
             pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
             pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
     else:
         pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
         pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
 
-    log("Indexing read alignments")
+    log("INFO", "Indexing read alignments")
     if os.path.isfile(output_path + "c_reads_against_query.s.bam.bai"):
         if not overwrite_files:
-            log("Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
+            log("INFO", "Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
         else:
-            log("Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
+            log("INFO", "Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
             pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
     else:
         pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
@@ -175,8 +175,8 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
     if min_cutoff == -1:
         min_cutoff = max(5, (glob_med - (num_devs*dev)))
 
-    log("The global median read coverage is %dX" % glob_med)
-    log("The max and min coverage thresholds are %dX and %dX, respectively" % (max_cutoff, min_cutoff))
+    log("INFO", "The global median read coverage is %dX" % glob_med)
+    log("INFO", "The max and min coverage thresholds are %dX and %dX, respectively" % (max_cutoff, min_cutoff))
 
     # Go through each break point and query the coverage within the vicinity of the breakpoint.
     bam = pysam.AlignmentFile(output_path + "c_reads_against_query.s.bam")
@@ -221,7 +221,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
                 status = "high cov"
 
             if debug:
-                log("query: %s, original break: %s, window start: %d, window end: %d, status: %s, new_break: %s, cov max: %d, cov min: %d" % (ctg, b, min_range, max_range, status, str(new_break), cov_max, cov_min))
+                log("DEBUG", "query: %s, original break: %s, window start: %d, window end: %d, status: %s, new_break: %s, cov max: %d, cov min: %d" % (ctg, b, min_range, max_range, status, str(new_break), cov_max, cov_min))
 
         validated_ctg_breaks[ctg] = clean_breaks(val_breaks, clean_dist)
 
@@ -243,7 +243,7 @@ def make_gff_interval_tree(gff_file):
 
                 if end - start > 100000:
                     coords = "%s:%d-%d" % (h, start+1, end)
-                    log("WARNING: large interval in this gff file (%s). This could disproportionately invalidate putative query breakpoints." % coords)
+                    log("WARNING", "Large interval in this gff file (%s). This could disproportionately invalidate putative query breakpoints." % coords)
                 t[h][start:end] = (start, end)
 
     return t
@@ -254,11 +254,11 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
     # Check if the output file already exists
     if os.path.isfile(out_file):
         if not overwrite:
-            log("Retaining pre-existing file: " + out_file)
+            log("INFO", "Retaining pre-existing file: " + out_file)
             return
 
         else:
-            log("Overwriting pre-existing file: " + out_file)
+            log("INFO", "Overwriting pre-existing file: " + out_file)
 
     fai = pysam.FastaFile(query_file)
     all_q_seqs = sorted(fai.references)
@@ -320,7 +320,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
                     "+"
             )
 
-    log("Writing: " + out_file)
+    log("INFO", "Writing: " + out_file)
     agp.write()
     fai.close()
 
@@ -374,8 +374,8 @@ def main():
         print("\n** The reference and query FASTA files are required **")
         sys.exit()
 
-    log("RagTag " + get_ragtag_version())
-    log("CMD: ragtag.py correct " + " ".join(sys.argv[1:]))
+    log("VERSION", "RagTag " + get_ragtag_version())
+    log("CMD", "ragtag.py correct " + " ".join(sys.argv[1:]))
 
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
@@ -409,7 +409,7 @@ def main():
     overwrite_files = args.w
     remove_suffix = not args.u
     if remove_suffix:
-        log("WARNING: Without '-u' invoked, some component/object AGP pairs might share the same ID. Some external programs/databases don't like this. To ensure valid AGP format, use '-u'.")
+        log("WARNING", "Without '-u' invoked, some component/object AGP pairs might share the same ID. Some external programs/databases don't like this. To ensure valid AGP format, use '-u'.")
 
     gff_file = args.gff
     if gff_file:
@@ -513,7 +513,7 @@ def main():
     debug_query_info_file = output_path + file_prefix + ".debug.query.info.txt"
 
     # Align the query to the reference.
-    log("Mapping the query genome to the reference genome")
+    log("INFO", "Mapping the query genome to the reference genome")
     if genome_aligner == "minimap2":
         al = Minimap2Aligner(reference_file, [query_file], genome_aligner_path, mm2_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     elif genome_aligner == "unimap":
@@ -528,7 +528,7 @@ def main():
         run_oae(cmd, output_path + file_prefix + ".asm.paf", ragtag_log)
 
     # Read and organize the alignments.
-    log('Reading whole genome alignments')
+    log("INFO", "Reading whole genome alignments")
     # ctg_alns = dict :: key=query header, value=ContigAlignment object
     ctg_alns = read_genome_alignments(output_path + file_prefix + ".asm.paf", query_blacklist, ref_blacklist)
 
@@ -540,7 +540,7 @@ def main():
         open(debug_merged_file, "w").close()
         open(debug_query_info_file, "w").close()
 
-    log("Filtering and merging alignments")
+    log("INFO", "Filtering and merging alignments")
     for i in ctg_alns:
 
         # Write unfiltered alignments
@@ -590,8 +590,8 @@ def main():
 
     # If desired, validate the putative breakpoints by observing read coverage.
     if read_files:
-        log("Validating putative query breakpoints via read alignment.")
-        log("Aligning reads to query sequences.")
+        log("INFO", "Validating putative query breakpoints via read alignment")
+        log("INFO", "Aligning reads to query sequences")
         if not os.path.isfile(output_path + file_prefix + ".reads.s.bam"):
             if val_reads_tech == "SR":
                 al = Minimap2SAMAligner(query_file, read_files, read_aligner_path, "-ax sr -t " + str(num_threads),
@@ -608,14 +608,14 @@ def main():
                 raise ValueError("'-T' must be either 'sr', 'ont' or 'corr'.")
             al.run_aligner()
         else:
-            log("Retaining pre-existing read alignments: " + output_path + file_prefix + ".reads.s.bam")
+            log("INFO", "Retaining pre-existing read alignments: " + output_path + file_prefix + ".reads.s.bam")
 
         # Compress, sort and index the alignments.
-        log("Compressing, sorting, and indexing read alignments")
+        log("INFO", "Compressing, sorting, and indexing read alignments")
         run_samtools(output_path, num_threads, overwrite_files)
 
         # Validate the breakpoints
-        log("Validating putative query breakpoints")
+        log("INFO", "Validating putative query breakpoints")
         
         # Give at least 10k/1k from ctg ends for coverage to accumulate for long and short reads, respectively.
         val_min_break_end_dist = min_break_end_dist
@@ -631,14 +631,14 @@ def main():
 
     # Check if we need to avoid gff intervals
     if gff_file:
-        log("Avoiding breaks within GFF intervals")
+        log("INFO", "Avoiding breaks within GFF intervals")
         it = make_gff_interval_tree(gff_file)
         non_gff_breaks = dict()
         for ctg in ctg_breaks:
             new_breaks = []
             for i in ctg_breaks[ctg]:
                 if it[ctg][i]:
-                    log("Avoiding breaking %s at %d. This point intersects a feature in the gff file." % (ctg, i))
+                    log("INFO", "Avoiding breaking %s at %d. This point intersects a feature in the gff file." % (ctg, i))
                 else:
                     new_breaks.append(i)
             if new_breaks:
@@ -650,7 +650,7 @@ def main():
     write_breaks(agp_file, query_file, ctg_breaks, True, remove_suffix)
 
     # Write the scaffolds.
-    log("Writing broken contigs")
+    log("INFO", "Writing broken contigs")
     cmd = [
         "ragtag_break_query.py",
         agp_file,
@@ -658,7 +658,7 @@ def main():
     ]
     run_oae(cmd, output_path + file_prefix + ".fasta", ragtag_log)
 
-    log("Goodbye")
+    log("INFO", "Goodbye")
 
 
 if __name__ == "__main__":

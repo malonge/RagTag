@@ -128,10 +128,10 @@ class Aligner:
                 run_oe(self.compile_command(), self.out_file, self.out_log)
             else:
                 if self.overwrite:
-                    log("overwriting pre-existing file: " + self.out_file)
+                    log("INFO", "Overwriting pre-existing file: " + self.out_file)
                     run_oe(self.compile_command(), self.out_file, self.out_log)
                 else:
-                    log("Retaining pre-existing file: " + self.out_file)
+                    log("INFO", "Retaining pre-existing file: " + self.out_file)
 
 
 class NucmerAligner(Aligner):
@@ -172,10 +172,10 @@ class NucmerAligner(Aligner):
                 run_e(self.compile_command(), self.out_log)
             else:
                 if self.overwrite:
-                    log("overwriting pre-existing file: " + self.out_file)
+                    log("INFO", "Overwriting pre-existing file: " + self.out_file)
                     run_e(self.compile_command(), self.out_log)
                 else:
-                    log("Retaining pre-existing file: " + self.out_file)
+                    log("INFO", "Retaining pre-existing file: " + self.out_file)
 
 
 class Minimap2Aligner(Aligner):
@@ -199,7 +199,7 @@ class Minimap2Aligner(Aligner):
             raise ValueError("Alignments must not be in SAM format (-a).")
 
         if "c" in all_flags:
-            log("WARNING: computing base-alignments (-c) will slow down Minimap2 alignment.")
+            log("WARNING", "Computing base-alignments (-c) will slow down Minimap2 alignment.")
 
         return True
 
@@ -237,7 +237,7 @@ class UnimapAligner(Aligner):
             raise ValueError("Alignments must not be in SAM format (-a).")
 
         if "c" in all_flags:
-            log("WARNING: computing base-alignments (-c) will slow down Unimap alignment.")
+            log("WARNING", "Computing base-alignments (-c) will slow down Unimap alignment.")
 
         return True
 

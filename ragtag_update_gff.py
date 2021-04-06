@@ -143,8 +143,8 @@ def main():
         parser.print_help()
         sys.exit()
 
-    log("RagTag " + get_ragtag_version())
-    log("CMD: ragtag.py updategff " + " ".join(sys.argv[1:]))
+    log("VERSION", "RagTag " + get_ragtag_version())
+    log("CMD", "ragtag.py updategff " + " ".join(sys.argv[1:]))
 
     gff_file = os.path.abspath(args.gff)
     agp_file = os.path.abspath(args.agp)
@@ -155,7 +155,7 @@ def main():
     else:
         sup_update(gff_file, agp_file)
 
-    log("Goodbye")
+    log("INFO", "Goodbye")
 
 
 if __name__ == "__main__":

@@ -50,11 +50,11 @@ def main():
     agp_file_list = [os.path.abspath(i) for i in args.agp]
     for agp_file in agp_file_list:
         print()
-        log("Checking {} ...".format(agp_file))
+        log("INFO", "Checking {} ...".format(agp_file))
         agp = AGPFile(agp_file, mode="r")
         for _ in agp.iterate_lines():
             pass
-        log("Check for {} is complete with no errors.".format(agp_file))
+        log("INFO", "Check for {} is complete with no errors.".format(agp_file))
 
 
 if __name__ == "__main__":

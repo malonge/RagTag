@@ -61,11 +61,11 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
     # Check if the output file already exists
     if os.path.isfile(out_agp_file):
         if not overwrite:
-            log("Retaining pre-existing file: " + out_agp_file)
+            log("INFO", "Retaining pre-existing file: " + out_agp_file)
             return
 
         else:
-            log("Overwriting pre-existing file: " + out_agp_file)
+            log("INFO", "Overwriting pre-existing file: " + out_agp_file)
 
     # Proceed with writing the intermediate output
     placed_seqs = set()
@@ -305,8 +305,8 @@ def main():
         print("\n** The reference and query FASTA files are required **")
         sys.exit()
 
-    log("RagTag " + get_ragtag_version())
-    log("CMD: ragtag.py scaffold " + " ".join(sys.argv[1:]))
+    log("VERSION", "RagTag " + get_ragtag_version())
+    log("CMD", "ragtag.py scaffold " + " ".join(sys.argv[1:]))
 
     reference_file = os.path.abspath(args.reference)
     query_file = os.path.abspath(args.query)
@@ -343,7 +343,7 @@ def main():
     overwrite_files = args.w
     remove_suffix = not args.u
     if remove_suffix:
-        log("WARNING: Without '-u' invoked, some component/object AGP pairs might share the same ID. Some external programs/databases don't like this. To ensure valid AGP format, use '-u'.")
+        log("WARNING", "Without '-u' invoked, some component/object AGP pairs might share the same ID. Some external programs/databases don't like this. To ensure valid AGP format, use '-u'.")
 
     # Gap options
     min_gap_size = args.g
@@ -410,7 +410,7 @@ def main():
     debug_query_info_file = output_path + file_prefix + ".debug.query.info.txt"
 
     # Align the query to the reference
-    log("Mapping the query genome to the reference genome")
+    log("INFO", "Mapping the query genome to the reference genome")
     if aligner == "minimap2":
         al = Minimap2Aligner(reference_file, [query_file], aligner_path, mm2_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     elif aligner == "unimap":
@@ -425,7 +425,7 @@ def main():
         run_oae(cmd, output_path + file_prefix + ".asm.paf", ragtag_log)
 
     # Read and organize the alignments
-    log('Reading whole genome alignments')
+    log("INFO", "Reading whole genome alignments")
     # ctg_alns = dict :: key=query header, value=ContigAlignment object
     ctg_alns = read_genome_alignments(output_path + file_prefix + ".asm.paf", query_blacklist, ref_blacklist)
 
@@ -437,7 +437,7 @@ def main():
         open(debug_merged_file, "w").close()
         open(debug_query_info_file, "w").close()
 
-    log("Filtering and merging alignments")
+    log("INFO", "Filtering and merging alignments")
     for i in ctg_alns:
 
         # Write unfiltered alignments
@@ -485,7 +485,7 @@ def main():
 
     # For each reference sequence which has at least one assigned query sequence, get the list of
     # all query sequences assigned to that reference sequence.
-    log("Ordering and orienting query sequences")
+    log("INFO", "Ordering and orienting query sequences")
     mapped_ref_seqs = defaultdict(list)
     for i in fltrd_ctg_alns:
         best_ref = fltrd_ctg_alns[i].best_ref_header
@@ -539,15 +539,15 @@ def main():
             gap_types[i] = ["U" for i in range(len(mapped_ref_seqs[i])-1)]
 
     if infer_gaps:
-        log("%d inferred gap" % g_inferred)
-        log("%d adjacent contig within min distance (%d) of each other" % (g_small, min_gap_size))
-        log("%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
+        log("INFO", "%d inferred gap" % g_inferred)
+        log("INFO", "%d adjacent contig within min distance (%d) of each other" % (g_small, min_gap_size))
+        log("INFO", "%d inferred gaps exceed length threshold (%d)" % (g_large, max_gap_size))
 
     # Write the scaffolds
-    log("Writing scaffolds")
+    log("INFO", "Writing scaffolds")
 
     # Write the intermediate output file in AGP v2.1 format
-    log("Writing: " + output_path + file_prefix + ".agp")
+    log("INFO", "Writing: " + output_path + file_prefix + ".agp")
     write_orderings(output_path + file_prefix + ".agp", output_path + file_prefix + ".confidence.txt", query_file, mapped_ref_seqs, fltrd_ctg_alns, pad_sizes, gap_types, make_chr0, True, not remove_suffix, skip_no_cat)
 
     # Build a FASTA from the AGP
@@ -566,7 +566,7 @@ def main():
     ]
     run_oae(cmd, output_path + file_prefix + ".stats", ragtag_log)
 
-    log("Goodbye")
+    log("INFO", "Goodbye")
 
 
 if __name__ == "__main__":
