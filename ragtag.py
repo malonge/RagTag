@@ -54,6 +54,7 @@ usage: ragtag.py <command> [options]
       agpcheck        check for valid AGP file format
       updategff       update gff intervals
       asmstats        assembly statistics
+      splitasm        split an assembly at gaps
       
 
     options:
@@ -106,6 +107,10 @@ usage: ragtag.py <command> [options]
 
         elif cmd == "asmstats":
             subcmd = ["ragtag_asmstats.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+
+        elif cmd == "splitasm":
+            subcmd = ["ragtag_splitasm.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         else:
