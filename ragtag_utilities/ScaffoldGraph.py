@@ -259,14 +259,20 @@ class ScaffoldGraphBase:
 
     def write_gml(self, f):
         """
-        Write the graph in GEXF format.
+        Write the graph in GML format.
         :param f: Write the graph to this file handle.
         """
-        nx.readwrite.gml.write_gml(self.graph, f)
+        G = self.graph.copy()
+
+        # networkx doesn't like writing non-string attributes to GML
+        for u, v in G.edges:
+            for key in G[u][v]:
+                G[u][v][key] = str(G[u][v][key])
+        nx.readwrite.gml.write_gml(G, f)
 
     def connect_and_write_gml(self, f):
         """
-        Connect scaffold edges, then write the graph in GEXF format
+        Connect scaffold edges, then write the graph in GML format
         :param f: Write the graph to this file handle.
         """
         G = self.graph.copy()
@@ -274,6 +280,10 @@ class ScaffoldGraphBase:
         for node in node_base_set:
             G.add_edge(node + "_b", node + "_e")
 
+        # networkx doesn't like writing non-string attributes to GML
+        for u, v in G.edges:
+            for key in G[u][v]:
+                G[u][v][key] = str(G[u][v][key])
         nx.readwrite.gml.write_gml(G, f)
 
     def filter_by_seq_len(self, min_len):
@@ -309,6 +319,19 @@ class ScaffoldGraph(ScaffoldGraphBase):
 
         for u, v in self.edges:
             if self.graph[u][v]["weight"] >= w:
+                # Add the nodes first in case they have data
+                G.add_node(u, **self.nodes(data=True)[u])
+                G.add_node(v, **self.nodes(data=True)[v])
+                G.add_edge(u, v, **self.graph[u][v])
+
+        self.graph = G
+
+    def filter_non_one(self):
+        """ Remove edges where the weight is not equal to one. """
+        G = nx.Graph()
+
+        for u, v in self.edges:
+            if self.graph[u][v]["weight"] == 1:
                 # Add the nodes first in case they have data
                 G.add_node(u, **self.nodes(data=True)[u])
                 G.add_node(v, **self.nodes(data=True)[v])

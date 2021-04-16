@@ -270,13 +270,13 @@ def main():
     parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (uncompressed or bgzipped)")
 
     scaf_options = parser.add_argument_group("scaffolding options")
-    scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore [null]")
-    scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave unplaced [null]")
+    scaf_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference sequences to ignore [null]")
+    scaf_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query sequences to leave unplaced [null]")
     scaf_options.add_argument("-J", metavar="<hard-skip.txt>", type=str, default="", help="list of query headers to leave unplaced and exclude from 'chr0' ('-C') [null]")
     scaf_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     scaf_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than '-f'")
     scaf_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
-    scaf_options.add_argument("-d", metavar="INT", type=int, default=100000, help="max reference alignment merge distance [100000]")
+    scaf_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum reference alignment merge distance [100000]")
     scaf_options.add_argument("--careful-merge", action="store_true", default=False, help="apply '-d' to the query and reference coordinates")
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
@@ -318,7 +318,6 @@ def main():
 
     if not os.path.isfile(query_file):
         raise FileNotFoundError("Could not find file: %s" % query_file)
-
 
     min_ulen = args.f
     keep_small_uniques = not args.remove_small

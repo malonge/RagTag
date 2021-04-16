@@ -127,7 +127,7 @@ def write_agp_solution(cover_graph, scaffold_graph, agp_fname, gap_func="MIN", a
     for i, cc in enumerate(nx.connected_components(G=cover_graph)):
         # Sort the list of nodes for deterministic output
         cc = sorted(list(cc))
-        obj_header = "scf" + "{0:05}".format(i+1) + "_RagTag"
+        obj_header = "scf" + "{0:08}".format(i+1) + "_RagTag"
         current_node = None
 
         # Iterate over each node in the connected component until we find a node with degree=1

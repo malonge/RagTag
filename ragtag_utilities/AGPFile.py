@@ -446,7 +446,7 @@ class AGPSeqLine(AGPLine):
             self.comp_beg > 0,
             self.comp_end > 0
         ]):
-            raise AGPError(self.fname, self.line_number, "encountered an invalid negative numeric AGP field.")
+            raise AGPError(self.fname, self.line_number, "encountered an invalid zero or negative numeric AGP field.")
 
         # Check the coordinates
         if self.comp_beg > self.comp_end:

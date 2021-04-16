@@ -50,8 +50,8 @@ class ContigAlignment:
 
     The set of alignments organized in a ContigAlignment object is used to calculate metrics for the query sequence. For
     example, self.best_ref_header gives the reference sequence which the query sequence most covers. For this reason,
-    the ContigAlignment object is pseudo-immutable. The order of alignments may change (e.g. _sort_by_ref() and
-    _sort_by_query()) but any addition/subtraction of alignments is not allowed. Any such addition/removal functionality
+    the ContigAlignment object is pseudo-immutable. The order of alignments may change (e.g. sort_by_ref() and
+    sort_by_query()) but any addition/subtraction of alignments is not allowed. Any such addition/removal functionality
     (e.g. add_alignment()) must return a new instance of the class.
     """
 
@@ -270,7 +270,7 @@ class ContigAlignment:
 
         self._set_ref_aln_lens()
 
-    def _sort_by_ref(self):
+    def sort_by_ref(self):
         """ Sort the alignments by reference header/position. """
         ref_pos = []
         for i in range(len(self._ref_headers)):
@@ -279,7 +279,7 @@ class ContigAlignment:
 
         self._rearrange_alns(hits)
 
-    def _sort_by_query(self):
+    def sort_by_query(self):
         """ Sort the alignments by query position. """
         q_pos = []
         for i in range(len(self._ref_headers)):
@@ -287,6 +287,54 @@ class ContigAlignment:
         hits = [i[2] for i in sorted(q_pos)]
 
         self._rearrange_alns(hits)
+
+    @property
+    def num_refs(self):
+        return len(set(self._ref_headers))
+
+    @property
+    def num_alns(self):
+        return len(self._ref_headers)
+
+    @property
+    def query_starts(self):
+        return self._query_starts
+
+    @property
+    def query_ends(self):
+        return self._query_ends
+
+    @property
+    def strands(self):
+        return self._strands
+
+    @property
+    def ref_headers(self):
+        return self._ref_headers
+
+    @property
+    def ref_lens(self):
+        return self._ref_lens
+
+    @property
+    def ref_starts(self):
+        return self._ref_starts
+
+    @property
+    def ref_ends(self):
+        return self._ref_ends
+
+    @property
+    def residue_matches(self):
+        return self._residue_matches
+
+    @property
+    def aln_lens(self):
+        return self._aln_lens
+
+    @property
+    def mapqs(self):
+        return self._mapqs
 
     def add_alignment(self, in_query_start, in_query_end, in_strand, in_reference_header, in_ref_len, in_ref_start, in_ref_end, in_residue_matches, in_aln_len, in_mapq):
         """ Add an alignment for this query sequence. Return a new instance of the class. """
@@ -376,7 +424,7 @@ class ContigAlignment:
         merge_dist away from each other.
         """
         # Sort the alignments
-        self._sort_by_ref()
+        self.sort_by_ref()
 
         # Make a copy of the alignment info
         query_starts = self._query_starts
@@ -459,7 +507,7 @@ class ContigAlignment:
         same reference (intra) and one where the consecutive alignments aligned to different
         references (inter).
         """
-        self._sort_by_query()
+        self.sort_by_query()
         intra_candidates = []
         inter_candidates = []
 
@@ -473,3 +521,10 @@ class ContigAlignment:
 
         return intra_candidates, inter_candidates
 
+    def keep_terminals(self, max_term_dist):
+        """
+        remove any alignments that aren't within max_term_dist of a reference terminus
+        :param max_term_dist: maximum distance from a reference terminus
+        """
+        hits = [i for i in range(len(self._ref_headers)) if self._ref_starts[i] <= max_term_dist or (self._ref_lens[i] - self._ref_ends[i]) <= max_term_dist]
+        return self._update_alns(hits)

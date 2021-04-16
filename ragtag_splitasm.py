@@ -36,7 +36,7 @@ from ragtag_utilities.AGPFile import AGPFile
 
 def main():
     parser = argparse.ArgumentParser(description='Split sequencs at gaps', usage="ragtag.py splitasm <asm.fa>")
-    parser.add_argument("asm", metavar="<asm.fa>", nargs='?', default="", type=str, help="assembly fasta file (uncompressed or bgzipped)")
+    parser.add_argument("asm", metavar="<asm.fa>", default="", type=str, help="assembly fasta file (uncompressed or bgzipped)")
     parser.add_argument("-n", metavar="INT", type=int, default=0, help="minimum gap size [0]")
     parser.add_argument("-o", metavar="PATH", type=str, default="ragtag.splitasm.agp", help="output AGP file path [./ragtag.splitasm.agp]")
 
@@ -65,7 +65,7 @@ def main():
         gap_coords = [(i.start(), i.end()) for i in re.finditer(r'N+', seq) if i.end() - i.start() > min_gap_size]
 
         if not gap_coords:
-            new_header = "ctg{0:08}".format(new_header_idx)
+            new_header = "seq{0:08}".format(new_header_idx)
             new_header_idx += 1
             agp.add_seq_line(header, "1", seq_len, "1", "W", new_header, "1", seq_len, "+")
         else:
@@ -73,7 +73,7 @@ def main():
             pid = 1
             if gap_coords[0][0]:
                 # The sequence doesn't start with a gap
-                new_header = "ctg{0:08}".format(new_header_idx)
+                new_header = "seq{0:08}".format(new_header_idx)
                 agp.add_seq_line(header, "1", str(gap_coords[0][0]), str(pid), "W", new_header, "1", str(gap_coords[0][0]), "+")
                 new_header_idx += 1
                 pid += 1
@@ -88,7 +88,7 @@ def main():
                 # Add the sequence line
                 obj_start, obj_end = gap_coords[i-1][1], gap_coords[i][0]
                 comp_len = obj_end - obj_start
-                new_header = "ctg{0:08}".format(new_header_idx)
+                new_header = "seq{0:08}".format(new_header_idx)
                 if gap_coords[i-1][1] != seq_len:
                     agp.add_seq_line(header, str(obj_start + 1), obj_end, pid, "W", new_header, "1", str(comp_len), "+")
                     new_header_idx += 1
@@ -103,6 +103,8 @@ def main():
             obj, comp, obj_beg, obj_end = line.obj, line.comp, line.obj_beg, line.obj_end
             print(">" + comp)
             print(fai.fetch(obj, obj_beg-1, obj_end))
+
+    fai.close()
 
 
 if __name__ == "__main__":
