@@ -277,7 +277,6 @@ def main():
     scaf_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than '-f'")
     scaf_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
     scaf_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum reference alignment merge distance [100000]")
-    scaf_options.add_argument("--careful-merge", action="store_true", default=False, help="apply '-d' to the query and reference coordinates")
     scaf_options.add_argument("-i", metavar="FLOAT", type=float, default=0.2, help="minimum grouping confidence score [0.2]")
     scaf_options.add_argument("-a", metavar="FLOAT", type=float, default=0.0, help="minimum location confidence score [0.0]")
     scaf_options.add_argument("-s", metavar="FLOAT", type=float, default=0.0, help="minimum orientation confidence score [0.0]")
@@ -322,7 +321,6 @@ def main():
     min_ulen = args.f
     keep_small_uniques = not args.remove_small
     merge_dist = args.d
-    careful_merge = args.careful_merge
     group_score_thresh = args.i
     loc_score_thresh = args.a
     orient_score_thresh = args.s
@@ -456,7 +454,7 @@ def main():
                     with open(debug_fltrd_file, "a") as f:
                         f.write(str(ctg_alns[i]))
 
-                ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist, careful_merge=careful_merge)
+                ctg_alns[i] = ctg_alns[i].merge_alns(merge_dist=merge_dist, careful_merge=True)
 
     # Remove query sequences which have no more qualifying alignments
     fltrd_ctg_alns = dict()

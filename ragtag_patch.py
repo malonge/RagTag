@@ -432,7 +432,6 @@ def main():
     patch_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than '-f'")
     patch_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
     patch_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum reference alignment merge distance [100000]")
-    patch_options.add_argument("--careful-merge", action="store_true", default=False, help="apply '-d' to the query and reference coordinates")  # TODO  make this default
     patch_options.add_argument("-s", metavar="INT", type=int, default=50000, help="minimum merged alignment length [50000]")
     patch_options.add_argument("-i", metavar="INT", type=int, default=1000, help="maximum merged alignment distance from sequence terminus [1000]")
     patch_options.add_argument("--fill-only", action="store_true", default=False, help="only fill existing reference gaps. do not join reference sequnces")
@@ -476,7 +475,6 @@ def main():
     min_ulen = args.f
     keep_small_uniques = not args.remove_small
     merge_dist = args.d
-    careful_merge = args.careful_merge
     num_threads = args.t
 
     aligner_path = args.aligner
