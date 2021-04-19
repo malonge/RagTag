@@ -445,11 +445,11 @@ def main():
 
     aln_options = parser.add_argument_group("mapping options")
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
-    aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="aligner executable ('nucmer', 'unimap' or 'minimap2') [minimap2]")
+    aln_options.add_argument("--aligner", metavar="PATH", type=str, default="nucmer", help="aligner executable ('nucmer' (recommended), 'unimap' or 'minimap2') [nucmer]")
     mm2_default = "-x asm5"
     aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 parameters ['%s']" % mm2_default)
     aln_options.add_argument("--unimap-params", metavar="STR", type=str, default=mm2_default, help="space delimited unimap parameters ['%s']" % mm2_default)
-    aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer parameters ['-l 100 -c 500']")
+    aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="--maxmatch -l 100 -c 500", help="space delimted nucmer parameters ['--maxmatch -l 100 -c 500']")
 
     args = parser.parse_args()
     if not args.reference or not args.query:

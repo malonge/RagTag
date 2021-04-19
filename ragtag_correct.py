@@ -355,7 +355,7 @@ def main():
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="whole genome aligner executable ('nucmer', 'unimap' or 'minimap2') [minimap2]")
     aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 whole genome alignment parameters ['%s']" % mm2_default)
     aln_options.add_argument("--unimap-params", metavar="STR", type=str, default=mm2_default, help="space delimited unimap parameters ['%s']" % mm2_default)
-    aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="-l 100 -c 500", help="space delimted nucmer whole genome alignment parameters ['-l 100 -c 500']")
+    aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="--maxmatch -l 100 -c 500", help="space delimted nucmer whole genome alignment parameters ['--maxmatch -l 100 -c 500']")
 
     val_options = parser.add_argument_group("validation options")
     val_options.add_argument("--read-aligner", metavar="PATH", type=str, default="minimap2", help="read aligner executable (only 'minimap2' is allowed) [minimap2]")
