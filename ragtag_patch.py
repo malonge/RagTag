@@ -135,13 +135,10 @@ def build_aln_scaffold_graph(components_fasta_fname, ctg_alns, max_term_dist):
 
                 # If everything is valid, collect the metadata and add nodes and an edge to the graph
                 if left_pass and right_pass:
+                    left_start_pos, right_end_pos = ctg_alns[query].ref_starts[i-1], ctg_alns[query].ref_ends[i]
+
                     left_seq, right_seq = ctg_alns[query].ref_headers[i-1], ctg_alns[query].ref_headers[i]
                     left_pos, right_pos = ctg_alns[query].ref_ends[i-1], ctg_alns[query].ref_starts[i]
-
-                    # Ensure that left is always the lexicographically smaller sequence
-                    if right_seq < left_seq:
-                        left_seq, right_seq = right_seq, left_seq
-                        left_pos, right_pos = right_pos, left_pos
 
                     query_header = ctg_alns[query].query_header
                     query_start = ctg_alns[query].query_ends[i-1]
@@ -157,8 +154,9 @@ def build_aln_scaffold_graph(components_fasta_fname, ctg_alns, max_term_dist):
                         gap_type="scaffold",
                         linkage=True,
                         linkage_evidence="align_genus",
-                        seqs=[left_seq, right_seq],  # TODO ** this causes problems when writting to GML
+                        seqs=[left_seq, right_seq],
                         pos=[left_pos, right_pos],
+                        term_pos=[left_start_pos, right_end_pos],
                         query=query_header,
                         query_start=query_start,
                         query_end=query_end
@@ -219,7 +217,7 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
     agp.add_comment("# AGP created by RagTag {}".format(get_ragtag_version()))
 
     # Enter the master loop to find joins until we run out
-    obj_header_idx = 0  # TODO increment this
+    obj_header_idx = 0
     while True:
         left_edge = None
         start_comp_node = None
@@ -262,10 +260,11 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
         # Get the position for the first component
         start_comp_pos_idx = cover_graph[left_edge[0]][left_edge[1]]["seqs"][0].index(start_comp)
         start_comp_pos = cover_graph[left_edge[0]][left_edge[1]]["pos"][0][start_comp_pos_idx]
+        start_comp_term_pos = cover_graph[left_edge[0]][left_edge[1]]["term_pos"][0][start_comp_pos_idx]
 
         comp_start, comp_end = 0, start_comp_pos
         if comp_strand == "-":
-            comp_start, comp_end = start_comp_pos, start_comp_len
+            comp_start, comp_end = start_comp_term_pos, start_comp_len
 
         comp_len = comp_end - comp_start
         agp.add_seq_line(obj_header, obj_pos+1, obj_pos+comp_len, obj_id, "W", start_comp, comp_start+1, comp_end, comp_strand)
@@ -275,7 +274,6 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
 
         # iterate over each pair of connected adjacency edges
         prev_comp_node = start_comp_node
-        prev_comp = prev_comp_node[:-2]
         while True:
             # Look for a right edge
             curr_comp_node = (set(left_edge) - {prev_comp_node}).pop()
@@ -290,17 +288,47 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
             right_edge = (curr_node_oppo, list(cover_graph[curr_node_oppo].keys())[0])
 
             # Write the patch provided by the left edge
-            query = cover_graph[left_edge[0]][left_edge[1]]["query"][0]
-            query_start, query_end = cover_graph[left_edge[0]][left_edge[1]]["query_start"][0], cover_graph[left_edge[0]][left_edge[1]]["query_end"][0]
-            query_len = query_end - query_start
-            # TODO add gap line when no fill found or desired
-            agp.add_seq_line(obj_header, obj_pos+1, obj_pos+query_len, obj_id, "W", query, query_start+1, query_end, "+")
-            obj_pos += query_len
-            obj_id += 1
+            fill = True
+            if "is_gap" in cover_graph[left_edge[0]][left_edge[1]]:
+                if cover_graph[left_edge[0]][left_edge[1]]["is_gap"][0]:
+                    if cover_graph[left_edge[0]][left_edge[1]]["is_filled"][0]:
+                        if join_only:
+                            fill = False
+                    else:
+                        fill = False
+
+            if fill:
+                query = cover_graph[left_edge[0]][left_edge[1]]["query"][0]
+                query_start, query_end = cover_graph[left_edge[0]][left_edge[1]]["query_start"][0], cover_graph[left_edge[0]][left_edge[1]]["query_end"][0]
+                query_len = query_end - query_start
+
+                # Check if the ref contigs overlap or bookend
+                if query_len > 0:
+                    agp.add_seq_line(obj_header, obj_pos+1, obj_pos+query_len, obj_id, "W", query, query_start+1, query_end, "+")
+                    obj_pos += query_len
+                    obj_id += 1
+            else:
+                # Add a gap line
+                query_len = cover_graph[left_edge[0]][left_edge[1]]["gap_size"][0]
+                agp.add_gap_line(obj_header,
+                                 obj_pos+1,
+                                 obj_pos+query_len,
+                                 obj_id,
+                                 "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
+                                 query_len,
+                                 cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
+                                 "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
+                                 cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
+                            )
+                obj_pos += query_len
+                obj_id += 1
 
             # Write the reference sequence between the edges
             start_pos_idx = cover_graph[left_edge[0]][left_edge[1]]["seqs"][0].index(curr_comp)
             start_pos = cover_graph[left_edge[0]][left_edge[1]]["pos"][0][start_pos_idx]
+
+            if query_len < 0:
+                start_pos = start_pos + abs(query_len)
 
             end_pos_idx = cover_graph[right_edge[0]][right_edge[1]]["seqs"][0].index(curr_comp)
             end_pos = cover_graph[right_edge[0]][right_edge[1]]["pos"][0][end_pos_idx]
@@ -319,12 +347,37 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
             prev_comp_node = curr_node_oppo
 
         # Finish the object
-        query = cover_graph[left_edge[0]][left_edge[1]]["query"][0]
-        query_start, query_end = cover_graph[left_edge[0]][left_edge[1]]["query_start"][0], cover_graph[left_edge[0]][left_edge[1]]["query_end"][0]
-        query_len = query_end - query_start
-        # TODO add gap line when no fill found or desired
-        if query_len > 0:
-            agp.add_seq_line(obj_header, obj_pos+1, obj_pos + query_len, obj_id, "W", query, query_start+1, query_end, "+")
+        fill = True
+        if "is_gap" in cover_graph[left_edge[0]][left_edge[1]]:
+            if cover_graph[left_edge[0]][left_edge[1]]["is_gap"][0]:
+                if cover_graph[left_edge[0]][left_edge[1]]["is_filled"][0]:
+                    if join_only:
+                        fill = False
+                else:
+                    fill = False
+
+        if fill:
+            query = cover_graph[left_edge[0]][left_edge[1]]["query"][0]
+            query_start, query_end = cover_graph[left_edge[0]][left_edge[1]]["query_start"][0], cover_graph[left_edge[0]][left_edge[1]]["query_end"][0]
+            query_len = query_end - query_start
+
+            if query_len > 0:
+                agp.add_seq_line(obj_header, obj_pos+1, obj_pos + query_len, obj_id, "W", query, query_start+1, query_end, "+")
+                obj_pos += query_len
+                obj_id += 1
+        else:
+            # Add a gap line
+            query_len = cover_graph[left_edge[0]][left_edge[1]]["gap_size"][0]
+            agp.add_gap_line(obj_header,
+                             obj_pos + 1,
+                             obj_pos + query_len,
+                             obj_id,
+                             "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
+                             query_len,
+                             cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
+                             "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
+                             cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
+                             )
             obj_pos += query_len
             obj_id += 1
 
@@ -332,13 +385,15 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
         comp_len = scaffold_graph.get_component_len(curr_comp)
         comp_pos_idx = cover_graph[left_edge[0]][left_edge[1]]["seqs"][0].index(curr_comp)
         comp_pos = cover_graph[left_edge[0]][left_edge[1]]["pos"][0][comp_pos_idx]
+        comp_term_pos = cover_graph[left_edge[0]][left_edge[1]]["term_pos"][0][comp_pos_idx]
+
         curr_comp_strand = "+"
         start_pos = comp_pos
         end_pos = comp_len
         if curr_comp_node.endswith("_e"):
             curr_comp_strand = "-"
             start_pos = 0
-            end_pos = comp_pos
+            end_pos = comp_term_pos
 
         comp_len = end_pos - start_pos
         agp.add_seq_line(obj_header, obj_pos+1, obj_pos+comp_len, obj_id, "W", curr_comp, start_pos+1, end_pos, curr_comp_strand)
@@ -655,7 +710,8 @@ def main():
     # Add all of the agp edges to the cover graph
     for u, v in agp_sg.edges:
         if cover_graph.has_edge(u, v):
-            cover_graph[u][v]["is_fill"] = True
+            cover_graph[u][v]["is_gap"] = [True]
+            cover_graph[u][v]["is_filled"] = [True]
             cover_graph[u][v]["agp_is_known_gap_size"] = agp_sg[u][v]["is_known_gap_size"]
             cover_graph[u][v]["agp_gap_size"] = agp_sg[u][v]["gap_size"]
             cover_graph[u][v]["agp_gap_type"] = agp_sg[u][v]["gap_type"]
@@ -663,7 +719,8 @@ def main():
             cover_graph[u][v]["agp_linkage_evidence"] = agp_sg[u][v]["linkage_evidence"]
         else:
             new_data = {
-                "is_fill": True,
+                "is_gap": [True],
+                "is_filled": [False],
                 "agp_is_known_gap_size": agp_sg[u][v]["is_known_gap_size"],
                 "agp_gap_size": agp_sg[u][v]["gap_size"],
                 "agp_gap_type": agp_sg[u][v]["gap_type"],
@@ -677,9 +734,10 @@ def main():
         new_cover_graph = nx.Graph()
         new_cover_graph.add_nodes_from(cover_graph.nodes(data=True))
         for u, v in cover_graph.edges:
-            if "is_fill" in cover_graph[u][v]:
-                if cover_graph[u][v]["is_fill"]:
-                    new_cover_graph.add_edge(u, v **cover_graph[u][v])
+            if "is_gap" in cover_graph[u][v]:
+                if cover_graph[u][v]["is_gap"][0]:
+                    data = cover_graph[u][v]
+                    new_cover_graph.add_edge(u, v, **cover_graph[u][v])
         cover_graph = new_cover_graph
 
     if debug_mode:
@@ -692,7 +750,7 @@ def main():
 
     # Write the scaffolding output to an AGP file
     log("INFO", "Writing scaffolding results")
-    write_agp_solution(cover_graph, agp_sg, sg, output_path + file_prefix + ".agp", add_suffix_to_unplaced=add_suffix)
+    write_agp_solution(cover_graph, agp_sg, sg, output_path + file_prefix + ".agp", add_suffix_to_unplaced=add_suffix, join_only=join_only)
 
     # Build a FASTA from the AGP
     cmd = [
