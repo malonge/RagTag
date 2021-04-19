@@ -308,16 +308,17 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
             else:
                 # Add a gap line
                 query_len = cover_graph[left_edge[0]][left_edge[1]]["gap_size"][0]
-                agp.add_gap_line(obj_header,
-                                 obj_pos+1,
-                                 obj_pos+query_len,
-                                 obj_id,
-                                 "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
-                                 query_len,
-                                 cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
-                                 "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
-                                 cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
-                            )
+                agp.add_gap_line(
+                    obj_header,
+                    obj_pos+1,
+                    obj_pos+query_len,
+                    obj_id,
+                    "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
+                    query_len,
+                    cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
+                    "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
+                    cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
+                )
                 obj_pos += query_len
                 obj_id += 1
 
@@ -366,16 +367,17 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
         else:
             # Add a gap line
             query_len = cover_graph[left_edge[0]][left_edge[1]]["gap_size"][0]
-            agp.add_gap_line(obj_header,
-                             obj_pos + 1,
-                             obj_pos + query_len,
-                             obj_id,
-                             "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
-                             query_len,
-                             cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
-                             "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
-                             cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
-                             )
+            agp.add_gap_line(
+                obj_header,
+                obj_pos + 1,
+                obj_pos + query_len,
+                obj_id,
+                "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
+                query_len,
+                cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
+                "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
+                cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
+            )
             obj_pos += query_len
             obj_id += 1
 
@@ -734,7 +736,6 @@ def main():
         for u, v in cover_graph.edges:
             if "is_gap" in cover_graph[u][v]:
                 if cover_graph[u][v]["is_gap"][0]:
-                    data = cover_graph[u][v]
                     new_cover_graph.add_edge(u, v, **cover_graph[u][v])
         cover_graph = new_cover_graph
 
