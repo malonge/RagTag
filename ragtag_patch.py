@@ -219,16 +219,13 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
     # Enter the master loop to find joins until we run out
     obj_header_idx = 0
     while True:
-        left_edge = None
-        start_comp_node = None
+        left_edge, start_comp_node = None, None
+        obj_id, obj_pos = 1, 0
         obj_header = "scf" + "{0:08}".format(obj_header_idx) + "_RagTag"
-        obj_id = 1
-        obj_pos = 0
 
-        # Iterate over edges until we find a starting place that we haven't seen yet
+        # Iterate over edges until we find a starting point that we haven't seen yet
         for u, v in cover_graph.edges:
-            u_base = u[:-2]
-            v_base = v[:-2]
+            u_base, v_base = u[:-2], v[:-2]
             if u_base in placed_components:
                 continue
 
@@ -236,6 +233,7 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
             v_base_degree = cover_graph.degree[v_base + "_b"] + cover_graph.degree[v_base + "_e"]
             assert u_base_degree in {1, 2} and v_base_degree in {1, 2}
 
+            # Check if one of these is a terminal component
             if u_base_degree == 1:
                 start_comp_node = u
                 left_edge = (u, v)
@@ -279,7 +277,7 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
             curr_comp_node = (set(left_edge) - {prev_comp_node}).pop()
             curr_comp = curr_comp_node[:-2]
             next_node_degree = cover_graph.degree[curr_comp + "_b"] + cover_graph.degree[curr_comp + "_e"]
-            # Break if we don't find a right edge
+            # Break if we don't find a non-terminal right edge
             if next_node_degree == 1:
                 break
 
@@ -346,7 +344,7 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
             left_edge = right_edge
             prev_comp_node = curr_node_oppo
 
-        # Finish the object
+        # Finish the object by adding the other terminal component
         fill = True
         if "is_gap" in cover_graph[left_edge[0]][left_edge[1]]:
             if cover_graph[left_edge[0]][left_edge[1]]["is_gap"][0]:
