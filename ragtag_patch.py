@@ -710,20 +710,20 @@ def main():
         if cover_graph.has_edge(u, v):
             cover_graph[u][v]["is_gap"] = [True]
             cover_graph[u][v]["is_filled"] = [True]
-            cover_graph[u][v]["agp_is_known_gap_size"] = agp_sg[u][v]["is_known_gap_size"]
-            cover_graph[u][v]["agp_gap_size"] = agp_sg[u][v]["gap_size"]
-            cover_graph[u][v]["agp_gap_type"] = agp_sg[u][v]["gap_type"]
-            cover_graph[u][v]["agp_linkage"] = agp_sg[u][v]["linkage"]
-            cover_graph[u][v]["agp_linkage_evidence"] = agp_sg[u][v]["linkage_evidence"]
+            cover_graph[u][v]["is_known_gap_size"] = agp_sg[u][v]["is_known_gap_size"]
+            cover_graph[u][v]["gap_size"] = agp_sg[u][v]["gap_size"]
+            cover_graph[u][v]["gap_type"] = agp_sg[u][v]["gap_type"]
+            cover_graph[u][v]["linkage"] = agp_sg[u][v]["linkage"]
+            cover_graph[u][v]["linkage_evidence"] = agp_sg[u][v]["linkage_evidence"]
         else:
             new_data = {
                 "is_gap": [True],
                 "is_filled": [False],
-                "agp_is_known_gap_size": agp_sg[u][v]["is_known_gap_size"],
-                "agp_gap_size": agp_sg[u][v]["gap_size"],
-                "agp_gap_type": agp_sg[u][v]["gap_type"],
-                "agp_linkage": agp_sg[u][v]["linkage"],
-                "agp_linkage_evidence": agp_sg[u][v]["linkage_evidence"]
+                "is_known_gap_size": agp_sg[u][v]["is_known_gap_size"],
+                "gap_size": agp_sg[u][v]["gap_size"],
+                "gap_type": agp_sg[u][v]["gap_type"],
+                "linkage": agp_sg[u][v]["linkage"],
+                "linkage_evidence": agp_sg[u][v]["linkage_evidence"]
             }
             cover_graph.add_edge(u, v, **new_data)
 
