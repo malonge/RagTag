@@ -50,7 +50,7 @@ usage: ragtag.py <command> [options]
       patch           continuous scaffolding & gap filling
       
     file utilities:
-      agp2fasta       build a FASTA file from an AGP file
+      agp2fa          build a FASTA file from an AGP file
       agpcheck        check for valid AGP file format
       updategff       update gff intervals
       asmstats        assembly statistics
