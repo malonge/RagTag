@@ -414,7 +414,7 @@ def main():
 
     # Generate a FASTA file corresponding to the AGP
     cmd = [
-        "ragtag_agp2fasta.py",
+        "ragtag_agp2fa.py",
         output_path + file_prefix + ".agp",
         comp_fname
     ]

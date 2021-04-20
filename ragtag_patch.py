@@ -756,7 +756,7 @@ def main():
 
     # Build a FASTA from the AGP
     cmd = [
-        "ragtag_agp2fasta.py",
+        "ragtag_agp2fa.py",
         output_path + file_prefix + ".agp",
         components_fn
     ]

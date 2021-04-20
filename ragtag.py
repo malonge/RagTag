@@ -93,8 +93,8 @@ usage: ragtag.py <command> [options]
             subcmd = ["ragtag_patch.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
-        elif cmd == "agp2fasta":
-            subcmd = ["ragtag_agp2fasta.py"] + sys.argv[2:]
+        elif cmd == "agp2fa":
+            subcmd = ["ragtag_agp2fa.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         elif cmd == "agpcheck":
