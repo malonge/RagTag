@@ -715,6 +715,9 @@ def main():
             cover_graph[u][v]["gap_type"] = agp_sg[u][v]["gap_type"]
             cover_graph[u][v]["linkage"] = agp_sg[u][v]["linkage"]
             cover_graph[u][v]["linkage_evidence"] = agp_sg[u][v]["linkage_evidence"]
+            if join_only:
+                cover_graph[u][v]["seqs"] = agp_sg[u][v]["seqs"]
+                cover_graph[u][v]["pos"] = agp_sg[u][v]["pos"]
         else:
             new_data = {
                 "is_gap": [True],
@@ -723,7 +726,9 @@ def main():
                 "gap_size": agp_sg[u][v]["gap_size"],
                 "gap_type": agp_sg[u][v]["gap_type"],
                 "linkage": agp_sg[u][v]["linkage"],
-                "linkage_evidence": agp_sg[u][v]["linkage_evidence"]
+                "linkage_evidence": agp_sg[u][v]["linkage_evidence"],
+                "seqs": agp_sg[u][v]["seqs"],
+                "pos": agp_sg[u][v]["pos"]
             }
             cover_graph.add_edge(u, v, **new_data)
 

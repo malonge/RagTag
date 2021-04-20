@@ -604,6 +604,8 @@ class AGPMultiScaffoldGraph(MultiScaffoldGraph):
             for ap in self._get_assembly_points(agp, weight):
                 for u, v, w in ap.get_realizations():
                     if u[:-2] not in exclusion_set and v[:-2] not in exclusion_set:
+                        u_base, v_base = u[:-2], v[:-2]
+                        u_len = self.get_component_len(u_base)
                         self.add_edge(
                             u,
                             v,
@@ -613,5 +615,7 @@ class AGPMultiScaffoldGraph(MultiScaffoldGraph):
                             gap_size=ap.gap_size,
                             gap_type=ap.gap_type,
                             linkage=ap.linkage,
-                            linkage_evidence=ap.linkage_evidence
+                            linkage_evidence=ap.linkage_evidence,
+                            seqs=[u_base, v_base],
+                            pos=[u_len, 0]
                         )
