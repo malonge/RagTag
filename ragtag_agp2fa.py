@@ -34,7 +34,7 @@ from ragtag_utilities.AGPFile import AGPFile
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Build sequences in FASTA format from an AGP v2.1 file.", usage="ragtag.py agp2fasta <scaffolds.agp> <components.fasta>")
+    parser = argparse.ArgumentParser(description="Build sequences in FASTA format from an AGP v2.1 file.", usage="ragtag.py agp2fa <scaffolds.agp> <components.fasta>")
     parser.add_argument("agp", metavar="<scaffolds.agp>", nargs='?', default="", type=str, help="AGP v2.1 file")
     parser.add_argument("components", metavar="<components.fasta>", nargs='?', default="", type=str, help="component FASTA file (can be uncompressed or bgzipped)")
 
