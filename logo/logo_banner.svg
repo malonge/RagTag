@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Generator: Adobe Illustrator 25.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
 <svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 540 144" style="enable-background:new 0 0 540 144;" xml:space="preserve">
+	 viewBox="0 0 576 144" style="enable-background:new 0 0 576 144;" xml:space="preserve">
 <style type="text/css">
 	.st0{fill:#F9F9FA;stroke:#000000;stroke-miterlimit:10;}
 	.st1{fill:#F26539;}
@@ -10,15 +10,15 @@
 	.st4{stroke:#000000;stroke-width:0.75;stroke-miterlimit:10;}
 	.st5{fill:none;stroke:#2791D0;stroke-width:0.75;stroke-miterlimit:10;}
 </style>
-<rect x="2.69" y="2.51" class="st0" width="534.63" height="138.98"/>
+<rect x="1.68" y="1.18" class="st0" width="572.65" height="141.64"/>
 <g>
-	<text transform="matrix(1 0 0 1 228.6382 63.7393)" class="st1 st2 st3">R</text>
-	<text transform="matrix(1 0 0 1 234.9741 111.0913)" class="st2 st3">ag</text>
+	<text transform="matrix(1 0 0 1 246.6382 63.517)" class="st1 st2 st3">R</text>
+	<text transform="matrix(1 0 0 1 252.9741 110.8691)" class="st2 st3">ag</text>
 	<g>
-		<line class="st4" x1="236.13" y1="73.02" x2="304.52" y2="73.02"/>
-		<line class="st4" x1="236.13" y1="70.98" x2="269.66" y2="70.98"/>
-		<line class="st5" x1="270.99" y1="70.98" x2="304.52" y2="70.98"/>
+		<line class="st4" x1="254.13" y1="72.8" x2="322.52" y2="72.8"/>
+		<line class="st4" x1="254.13" y1="70.76" x2="287.66" y2="70.76"/>
+		<line class="st5" x1="288.99" y1="70.76" x2="322.52" y2="70.76"/>
 	</g>
-	<text transform="matrix(1 0 0 1 263.7544 63.7393)" class="st2 st3">T</text>
+	<text transform="matrix(1 0 0 1 281.7544 63.517)" class="st2 st3">T</text>
 </g>
 </svg>
