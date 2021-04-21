@@ -335,7 +335,7 @@ def main():
     cor_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     cor_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than -f")
     cor_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
-    cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="max reference alignment merge distance [100000]")
+    cor_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum alignment merge distance [100000]")
     cor_options.add_argument("-b", metavar="INT", type=int, default=5000, help="minimum break distance from contig ends [5000]")
     cor_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference headers to ignore [null]")
     cor_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query headers to leave uncorrected [null]")

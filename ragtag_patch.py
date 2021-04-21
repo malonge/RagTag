@@ -420,22 +420,22 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Use a query assembly to patch a reference assembly', usage="ragtag.py patch <reference.fa> <query.fa>")
+    parser = argparse.ArgumentParser(description='Make joins and fill gaps in target.fa using sequences from query.fa', usage="ragtag.py patch <target.fa> <query.fa>")
 
-    parser.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file (uncompressed or bgzipped)")
+    parser.add_argument("reference", metavar="<target.fa>", nargs='?', default="", type=str, help="target fasta file (uncompressed or bgzipped)")
     parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (uncompressed or bgzipped)")
 
     patch_options = parser.add_argument_group("patching")
-    patch_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of reference sequences to ignore [null]")
+    patch_options.add_argument("-e", metavar="<exclude.txt>", type=str, default="", help="list of target sequences to ignore [null]")
     patch_options.add_argument("-j", metavar="<skip.txt>", type=str, default="", help="list of query sequences to ignore [null]")
     patch_options.add_argument("-f", metavar="INT", type=int, default=1000, help="minimum unique alignment length [1000]")
     patch_options.add_argument("--remove-small", action="store_true", default=False, help="remove unique alignments shorter than '-f'")
     patch_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
-    patch_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum reference alignment merge distance [100000]")
+    patch_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum alignment merge distance [100000]")
     patch_options.add_argument("-s", metavar="INT", type=int, default=50000, help="minimum merged alignment length [50000]")
     patch_options.add_argument("-i", metavar="INT", type=int, default=1000, help="maximum merged alignment distance from sequence terminus [1000]")
-    patch_options.add_argument("--fill-only", action="store_true", default=False, help="only fill existing reference gaps. do not join reference sequnces")
-    patch_options.add_argument("--join-only", action="store_true", default=False, help="only join and patch reference sequences. do not fill existing gaps")
+    patch_options.add_argument("--fill-only", action="store_true", default=False, help="only fill existing target gaps. do not join target sequnces")
+    patch_options.add_argument("--join-only", action="store_true", default=False, help="only join and patch target sequences. do not fill existing gaps")
 
     io_options = parser.add_argument_group("input/output options")
     io_options.add_argument("-o", metavar="PATH", type=str, default="ragtag_output", help="output directory [./ragtag_output]")
@@ -454,7 +454,7 @@ def main():
     args = parser.parse_args()
     if not args.reference or not args.query:
         parser.print_help()
-        print("\n** The reference and query FASTA files are required **")
+        print("\n** The target and query FASTA files are required **")
         sys.exit()
 
     log("VERSION", "RagTag " + get_ragtag_version())
@@ -604,7 +604,7 @@ def main():
                 f.write(query_fai.fetch(query) + "\n")
 
     # Map the query assembly to the reference contigs
-    log("INFO", "Mapping the query genome to the reference genome")
+    log("INFO", "Mapping the query genome to the target genome")
     if aligner == "minimap2":
         al = Minimap2Aligner(reference_ctg_fn, [query_rename_fn], aligner_path, mm2_params, output_path + file_prefix + ".asm", in_overwrite=overwrite_files)
     elif aligner == "unimap":
