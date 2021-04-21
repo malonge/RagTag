@@ -59,7 +59,7 @@ def main():
     # Process the FASTA file
     new_header_idx = 0
     fai = pysam.FastaFile(asm_fn)
-    for header in fai.references:
+    for header in sorted(fai.references):
         seq = fai.fetch(header).upper()
         seq_len = fai.get_reference_length(header)
         gap_coords = [(i.start(), i.end()) for i in re.finditer(r'N+', seq) if i.end() - i.start() > min_gap_size]
