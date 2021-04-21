@@ -34,7 +34,7 @@ def main():
     VERSION = get_ragtag_version()
     CITATION = """
 Alonge, Michael, et al. "RaGOO: fast and accurate reference-guided scaffolding of draft genomes."
-Genome biology 20.1 (2019): 1-17.
+Genome biology 20.1 (2019): 1-17. https://doi.org/10.1186/s13059-019-1829-6
     """
 
     description = """
