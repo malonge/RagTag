@@ -420,7 +420,7 @@ def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fnam
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Make joins and fill gaps in target.fa using sequences from query.fa', usage="ragtag.py patch <target.fa> <query.fa>")
+    parser = argparse.ArgumentParser(description='Make joins and fill gaps in one assembly (target.fa) using sequences from another assembly (query.fa)', usage="ragtag.py patch <target.fa> <query.fa>")
 
     parser.add_argument("reference", metavar="<target.fa>", nargs='?', default="", type=str, help="target fasta file (uncompressed or bgzipped)")
     parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (uncompressed or bgzipped)")
