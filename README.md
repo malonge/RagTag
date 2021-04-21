@@ -50,7 +50,7 @@ Please see the [Wiki](https://github.com/malonge/RagTag/wiki) for detailed docum
     
 ## Citation
 
-Alonge, Michael, et al. ["RaGOO: fast and accurate reference-guided scaffolding of draft genomes."](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1829-6) Genome biology 20.1 (2019): 1-17. https://doi.org/10.1186/s13059-019-1829-6
+Alonge, Michael, et al. ["RaGOO: fast and accurate reference-guided scaffolding of draft genomes."](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1829-6) Genome biology 20.1 (2019): 1-17. <br>https://doi.org/10.1186/s13059-019-1829-6
 
 ## Acknowledgments
 
