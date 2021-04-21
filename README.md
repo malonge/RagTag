@@ -1,10 +1,17 @@
 ![logo_text](logo/logo_banner.svg)
 
-## RagTag: Utilities for fast and flexible genome assembly improvement 
+## RagTag 
 
-[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=ff69b4)](https://github.com/malonge/RagTag/releases/tag/v2.0.0) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=%230BE67&label=conda)](https://anaconda.org/bioconda/ragtag)
+[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=EE7733)](https://github.com/malonge/RagTag/releases/tag/v2.0.0) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=009988&label=conda)](https://anaconda.org/bioconda/ragtag) [![GitHub](https://img.shields.io/github/license/malonge/RagTag?color=CC3311)](https://github.com/malonge/RagTag/blob/master/LICENSE)
 
-RagTag is a collection of command-line utilities for improving modern genome assemblies. This includes tools for homology-based scaffolding/correction, hybrdid scaffolding and gap-filling.
+RagTag is a collection of command-line utilities for improving modern genome assemblies. Tasks include:
+
+- Homology-based sequence [correction](https://github.com/malonge/RagTag/wiki/correct)
+- Homology-based sequence [scaffolding](https://github.com/malonge/RagTag/wiki/scaffold)
+- Homology-based continuous scaffolding and gap-filling ([patching](https://github.com/malonge/RagTag/wiki/patch))
+- Scaffold [merging](https://github.com/malonge/RagTag/wiki/merge)
+  
+Ragtag also provides a [collection of command line utilities]() for working with common genome assembly file formats.
 
 ## Getting Started
 
@@ -25,13 +32,16 @@ ragtag.py merge query.fasta out_*/*.agp
 
 # use Hi-C to resolve conflicts
 ragtag.py merge -b hic.bam query.fasta out_*/*.agp
+
+# make joins and fill gaps in target.fa using sequences from query.fa
+ragtag.py patch target.fa query.fa
 ```
 
 ## Docs
 Please see the [Wiki](https://github.com/malonge/RagTag/wiki) for detailed documentation.
 
 ## Dependencies
-- [Minimap2](https://github.com/lh3/minimap2) or [Nucmer](http://mummer.sourceforge.net/)
+- [Minimap2](https://github.com/lh3/minimap2), [Unimap](https://github.com/lh3/unimap), or [Nucmer](http://mummer.sourceforge.net/)
 - Python 3 (with the following auto-installed packages)
     - numpy
     - intervaltree
@@ -44,4 +54,4 @@ Alonge, Michael, et al. ["RaGOO: fast and accurate reference-guided scaffolding 
 
 ## Acknowledgments
 
-Many of the major algorithmic improvements relative to RaGOO's first release were provided by Aleksey Zimin, lead developer of the [MaSuRCA assembler](https://github.com/alekseyzimin/masurca). This includes the use of read-mapping for misassembly validation as well as the use of alignment merging for improved scaffolding. [Luca Venturini](https://github.com/lucventurini) also suggested and initially implemented many feature enhancments, such as pysam integration. RagTag "merge" was inspired by [CAMSA](https://doi.org/10.1186/s12859-017-1919-y). The developer of CAMSA, [Sergey Aganezov](https://github.com/aganezov), helped review relevant RagTag code.  
+Many of the major algorithmic improvements relative to RaGOO's first release were provided by Aleksey Zimin, lead developer of the [MaSuRCA assembler](https://github.com/alekseyzimin/masurca). [Luca Venturini](https://github.com/lucventurini) suggested and initially implemented many feature enhancments, such as pysam integration. RagTag "merge" was inspired by [CAMSA](https://doi.org/10.1186/s12859-017-1919-y). The developer of CAMSA, [Sergey Aganezov](https://github.com/aganezov), helped review relevant RagTag code. RagTag "patch" was inspired by [Grafter](https://github.com/mkirsche/Grafter), a scaffolding tool written by [Melanie Kirsche](https://github.com/mkirsche). Melanie provided guidance for the RagTag implementation. [Michael Schatz](http://schatz-lab.org/) has provided guidance for the whole project.   
