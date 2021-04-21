@@ -207,7 +207,7 @@ class ScaffoldGraphBase:
             raise ValueError("Nodes must end with either '_b' or '_e'.")
 
         if n[:-2] not in self.component_lens:
-            raise ValueError("{} was not found in {}.".format(n[:-2], self.components_fasta_fname))
+            raise ValueError("{} was not found in {}".format(n[:-2], self.components_fasta_fname))
 
         self.graph.add_node(n, **kwargs)
 
