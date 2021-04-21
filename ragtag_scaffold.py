@@ -292,7 +292,7 @@ def main():
     io_options.add_argument("--debug", action='store_true', default=False, help=argparse.SUPPRESS)
 
     aln_options = parser.add_argument_group("mapping options")
-    aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2 threads [1]")
+    aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2/unimap threads [1]")
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="aligner executable ('nucmer', 'unimap' or 'minimap2') [minimap2]")
     mm2_default = "-x asm5"
     aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 parameters ['%s']" % mm2_default)
