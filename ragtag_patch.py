@@ -42,6 +42,8 @@ from ragtag_utilities.Aligner import NucmerAligner
 from ragtag_utilities.ScaffoldGraph import ScaffoldGraphBase
 from ragtag_utilities.ScaffoldGraph import AGPMultiScaffoldGraph
 from ragtag_utilities.ScaffoldGraph import MultiScaffoldGraph
+from ragtag_utilities.ScaffoldGraph import PatchScaffoldGraph
+from ragtag_utilities.ScaffoldGraph import Alignment
 
 
 def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
@@ -88,335 +90,79 @@ def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
     return ctg_alns
 
 
-def build_aln_scaffold_graph(components_fasta_fname, ctg_alns, max_term_dist):
+def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
     """
-    Build a scaffold graph from alignments in PAF format,
-    :param components_fasta_fname: reference FASTA file name
-    :param ctg_alns: query header -> ContigAlignment object. Assumed to be filtered to only contain informative alignments
-    :param max_term_dist: max distance of alignment to sequence terminus
-    :return: A Scaffold Graph
+    Build a directed scaffold graph from filtered alignments
+    :param ctg_alns: query sequence -> ContigAlignment object
+    :param components_fn: name of FASTA file with all relevant sequences
+    :param max_term_dist: maximum alignment distance from a sequence terminus
+    :return: PatchScaffoldGraph
     """
-    G = MultiScaffoldGraph(components_fasta_fname)
-    for query in ctg_alns:
-        # Sort the alignments by query position
-        ctg_alns[query].sort_by_query()
+    sg = PatchScaffoldGraph(components_fn)
 
-        # Iterate over each adjacent pair of alignments
-        for i in range(1, ctg_alns[query].num_alns):
-            # Only consider adjacent alignments to distinct reference sequences
-            if ctg_alns[query].ref_headers[i-1] != ctg_alns[query].ref_headers[i]:
-                left_strand, right_strand = ctg_alns[query].strands[i-1], ctg_alns[query].strands[i]
+    for query_seq in ctg_alns:
+        als = ctg_alns[query_seq]
+        last = None
+        last_reversed = False
 
-                # Get the potential nodes
-                left_node = ctg_alns[query].ref_headers[i-1] + "_e"
-                if left_strand == "-":
-                    left_node = ctg_alns[query].ref_headers[i-1] + "_b"
+        # Iterate over each alignment for this query sequence
+        for i in range(als.num_alns):
+            cur_reversed = False
 
-                right_node = ctg_alns[query].ref_headers[i] + "_b"
-                if right_strand == "-":
-                    right_node = ctg_alns[query].ref_headers[i] + "_e"
+            # For each reference/query alignment terminus, determine if it is close to the sequence terminus
+            ref_left_end, ref_right_end = als.ref_start_end(i, max_term_dist)
+            query_left_end, query_right_end = als.query_start_end(i, max_term_dist)
 
-                # Check that the alignments are close to the correct terminus
-                left_pass = True
-                if left_strand == "+":
-                    if (ctg_alns[query].ref_lens[i-1] - ctg_alns[query].ref_ends[i-1]) > max_term_dist:
-                        left_pass = False
-                else:
-                    if ctg_alns[query].ref_starts[i-1] > max_term_dist:
-                        left_pass = False
-
-                right_pass = True
-                if right_strand == "-":
-                    if (ctg_alns[query].ref_lens[i] - ctg_alns[query].ref_ends[i]) > max_term_dist:
-                        right_pass = False
-                else:
-                    if ctg_alns[query].ref_starts[i] > max_term_dist:
-                        right_pass = False
-
-                # If everything is valid, collect the metadata and add nodes and an edge to the graph
-                if left_pass and right_pass:
-                    left_start_pos, right_end_pos = ctg_alns[query].ref_starts[i-1], ctg_alns[query].ref_ends[i]
-
-                    left_seq, right_seq = ctg_alns[query].ref_headers[i-1], ctg_alns[query].ref_headers[i]
-                    left_pos, right_pos = ctg_alns[query].ref_ends[i-1], ctg_alns[query].ref_starts[i]
-
-                    query_header = ctg_alns[query].query_header
-                    query_start = ctg_alns[query].query_ends[i-1]
-                    query_end = ctg_alns[query].query_starts[i]
-
-                    G.add_edge(
-                        left_node,
-                        right_node,
-                        weight=1,
-                        source_fname="alns.paf",
-                        is_known_gap_size=True,
-                        gap_size=query_end - query_start,
-                        gap_type="scaffold",
-                        linkage=True,
-                        linkage_evidence="align_genus",
-                        seqs=[left_seq, right_seq],
-                        pos=[left_pos, right_pos],
-                        term_pos=[left_start_pos, right_end_pos],
-                        query=query_header,
-                        query_start=query_start,
-                        query_end=query_end
-                    )
-
-    SG = G.merge()
-
-    # Remove edges with more than one supporting alignment
-    SG.filter_non_one()
-    return SG
-
-
-def get_maximal_matching(sg):
-    """ Find a solution to a Scaffold Graph. """
-    matching = sg.get_max_weight_matching()
-
-    cover_graph = nx.Graph()
-    cover_graph.add_nodes_from(sg.nodes(data=True))
-
-    # Add edges connecting contig ends
-    node_base_set = set([i[:-2] for i in list(cover_graph.nodes)])
-    for node in node_base_set:
-        cover_graph.add_edge(node + "_b", node + "_e", weight=np.inf)
-
-    # Add the Scaffold Graph edges that form the matching
-    for u, v in matching:
-        cover_graph.add_edge(u, v, **sg[u][v])
-
-    # Remove any potential cycles
-    edges_to_delete = []
-    for cc in nx.connected_components(G=cover_graph):
-        cc = cover_graph.subgraph(cc).copy()
-        if cc.number_of_nodes() == cc.number_of_edges():
-            assembly_edges = cc.edges(data=True)
-            edges_to_delete.append(min(assembly_edges, key=lambda entry: entry[2]["weight"]))
-    for u, v, data in edges_to_delete:
-        cover_graph.remove_edge(u, v)
-
-    # Remove intra-sequence edges
-    for node in node_base_set:
-        cover_graph.remove_edge(node + "_b", node + "_e")
-
-    return cover_graph
-
-
-def write_agp_solution(cover_graph, agp_scaffold_graph, scaffold_graph, agp_fname, add_suffix_to_unplaced=False, join_only=False):
-    if not isinstance(agp_scaffold_graph, ScaffoldGraphBase):
-        raise TypeError("agp_scaffold_graph must be an instance of ScaffoldGraph")
-
-    if not isinstance(scaffold_graph, ScaffoldGraphBase):
-        raise TypeError("scaffold_graph must be an instance of ScaffoldGraph")
-
-    placed_components = set()
-
-    # Initialize the AGP file
-    agp = AGPFile(agp_fname, mode="w")
-    agp.add_pragma()
-    agp.add_comment("# AGP created by RagTag {}".format(get_ragtag_version()))
-
-    # Enter the master loop to find joins until we run out
-    obj_header_idx = 0
-    while True:
-        left_edge, start_comp_node = None, None
-        obj_id, obj_pos = 1, 0
-        obj_header = "scf" + "{0:08}".format(obj_header_idx) + "_RagTag"
-
-        # Iterate over edges until we find a starting point that we haven't seen yet
-        for u, v in cover_graph.edges:
-            u_base, v_base = u[:-2], v[:-2]
-            if u_base in placed_components:
-                continue
-
-            u_base_degree = cover_graph.degree[u_base + "_b"] + cover_graph.degree[u_base + "_e"]
-            v_base_degree = cover_graph.degree[v_base + "_b"] + cover_graph.degree[v_base + "_e"]
-            assert u_base_degree in {1, 2} and v_base_degree in {1, 2}
-
-            # Check if one of these is a terminal component
-            if u_base_degree == 1:
-                start_comp_node = u
-                left_edge = (u, v)
-                break
-
-            if v_base_degree == 1:
-                start_comp_node = v
-                left_edge = (u, v)
-                break
-
-        # If the above 'for' loop doesn't find any starting nodes, we are done.
-        if left_edge is None:
-            break
-
-        start_comp = start_comp_node[:-2]
-        start_comp_len = scaffold_graph.get_component_len(start_comp)
-
-        comp_strand = "+"
-        if start_comp_node.endswith("_b"):
-            comp_strand = "-"
-
-        # Get the position for the first component
-        start_comp_pos_idx = cover_graph[left_edge[0]][left_edge[1]]["seqs"][0].index(start_comp)
-        start_comp_pos = cover_graph[left_edge[0]][left_edge[1]]["pos"][0][start_comp_pos_idx]
-        start_comp_term_pos = cover_graph[left_edge[0]][left_edge[1]]["term_pos"][0][start_comp_pos_idx]
-
-        comp_start, comp_end = 0, start_comp_pos
-        if comp_strand == "-":
-            comp_start, comp_end = start_comp_term_pos, start_comp_len
-
-        comp_len = comp_end - comp_start
-        agp.add_seq_line(obj_header, obj_pos+1, obj_pos+comp_len, obj_id, "W", start_comp, comp_start+1, comp_end, comp_strand)
-        obj_pos += comp_len
-        obj_id += 1
-        placed_components.add(start_comp)
-
-        # iterate over each pair of connected adjacency edges
-        prev_comp_node = start_comp_node
-        while True:
-            # Look for a right edge
-            curr_comp_node = (set(left_edge) - {prev_comp_node}).pop()
-            curr_comp = curr_comp_node[:-2]
-            next_node_degree = cover_graph.degree[curr_comp + "_b"] + cover_graph.degree[curr_comp + "_e"]
-            # Break if we don't find a non-terminal right edge
-            if next_node_degree == 1:
-                break
-
-            # If we found a right edge, add the resulting patch and ref agp lines
-            curr_node_oppo = curr_comp + "_b" if curr_comp_node.endswith("_e") else curr_comp + "_e"
-            right_edge = (curr_node_oppo, list(cover_graph[curr_node_oppo].keys())[0])
-
-            # Write the patch provided by the left edge
-            fill = True
-            if "is_gap" in cover_graph[left_edge[0]][left_edge[1]]:
-                if cover_graph[left_edge[0]][left_edge[1]]["is_gap"][0]:
-                    if cover_graph[left_edge[0]][left_edge[1]]["is_filled"][0]:
-                        if join_only:
-                            fill = False
-                    else:
-                        fill = False
-
-            if fill:
-                query = cover_graph[left_edge[0]][left_edge[1]]["query"][0]
-                query_start, query_end = cover_graph[left_edge[0]][left_edge[1]]["query_start"][0], cover_graph[left_edge[0]][left_edge[1]]["query_end"][0]
-                query_len = query_end - query_start
-
-                # Check if the ref contigs overlap or bookend
-                if query_len > 0:
-                    agp.add_seq_line(obj_header, obj_pos+1, obj_pos+query_len, obj_id, "W", query, query_start+1, query_end, "+")
-                    obj_pos += query_len
-                    obj_id += 1
+            # Determine if we are reversing the reference sequence of this alignment
+            if ref_left_end and ref_right_end:
+                # Entire reference aligns - have to look at strand in alignment
+                if als.strands[i] == '-':
+                    cur_reversed = True
+            elif ref_left_end:
+                # Beginning of reference - we would expect suffix of read if same strand
+                if query_left_end and query_right_end:
+                    if als.strands[i] == '-':
+                        cur_reversed = True
+                elif query_left_end:
+                    cur_reversed = True
             else:
-                # Add a gap line
-                query_len = cover_graph[left_edge[0]][left_edge[1]]["gap_size"][0]
-                agp.add_gap_line(
-                    obj_header,
-                    obj_pos+1,
-                    obj_pos+query_len,
-                    obj_id,
-                    "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
-                    query_len,
-                    cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
-                    "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
-                    cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
-                )
-                obj_pos += query_len
-                obj_id += 1
+                # End of contig - we would expect prefix of read if same strand
+                if query_left_end and query_right_end:
+                    if als.strands[i] == '-':
+                        cur_reversed = True
+                elif query_right_end:
+                    cur_reversed = True
 
-            # Write the reference sequence between the edges
-            start_pos_idx = cover_graph[left_edge[0]][left_edge[1]]["seqs"][0].index(curr_comp)
-            start_pos = cover_graph[left_edge[0]][left_edge[1]]["pos"][0][start_pos_idx]
+            if last is not None:
+                if als.ref_headers[last] != als.ref_headers[i]:
+                    overlap = als.query_ends[last] - als.query_starts[i]
+                    if overlap <= als.ref_lens[last] and overlap <= als.ref_lens[i]:
 
-            if query_len < 0:
-                start_pos = start_pos + abs(query_len)
+                        # Determine the scaffold graph nodes
+                        u = als.ref_headers[last] + "_e"
+                        v = als.ref_headers[i] + "_b"
+                        if last_reversed:
+                            u = als.ref_headers[last] + "_b"
+                        if cur_reversed:
+                            v = als.ref_headers[i] + "_e"
 
-            end_pos_idx = cover_graph[right_edge[0]][right_edge[1]]["seqs"][0].index(curr_comp)
-            end_pos = cover_graph[right_edge[0]][right_edge[1]]["pos"][0][end_pos_idx]
+                        alignment = Alignment(
+                            u,
+                            v,
+                            query_seq,
+                            als.query_len,
+                            als.query_ends[last],
+                            als.query_starts[i],
+                            0,  # Always on the query's forward strand
+                            is_gap=False
+                        )
+                        sg.add_edge(u, v, alignment)
 
-            curr_comp_strand = "+"
-            if curr_node_oppo.endswith("_b"):
-                curr_comp_strand = "-"
+            last = i
+            last_reversed = cur_reversed
 
-            curr_comp_len = end_pos - start_pos
-            agp.add_seq_line(obj_header, obj_pos+1, obj_pos+curr_comp_len, obj_id, "W", curr_comp, start_pos+1, end_pos, curr_comp_strand)
-            obj_pos += curr_comp_len
-            obj_id += 1
-            placed_components.add(curr_comp)
-
-            left_edge = right_edge
-            prev_comp_node = curr_node_oppo
-
-        # Finish the object by adding the other terminal component
-        fill = True
-        if "is_gap" in cover_graph[left_edge[0]][left_edge[1]]:
-            if cover_graph[left_edge[0]][left_edge[1]]["is_gap"][0]:
-                if cover_graph[left_edge[0]][left_edge[1]]["is_filled"][0]:
-                    if join_only:
-                        fill = False
-                else:
-                    fill = False
-
-        if fill:
-            query = cover_graph[left_edge[0]][left_edge[1]]["query"][0]
-            query_start, query_end = cover_graph[left_edge[0]][left_edge[1]]["query_start"][0], cover_graph[left_edge[0]][left_edge[1]]["query_end"][0]
-            query_len = query_end - query_start
-
-            if query_len > 0:
-                agp.add_seq_line(obj_header, obj_pos+1, obj_pos + query_len, obj_id, "W", query, query_start+1, query_end, "+")
-                obj_pos += query_len
-                obj_id += 1
-        else:
-            # Add a gap line
-            query_len = cover_graph[left_edge[0]][left_edge[1]]["gap_size"][0]
-            agp.add_gap_line(
-                obj_header,
-                obj_pos + 1,
-                obj_pos + query_len,
-                obj_id,
-                "N" if cover_graph[left_edge[0]][left_edge[1]]["is_known_gap_size"][0] else "U",
-                query_len,
-                cover_graph[left_edge[0]][left_edge[1]]["gap_type"][0],
-                "yes" if cover_graph[left_edge[0]][left_edge[1]]["linkage"][0] else "no",
-                cover_graph[left_edge[0]][left_edge[1]]["linkage_evidence"][0]
-            )
-            obj_pos += query_len
-            obj_id += 1
-
-        # Write the final terminal component
-        comp_len = scaffold_graph.get_component_len(curr_comp)
-        comp_pos_idx = cover_graph[left_edge[0]][left_edge[1]]["seqs"][0].index(curr_comp)
-        comp_pos = cover_graph[left_edge[0]][left_edge[1]]["pos"][0][comp_pos_idx]
-        comp_term_pos = cover_graph[left_edge[0]][left_edge[1]]["term_pos"][0][comp_pos_idx]
-
-        curr_comp_strand = "+"
-        start_pos = comp_pos
-        end_pos = comp_len
-        if curr_comp_node.endswith("_e"):
-            curr_comp_strand = "-"
-            start_pos = 0
-            end_pos = comp_term_pos
-
-        comp_len = end_pos - start_pos
-        agp.add_seq_line(obj_header, obj_pos+1, obj_pos+comp_len, obj_id, "W", curr_comp, start_pos+1, end_pos, curr_comp_strand)
-        placed_components.add(curr_comp)
-
-        obj_header_idx += 1
-
-    # Write all unplaced contigs
-    remaining_components = scaffold_graph.components - placed_components
-    for c in remaining_components:
-        agp.add_seq_line(
-            c + "_RagTag" * add_suffix_to_unplaced,
-            "1",
-            str(scaffold_graph.get_component_len(c)),
-            "1",
-            "W",
-            c,
-            "1",
-            str(scaffold_graph.get_component_len(c)),
-            "+"
-        )
-
-    agp.write()
+    sg.remove_heavier_than(1)
+    return sg
 
 
 def main():
@@ -497,6 +243,7 @@ def main():
     if unimap_params == mm2_default:
         unimap_params += " -t " + str(num_threads)
 
+    # Set reference/query sequences to ignore
     ref_blacklist = set()
     exclude_file = args.e
     if exclude_file:
@@ -578,7 +325,7 @@ def main():
     else:
         run_oae(cmd, query_rename_fn, ragtag_log)
 
-    # Combine the reference contigs and query sequencs to make a components fasta file
+    # Combine the reference contigs and query sequences to make a components fasta file
     components_fn = output_path + file_prefix + ".comps.fasta"
     if os.path.isfile(components_fn):
         if overwrite_files:
@@ -682,88 +429,52 @@ def main():
     agp_multi_sg.add_agps([output_path + file_prefix + ".ctg.agp"])
     agp_sg = agp_multi_sg.merge()
 
-    # Make a scaffold graph from the alignments to the query
-    log("INFO", "Building a scaffold graph from the assembly alignments")
-    sg = build_aln_scaffold_graph(reference_ctg_fn, fltrd_ctg_alns, max_term_dist)
-
-    # Remove known false edges from the scaffold graph
+    # As a hack, go through the AGP sg and make the required directed scaffold graph
+    agp_psg = PatchScaffoldGraph(components_fn)
     for u, v in agp_sg.edges:
-        if u in sg.nodes:
-            for neighbor in sg.neighbors(u):
-                if neighbor != v:
-                    sg.remove_edge(u, neighbor)
+        aln = Alignment(
+            u,
+            v,
+            "",
+            agp_sg[u][v]["gap_size"],
+            0,
+            agp_sg[u][v]["gap_size"],
+            0,
+            is_gap=True
+        )
+        agp_psg.add_edge(u, v, aln)
 
-        if v in sg.nodes:
-            for neighbor in sg.neighbors(v):
-                if neighbor != u:
-                    sg.remove_edge(v, neighbor)
-
-    if debug_mode:
-        agp_sg.connect_and_write_gml(output_path + file_prefix + ".debug.agp_sg.gml")
-        sg.connect_and_write_gml(output_path + file_prefix + ".debug.sg.gml")
-
-    log("INFO", "Computing solution to the scaffold graph")
-    cover_graph = get_maximal_matching(sg)
-
-    # Add all of the agp edges to the cover graph
-    for u, v in agp_sg.edges:
-        if cover_graph.has_edge(u, v):
-            cover_graph[u][v]["is_gap"] = [True]
-            cover_graph[u][v]["is_filled"] = [True]
-            cover_graph[u][v]["is_known_gap_size"] = agp_sg[u][v]["is_known_gap_size"]
-            cover_graph[u][v]["gap_size"] = agp_sg[u][v]["gap_size"]
-            cover_graph[u][v]["gap_type"] = agp_sg[u][v]["gap_type"]
-            cover_graph[u][v]["linkage"] = agp_sg[u][v]["linkage"]
-            cover_graph[u][v]["linkage_evidence"] = agp_sg[u][v]["linkage_evidence"]
-            if join_only:
-                cover_graph[u][v]["seqs"] = agp_sg[u][v]["seqs"]
-                cover_graph[u][v]["pos"] = agp_sg[u][v]["pos"]
-        else:
-            new_data = {
-                "is_gap": [True],
-                "is_filled": [False],
-                "is_known_gap_size": agp_sg[u][v]["is_known_gap_size"],
-                "gap_size": agp_sg[u][v]["gap_size"],
-                "gap_type": agp_sg[u][v]["gap_type"],
-                "linkage": agp_sg[u][v]["linkage"],
-                "linkage_evidence": agp_sg[u][v]["linkage_evidence"],
-                "seqs": agp_sg[u][v]["seqs"],
-                "pos": agp_sg[u][v]["pos"]
-            }
-            cover_graph.add_edge(u, v, **new_data)
-
-    # If only filling gaps, remove all edges that make joins
-    if fill_only:
-        new_cover_graph = nx.Graph()
-        new_cover_graph.add_nodes_from(cover_graph.nodes(data=True))
-        for u, v in cover_graph.edges:
-            if "is_gap" in cover_graph[u][v]:
-                if cover_graph[u][v]["is_gap"][0]:
-                    new_cover_graph.add_edge(u, v, **cover_graph[u][v])
-        cover_graph = new_cover_graph
-
-    if debug_mode:
-        gml_G = cover_graph.copy()
-        # networkx doesn't like writing non-string attributes to GML
-        for u, v in gml_G.edges:
-            for key in gml_G[u][v]:
-                gml_G[u][v][key] = str(gml_G[u][v][key])
-        nx.readwrite.gml.write_gml(gml_G, output_path + file_prefix + ".debug.covergraph.gml")
-
-    # Write the scaffolding output to an AGP file
-    log("INFO", "Writing scaffolding results")
-    write_agp_solution(cover_graph, agp_sg, sg, output_path + file_prefix + ".agp", add_suffix_to_unplaced=add_suffix, join_only=join_only)
-
-    # Build a FASTA from the AGP
-    cmd = [
-        "ragtag_agp2fa.py",
-        output_path + file_prefix + ".agp",
-        components_fn
-    ]
-    run_oae(cmd, output_path + file_prefix + ".fasta", ragtag_log)
-
-    log("INFO", "Goodbye")
+    # Make a second directed scaffold graph from the alignments
+    aln_psg = build_aln_scaffold_graph(fltrd_ctg_alns, components_fn, max_term_dist)
 
 
 if __name__ == "__main__":
+    """ 
+        
+    - Make a new scaffold graph. It will be directed, and for each edge, there must exist its opposing edge (from <=> to).
+    
+    - Each edge should have info about its connecting sequences, as well as the patch sequence
+    -- The patch sequence could be a gap
+    
+    - The graph should have a method to output the implied AGP file
+
+    - It should also have a method for getting a matching (uses a undirected copy of the graph to get pairs of nodes defining the matching)
+    
+    - For ragtag patch, make two of these graphs
+    -- A) for contigs that make up scaffolds. edges are known gaps
+    -- B) is for adjacencies implied by alignments + any edges from A not implied by alignments
+    
+    If fill only:
+        Make a new empty copy graph. For each (undirected) edge in A, if edge in B, add to new copy. Replace B with new copy. 
+        
+    If join only:
+        for each (undirected) edge in A, if edge in B, replace its info with gap info (info from A)
+    
+    
+    
+    - The edges for the graph will have two pieces of data - a weight and an Alignment object (maybe a list of them)
+    - The alignment object will contain all the necessary info to output the AGP.
+    
+    """
     main()
+

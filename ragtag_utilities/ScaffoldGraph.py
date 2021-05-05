@@ -619,3 +619,132 @@ class AGPMultiScaffoldGraph(MultiScaffoldGraph):
                             seqs=[u_base, v_base],
                             pos=[u_len, 0]
                         )
+
+
+class Alignment:
+    """
+    An object representing query a sequence/gap joining two target sequences.
+
+      target_from --------- target "from" scaffold graph node
+      target_to ----------- target "to" scaffold graph node
+      query --------------- name of the sequence used to join "from" and "to". ignored if gap
+      query_len ----------- length of the query sequence
+      my_query_end -------- the 0-based position in the query that corresponds to the end of "from"
+      their_query_start --- the 0-based position in the query that corresponds to the beginning of "to"
+      strand -------------- the strand of the query sequence
+      is_gap -------------- boolean indicating a gap or a sequence
+    """
+
+    def __init__(self, target_from, target_to, query, query_len, my_query_end, their_query_start, strand, is_gap=False):
+        """
+
+        :param target_from:
+        :param target_to:
+        :param query:
+        :param query_len:
+        :param my_query_end:
+        :param their_query_start:
+        :param strand: 0, 1 for forward, reverse
+        :param is_gap:
+        """
+        self.target_from = target_from
+        self.target_to = target_to
+        self.query = query
+        self.query_len = query_len
+        self.my_query_end = my_query_end  # 0-based query start coordinate
+        self.their_query_start = their_query_start  # 0-based query end coordinate
+        self.strand = strand  # 0, 1 for forward, reverse
+
+        self.is_gap = is_gap
+        self.query_span = self.their_query_start - self.my_query_end
+
+    def reverse(self):
+        return Alignment(
+            self.target_to,
+            self.target_from,
+            self.query,
+            self.query_len,
+            self.query_len - self.their_query_start,
+            self.query_len - self.my_query_end,
+            1 - self.strand
+        )
+
+
+class PatchScaffoldGraph:
+    """
+    A directed scaffold graph useful for continuous scaffolding
+
+    Terms:
+      Target assembly - a genome assembly that we wish to scaffold
+      Target sequence - an individual sequence in a target assembly
+      Query sequence - a sequence, independent from the target assembly, used to scaffold the target assembly
+      Adjacency - a pair of termini between two distinct target sequences suggested to be joined
+
+    The object keeps track of a directed graph. Nodes in the graph are target sequence termini
+    (target sequence + "_b" or "_e" representing the beginning or end of the sequence, respectively). Edges
+    connecting these nodes represent an adjacency, and the necessary information must be encoded in an Alignment
+    object.
+
+    This class defines a method to produce an AGP file from the scaffold graph, assuming that the edges
+    form a matching.
+    """
+
+    def __init__(self, components_fn):
+        self.graph = nx.DiGraph()
+
+        self.components_fn = components_fn  # name of FASTA file with all relevant target/query sequences
+        self.component_lens = dict()  # component name -> length
+        self._set_component_lens()
+
+    def __getitem__(self, e):
+        return self.graph[e]
+
+    def _set_component_lens(self):
+        fai = pysam.FastaFile(self.components_fn)
+
+        for i in fai.references:
+            self.component_lens[i] = fai.get_reference_length(i)
+
+    @property
+    def nodes(self, **kwargs):
+        return self.graph.nodes(**kwargs)
+
+    @property
+    def edges(self):
+        return self.graph.edges
+
+    def has_edge(self, u, v):
+        return self.graph.has_edge(u, v)
+
+    def add_edge(self, u, v, aln):
+        """
+        :param u: from
+        :param v: to
+        :param aln: Alignment object
+        """
+        if not isinstance(aln, Alignment):
+            raise TypeError("aln must be an Alignment object.")
+
+        if u != aln.target_from or v != aln.target_to:
+            raise RuntimeError("Scaffold graph nodes don't match Alignment nodes.")
+
+        if self.has_edge(u, v):
+            self.graph[u][v]["weight"] += 1
+            self.graph[u][v]["alignment"] = aln
+
+            self.graph[v][u]["weight"] += 1
+            self.graph[v][u]["alignment"] = aln.reverse()
+        else:
+            self.graph.add_edge(u, v, weight=1, alignment=aln)
+            self.graph.add_edge(v, u, weight=1, alignment=aln.reverse())
+
+    def remove_heavier_than(self, w):
+        """
+        Remove edges with weight > w
+        :param w: maximum edge weight
+        """
+        G = nx.DiGraph()
+        for u, v in self.edges:
+            if self.graph[u][v]["weight"] <= w:
+                G.add_edge(u, v, weight=self.graph[u][v]["weight"], alignment=self.graph[u][v]["alignment"])
+        self.graph = G
