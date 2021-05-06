@@ -438,16 +438,16 @@ def main():
             u,
             v,
             "",
-            agp_sg[u][v]["gap_size"],
+            agp_sg[u][v]["gap_size"][0],
             0,
-            agp_sg[u][v]["gap_size"],
+            agp_sg[u][v]["gap_size"][0],
             0,
             is_gap=True
         )
         agp_psg.add_edge(u, v, aln)
 
     # Make a second directed scaffold graph from the alignments
-    log("INFO", "Building a scaffold graph from the targer/query mappings")
+    log("INFO", "Building a scaffold graph from the target/query mappings")
     aln_psg = build_aln_scaffold_graph(fltrd_ctg_alns, components_fn, max_term_dist)
 
     # Add edges for unfilled gaps
@@ -481,18 +481,18 @@ def main():
             aln_psg[v][u]["alignment"] = agp_psg[v][u]["alignment"]
 
     if debug_mode:
-        nx.readwrite.gml.write_gml(aln_psg, output_path + file_prefix + ".debug.sg.gml")
+        aln_psg.write_gml(output_path + file_prefix + ".debug.sg.gml")
 
     # Compute a matching solution for the graph
     log("INFO", "Computing a matching solution to the scaffold graph")
     match_psg = aln_psg.max_weight_matching()
 
     if debug_mode:
-        nx.readwrite.gml.write_gml(match_psg, output_path + file_prefix + ".debug.matching.gml")
+        match_psg.write_gml(output_path + file_prefix + ".debug.matching.gml")
 
     # Write the output in AGP format
     log("INFO", "Writing output files")
-    match_psg.write_agp(output_path + file_prefix + ".agp", reference_fn)
+    match_psg.write_agp(output_path + file_prefix + ".agp", output_path + file_prefix + ".ctg.fasta")
 
     # Write the output in fasta format
     cmd = [

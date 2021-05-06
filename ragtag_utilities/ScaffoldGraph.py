@@ -753,6 +753,12 @@ class PatchScaffoldGraph:
     def remove_edge(self, u, v):
         self.graph.remove_edge(u, v)
 
+    def write_gml(self, f):
+        G = nx.Graph()
+        for u, v in self.edges:
+            G.add_edge(u, v, alignment=str(self.graph[u][v]["alignment"]))
+        nx.readwrite.gml.write_gml(G, f)
+
     def remove_heavier_than(self, w):
         """
         Remove edges with weight > w
@@ -801,8 +807,8 @@ class PatchScaffoldGraph:
         new_psg = PatchScaffoldGraph(self.components_fn)
         for u, v in matching:
             if (u, v) not in edges_to_delete and (v, u) not in edges_to_delete:
-                new_psg.add_edge(u, v, **self.graph[u][v])
-                new_psg.add_edge(v, u, **self.graph[v][u])
+                new_psg.add_edge(u, v, self.graph[u][v]["alignment"])
+                new_psg.add_edge(v, u, self.graph[v][u]["alignment"])
 
         return new_psg
 
@@ -825,11 +831,17 @@ class PatchScaffoldGraph:
             from_node = None
             to_node = None
             cur_ref = None
-            for u, v in self.edges:
+            for u, v in sorted(self.edges):
                 if (u, v) not in used_edges:
                     u_base = u[:-2]
-                    u_degree = self.graph.degree[u_base + "_b"] + self.graph.degree[u_base + "_e"]
-                    assert u_degree in {1, 2}
+
+                    u_degree = 0
+                    if u_base + "_b" in self.nodes:
+                        u_degree += self.graph.degree[u_base + "_b"]
+                    if u_base + "_e" in self.nodes:
+                        u_degree += self.graph.degree[u_base + "_e"]
+
+                    assert u_degree in {2, 4}
 
                     # Check if we have found a starting target sequence
                     if u_degree == 1:
@@ -907,7 +919,7 @@ class PatchScaffoldGraph:
         all_ref_seqs = set(fai.references)
         fai.close()
         remaining_components = all_ref_seqs - used_components
-        for c in remaining_components:
+        for c in sorted(remaining_components):
             agp.add_seq_line(
                 c + "_RagTag" * add_suffix_to_unplaced,
                 "1",
