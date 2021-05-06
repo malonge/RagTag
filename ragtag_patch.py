@@ -135,7 +135,9 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
 
             if last is not None:
                 if als.ref_headers[last] != als.ref_headers[i]:
-                    overlap = als.query_ends[last] - als.query_starts[i]
+                    my_query_end = als.query_ends[last] + (als.ref_lens[last] - als.ref_ends[last])
+                    their_query_start = als.query_starts[i] - als.ref_starts[i]
+                    overlap = my_query_end - their_query_start
                     if overlap <= als.ref_lens[last] and overlap <= als.ref_lens[i]:
 
                         # Determine the scaffold graph nodes
@@ -151,8 +153,8 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
                             v,
                             query_seq,
                             als.query_len,
-                            als.query_ends[last],
-                            als.query_starts[i],
+                            my_query_end,
+                            their_query_start,
                             0,  # Always on the query's forward strand
                             is_gap=False
                         )
@@ -445,7 +447,62 @@ def main():
         agp_psg.add_edge(u, v, aln)
 
     # Make a second directed scaffold graph from the alignments
+    log("INFO", "Building a scaffold graph from the targer/query mappings")
     aln_psg = build_aln_scaffold_graph(fltrd_ctg_alns, components_fn, max_term_dist)
+
+    # Add edges for unfilled gaps
+    for u, v in agp_psg.edges:
+        if not aln_psg.has_edge(u, v):
+            aln_psg.add_edge(u, v, agp_psg[u][v]["alignment"])
+
+    # Remove known false edges
+    for u, v in agp_psg.edges:
+        for neighbor in aln_psg.neighbors(u):
+            if neighbor != v:
+                aln_psg.remove_edge(u, neighbor)
+                aln_psg.remove_edge(neighbor, u)
+
+        for neighbor in aln_psg.neighbors(v):
+            if neighbor != u:
+                aln_psg.remove_edge(neighbor, v)
+                aln_psg.remove_edge(v, neighbor)
+
+    # Adjust the graph depending on if only fills or joins are requested
+    if fill_only:
+        psg = PatchScaffoldGraph(components_fn)
+        for u, v in agp_psg.edges:
+            psg.add_edge(u, v, aln_psg[u][v]["alignment"])
+            psg.add_edge(v, u, aln_psg[v][u]["alignment"])
+        aln_psg = psg
+
+    if join_only:
+        for u, v in agp_psg:
+            aln_psg[u][v]["alignment"] = agp_psg[u][v]["alignment"]
+            aln_psg[v][u]["alignment"] = agp_psg[v][u]["alignment"]
+
+    if debug_mode:
+        nx.readwrite.gml.write_gml(aln_psg, output_path + file_prefix + ".debug.sg.gml")
+
+    # Compute a matching solution for the graph
+    log("INFO", "Computing a matching solution to the scaffold graph")
+    match_psg = aln_psg.max_weight_matching()
+
+    if debug_mode:
+        nx.readwrite.gml.write_gml(match_psg, output_path + file_prefix + ".debug.matching.gml")
+
+    # Write the output in AGP format
+    log("INFO", "Writing output files")
+    match_psg.write_agp(output_path + file_prefix + ".agp", reference_fn)
+
+    # Write the output in fasta format
+    cmd = [
+        "ragtag_agp2fa.py",
+        output_path + file_prefix + ".agp",
+        components_fn
+    ]
+    run_oae(cmd, output_path + file_prefix + ".fasta", ragtag_log)
+
+    log("INFO", "Goodbye")
 
 
 if __name__ == "__main__":
@@ -469,7 +526,6 @@ if __name__ == "__main__":
         
     If join only:
         for each (undirected) edge in A, if edge in B, replace its info with gap info (info from A)
-    
     
     
     - The edges for the graph will have two pieces of data - a weight and an Alignment object (maybe a list of them)

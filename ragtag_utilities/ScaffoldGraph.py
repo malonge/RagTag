@@ -30,9 +30,11 @@ import itertools
 import numbers
 
 import pysam
+import numpy as np
 import networkx as nx
 
 from ragtag_utilities.AGPFile import AGPFile
+from ragtag_utilities.utilities import get_ragtag_version
 
 
 """
@@ -658,6 +660,13 @@ class Alignment:
         self.is_gap = is_gap
         self.query_span = self.their_query_start - self.my_query_end
 
+    def __str__(self):
+        return "::".join([
+            self.target_from,
+            self.target_to,
+            self.query
+        ])
+
     def reverse(self):
         return Alignment(
             self.target_to,
@@ -716,6 +725,9 @@ class PatchScaffoldGraph:
     def has_edge(self, u, v):
         return self.graph.has_edge(u, v)
 
+    def neighbors(self, n):
+        return self.graph.neighbors(n)
+
     def add_edge(self, u, v, aln):
         """
         :param u: from
@@ -738,6 +750,9 @@ class PatchScaffoldGraph:
             self.graph.add_edge(u, v, weight=1, alignment=aln)
             self.graph.add_edge(v, u, weight=1, alignment=aln.reverse())
 
+    def remove_edge(self, u, v):
+        self.graph.remove_edge(u, v)
+
     def remove_heavier_than(self, w):
         """
         Remove edges with weight > w
@@ -748,3 +763,161 @@ class PatchScaffoldGraph:
             if self.graph[u][v]["weight"] <= w:
                 G.add_edge(u, v, weight=self.graph[u][v]["weight"], alignment=self.graph[u][v]["alignment"])
         self.graph = G
+
+    def max_weight_matching(self):
+        """
+        Return a new PatchScaffoldGraph that is a matching
+        :return: Matching PatchScaffoldGraph
+        """
+        undirected_sg = nx.Graph()
+        for u, v in self.edges:
+            undirected_sg.add_edge(u, v, weight=self.graph[u][v]["weight"])
+        matching = nx.max_weight_matching(G=undirected_sg)
+
+        # Remove any cycles that would result from adding intra-sequence edges
+        # Make a new graph
+        cover_graph = nx.Graph()
+        cover_graph.add_nodes_from(undirected_sg.nodes(data=True))
+
+        # Add edges connecting contig ends
+        node_base_set = set([i[:-2] for i in list(cover_graph.nodes)])
+        for node in node_base_set:
+            cover_graph.add_edge(node + "_b", node + "_e", weight=np.inf)
+
+        # Add the edges that form the matching
+        for u, v in matching:
+            cover_graph.add_edge(u, v, **undirected_sg[u][v])
+
+        # Remove any potential cycles
+        edges_to_delete = []
+        for cc in nx.connected_components(G=cover_graph):
+            cc = cover_graph.subgraph(cc).copy()
+            if cc.number_of_nodes() == cc.number_of_edges():
+                assembly_edges = cc.edges(data=True)
+                edge_to_delete = min(assembly_edges, key=lambda entry: entry[2]["weight"])
+                edges_to_delete.append((edge_to_delete[0], edge_to_delete[1]))
+
+        # Add the edges that form the matching into a new PatchScaffoldGraph
+        new_psg = PatchScaffoldGraph(self.components_fn)
+        for u, v in matching:
+            if (u, v) not in edges_to_delete and (v, u) not in edges_to_delete:
+                new_psg.add_edge(u, v, **self.graph[u][v])
+                new_psg.add_edge(v, u, **self.graph[v][u])
+
+        return new_psg
+
+    def write_agp(self, agp_fn, ref_fn, add_suffix_to_unplaced=False):
+        """
+        Write the AGP file implied by the scaffold graph
+        :param agp_fn: AGP file name
+        :param ref_fn: reference FASTA file name
+        """
+        used_components = set()
+        used_edges = set()
+        obj_header_idx = -1
+
+        agp = AGPFile(agp_fn, "w")
+        agp.add_pragma()
+        agp.add_comment("# AGP created by RagTag {}".format(get_ragtag_version()))
+
+        while True:
+            # Find a starting node
+            from_node = None
+            to_node = None
+            cur_ref = None
+            for u, v in self.edges:
+                if (u, v) not in used_edges:
+                    u_base = u[:-2]
+                    u_degree = self.graph.degree[u_base + "_b"] + self.graph.degree[u_base + "_e"]
+                    assert u_degree in {1, 2}
+
+                    # Check if we have found a starting target sequence
+                    if u_degree == 1:
+                        cur_ref = u_base
+                        from_node = u
+                        to_node = v
+                        used_edges.add((u, v))
+                        break
+
+            # If we haven't found a new starting target sequence, we are done
+            if from_node is None:
+                break
+
+            # Initialize this object
+            obj_header_idx += 1
+            obj_header = "scf" + "{0:08}".format(obj_header_idx)
+            obj_pos = 0
+            obj_pid = 1
+
+            # Process the first target sequence
+            cur_ref_len = self.component_lens[cur_ref]
+            cur_ref_strand = "+"
+            if from_node.endswith("_b"):
+                cur_ref_strand = "-"
+            agp.add_seq_line(obj_header, obj_pos+1, obj_pos+cur_ref_len, obj_pid, "W", cur_ref, 1, cur_ref_len, cur_ref_strand)
+            obj_pos += cur_ref_len
+            obj_pid += 1
+            used_components.add(cur_ref)
+
+            # Process the remaining sequences.
+            next_edge_exists = True
+            while next_edge_exists:
+                # Process the patch
+                patch_aln = self.graph[from_node][to_node]["alignment"]
+                patch_query = patch_aln.query
+                patch_strand = "+"
+                if patch_aln.strand:
+                    patch_strand = "-"
+
+                patch_len = patch_aln.their_query_start - patch_aln.my_query_end
+                if patch_len > 0:
+                    if patch_aln.is_gap:
+                        agp.add_gap_line(obj_header, obj_pos+1, obj_pos+patch_len, obj_pid, "N", patch_len, "scaffold", "yes", "align_genus")
+                    else:
+                        agp.add_seq_line(obj_header, obj_pos+1, obj_pos+patch_len, obj_pid, "W", patch_query, patch_aln.my_query_end, patch_aln.their_query_start, patch_strand)
+                        used_components.add(patch_query)
+                    obj_pos += patch_len
+                    obj_pid += 1
+
+                # Next, process the reference sequence
+                comp_start = min(0, patch_len)
+                cur_ref = to_node[:-2]
+                cur_ref_len = self.component_lens[cur_ref]
+                cur_ref_strand = "+"
+                if to_node.endswith("_e"):
+                    cur_ref_strand = "-"
+                agp.add_seq_line(obj_header, obj_pos+1+comp_start, obj_pos+cur_ref_len, obj_pid, "W", cur_ref, 1+comp_start, cur_ref_len, cur_ref_strand)
+                obj_pos += cur_ref_len
+                obj_pid += 1
+                used_components.add(cur_ref)
+
+                from_node = to_node
+                next_nodes = set(self.graph[from_node])
+                visited_nodes = set([i + "_b" for i in used_components]).union(set([i + "_e" for i in used_components]))
+                remaining_nodes = next_nodes - visited_nodes
+                assert len(remaining_nodes) in {0, 1}
+
+                if remaining_nodes:
+                    to_node = remaining_nodes.pop
+                else:
+                    next_edge_exists = False
+
+        # Write unplaced reference sequences
+        fai = pysam.FastaFile(ref_fn)
+        all_ref_seqs = set(fai.references)
+        fai.close()
+        remaining_components = all_ref_seqs - used_components
+        for c in remaining_components:
+            agp.add_seq_line(
+                c + "_RagTag" * add_suffix_to_unplaced,
+                "1",
+                str(self.component_lens[c]),
+                "1",
+                "W",
+                c,
+                "1",
+                str(self.component_lens[c]),
+                "+"
+            )
+
+        agp.write()
