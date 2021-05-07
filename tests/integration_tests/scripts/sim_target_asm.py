@@ -34,11 +34,6 @@ with open("target.fa", "w") as f:
     f.write(fai.fetch("Chr1", 1000500, 5000000) + "\n")
 
     # Break the second sequence into 5 sequences
-    # The first should be reverse complemented
-    # The second should be overlapping the first, + strand
-    # The third should be reverse complemented
-    # The fourth should be reverse complemnted, with some missing sequence between it and the third
-    # The fifth should be + strand
     f.write(">r2a\n")
     f.write(fai.fetch("Chr2", 0, 1000000) + "\n")
 

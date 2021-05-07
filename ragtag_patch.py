@@ -29,19 +29,14 @@ import sys
 import argparse
 
 import pysam
-import numpy as np
-import networkx as nx
 
 from ragtag_utilities.utilities import log, run_oae, get_ragtag_version
 from ragtag_utilities.AlignmentReader import PAFReader
 from ragtag_utilities.ContigAlignment import ContigAlignment
-from ragtag_utilities.AGPFile import AGPFile
 from ragtag_utilities.Aligner import Minimap2Aligner
 from ragtag_utilities.Aligner import UnimapAligner
 from ragtag_utilities.Aligner import NucmerAligner
-from ragtag_utilities.ScaffoldGraph import ScaffoldGraphBase
 from ragtag_utilities.ScaffoldGraph import AGPMultiScaffoldGraph
-from ragtag_utilities.ScaffoldGraph import MultiScaffoldGraph
 from ragtag_utilities.ScaffoldGraph import PatchScaffoldGraph
 from ragtag_utilities.ScaffoldGraph import Alignment
 
@@ -506,31 +501,6 @@ def main():
 
 
 if __name__ == "__main__":
-    """ 
-        
-    - Make a new scaffold graph. It will be directed, and for each edge, there must exist its opposing edge (from <=> to).
-    
-    - Each edge should have info about its connecting sequences, as well as the patch sequence
-    -- The patch sequence could be a gap
-    
-    - The graph should have a method to output the implied AGP file
-
-    - It should also have a method for getting a matching (uses a undirected copy of the graph to get pairs of nodes defining the matching)
-    
-    - For ragtag patch, make two of these graphs
-    -- A) for contigs that make up scaffolds. edges are known gaps
-    -- B) is for adjacencies implied by alignments + any edges from A not implied by alignments
-    
-    If fill only:
-        Make a new empty copy graph. For each (undirected) edge in A, if edge in B, add to new copy. Replace B with new copy. 
-        
-    If join only:
-        for each (undirected) edge in A, if edge in B, replace its info with gap info (info from A)
-    
-    
-    - The edges for the graph will have two pieces of data - a weight and an Alignment object (maybe a list of them)
-    - The alignment object will contain all the necessary info to output the AGP.
-    
-    """
     main()
+
 

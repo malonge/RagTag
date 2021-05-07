@@ -844,11 +844,12 @@ class PatchScaffoldGraph:
                     assert u_degree in {2, 4}
 
                     # Check if we have found a starting target sequence
-                    if u_degree == 1:
+                    if u_degree == 2:
                         cur_ref = u_base
                         from_node = u
                         to_node = v
                         used_edges.add((u, v))
+                        used_edges.add((v, u))
                         break
 
             # If we haven't found a new starting target sequence, we are done
@@ -886,7 +887,7 @@ class PatchScaffoldGraph:
                     if patch_aln.is_gap:
                         agp.add_gap_line(obj_header, obj_pos+1, obj_pos+patch_len, obj_pid, "N", patch_len, "scaffold", "yes", "align_genus")
                     else:
-                        agp.add_seq_line(obj_header, obj_pos+1, obj_pos+patch_len, obj_pid, "W", patch_query, patch_aln.my_query_end, patch_aln.their_query_start, patch_strand)
+                        agp.add_seq_line(obj_header, obj_pos+1, obj_pos+patch_len, obj_pid, "W", patch_query, patch_aln.my_query_end+1, patch_aln.their_query_start, patch_strand)
                         used_components.add(patch_query)
                     obj_pos += patch_len
                     obj_pid += 1
@@ -898,19 +899,22 @@ class PatchScaffoldGraph:
                 cur_ref_strand = "+"
                 if to_node.endswith("_e"):
                     cur_ref_strand = "-"
-                agp.add_seq_line(obj_header, obj_pos+1+comp_start, obj_pos+cur_ref_len, obj_pid, "W", cur_ref, 1+comp_start, cur_ref_len, cur_ref_strand)
-                obj_pos += cur_ref_len
+                agp.add_seq_line(obj_header, obj_pos+1, obj_pos+(cur_ref_len + comp_start), obj_pid, "W", cur_ref, 1+(-1*comp_start), cur_ref_len, cur_ref_strand)
+                obj_pos += cur_ref_len + comp_start
                 obj_pid += 1
                 used_components.add(cur_ref)
 
-                from_node = to_node
-                next_nodes = set(self.graph[from_node])
-                visited_nodes = set([i + "_b" for i in used_components]).union(set([i + "_e" for i in used_components]))
-                remaining_nodes = next_nodes - visited_nodes
-                assert len(remaining_nodes) in {0, 1}
+                # Look for the next edge
+                from_node = to_node[:-2] + "_b"
+                if to_node.endswith("_b"):
+                    from_node = to_node[:-2] + "_e"
 
-                if remaining_nodes:
-                    to_node = remaining_nodes.pop
+                if from_node in self.graph.nodes:
+                    next_nodes = set(self.graph[from_node])
+                    assert len(next_nodes) == 1
+                    to_node = next_nodes.pop()
+                    used_edges.add((from_node, to_node))
+                    used_edges.add((to_node, from_node))
                 else:
                     next_edge_exists = False
 
