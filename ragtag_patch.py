@@ -177,7 +177,7 @@ def main():
     patch_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum alignment merge distance [100000]")
     patch_options.add_argument("-s", metavar="INT", type=int, default=50000, help="minimum merged alignment length [50000]")
     patch_options.add_argument("-i", metavar="INT", type=int, default=1000, help="maximum merged alignment distance from sequence terminus [1000]")
-    patch_options.add_argument("--fill-only", action="store_true", default=False, help="only fill existing target gaps. do not join target sequnces")
+    patch_options.add_argument("--fill-only", action="store_true", default=False, help="only fill existing target gaps. do not join target sequences")
     patch_options.add_argument("--join-only", action="store_true", default=False, help="only join and patch target sequences. do not fill existing gaps")
 
     io_options = parser.add_argument_group("input/output options")
@@ -471,7 +471,7 @@ def main():
         aln_psg = psg
 
     if join_only:
-        for u, v in agp_psg:
+        for u, v in agp_psg.edges:
             aln_psg[u][v]["alignment"] = agp_psg[u][v]["alignment"]
             aln_psg[v][u]["alignment"] = agp_psg[v][u]["alignment"]
 
@@ -487,7 +487,7 @@ def main():
 
     # Write the output in AGP format
     log("INFO", "Writing output files")
-    match_psg.write_agp(output_path + file_prefix + ".agp", output_path + file_prefix + ".ctg.fasta")
+    match_psg.write_agp(output_path + file_prefix + ".agp", output_path + file_prefix + ".ctg.fasta", add_suffix_to_unplaced=add_suffix)
 
     # Write the output in fasta format
     cmd = [
@@ -502,5 +502,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
