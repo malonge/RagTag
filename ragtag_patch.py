@@ -97,6 +97,7 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
 
     for query_seq in ctg_alns:
         als = ctg_alns[query_seq]
+        als.sort_by_query()
         last = None
         last_reversed = False
 
@@ -130,9 +131,18 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
 
             if last is not None:
                 if als.ref_headers[last] != als.ref_headers[i]:
-                    my_query_end = als.query_ends[last] + (als.ref_lens[last] - als.ref_ends[last])
-                    their_query_start = als.query_starts[i] - als.ref_starts[i]
+                    my_query_end_offset = als.ref_lens[last] - als.ref_ends[last]
+                    if last_reversed:
+                        my_query_end_offset = als.ref_starts[last]
+
+                    their_query_start_offset = als.ref_starts[i]
+                    if cur_reversed:
+                        their_query_start_offset = als.ref_lens[i] - als.ref_ends[i]
+
+                    my_query_end = als.query_ends[last] + my_query_end_offset
+                    their_query_start = als.query_starts[i] - their_query_start_offset
                     overlap = my_query_end - their_query_start
+
                     if overlap <= als.ref_lens[last] and overlap <= als.ref_lens[i]:
 
                         # Determine the scaffold graph nodes

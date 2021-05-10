@@ -755,9 +755,33 @@ class PatchScaffoldGraph:
         self.graph.remove_edge(u, v)
 
     def write_gml(self, f):
-        G = nx.Graph()
+        G = nx.DiGraph()
         for u, v in self.edges:
-            G.add_edge(u, v, alignment=str(self.graph[u][v]["alignment"]))
+            G.add_edge(
+                u,
+                v,
+                target_from=self.graph[u][v]["alignment"].target_from,
+                target_to=self.graph[u][v]["alignment"].target_to,
+                query=self.graph[u][v]["alignment"].query,
+                query_len=str(self.graph[u][v]["alignment"].query_len),
+                my_query_end=str(self.graph[u][v]["alignment"].my_query_end),
+                their_query_start=str(self.graph[u][v]["alignment"].their_query_start),
+                strand=str(self.graph[u][v]["alignment"].strand),
+                is_gap=str(self.graph[u][v]["alignment"].is_gap)
+            )
+
+            G.add_edge(
+                v,
+                u,
+                target_from=self.graph[v][u]["alignment"].target_from,
+                target_to=self.graph[v][u]["alignment"].target_to,
+                query=self.graph[v][u]["alignment"].query,
+                query_len=str(self.graph[v][u]["alignment"].query_len),
+                my_query_end=str(self.graph[v][u]["alignment"].my_query_end),
+                their_query_start=str(self.graph[v][u]["alignment"].their_query_start),
+                strand=str(self.graph[v][u]["alignment"].strand),
+                is_gap=str(self.graph[v][u]["alignment"].is_gap)
+            )
         nx.readwrite.gml.write_gml(G, f)
 
     def remove_heavier_than(self, w):
