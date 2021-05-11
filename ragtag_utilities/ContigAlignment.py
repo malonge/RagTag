@@ -527,7 +527,7 @@ class ContigAlignment:
         :param max_term_dist: maximum distance from a reference terminus
         """
         if max_term_dist <= 0:
-            raise ValueError("max_term_dist must be a positive nonnegative number.")
+            raise ValueError("max_term_dist must be a positive nonzero number.")
 
         if max_term_dist < 1:
             hits = [i for i in range(self.num_alns) if self.ref_starts[i] <= (max_term_dist*self.ref_lens[i]) or (self.ref_lens[i] - self.ref_ends[i]) <= (max_term_dist*self.ref_lens[i])]
@@ -541,7 +541,7 @@ class ContigAlignment:
         :param max_term_dist: maximum distance from a reference terminus
         """
         if max_term_dist <= 0:
-            raise ValueError("max_term_dist must be a positive nonnegative number.")
+            raise ValueError("max_term_dist must be a positive nonzero number.")
 
         if max_term_dist < 1:
             max_term_dist = max_term_dist * self.ref_lens[aln_idx]
@@ -554,9 +554,28 @@ class ContigAlignment:
         :param max_term_dist: maximum distance from a query terminus
         """
         if max_term_dist <= 0:
-            raise ValueError("max_term_dist must be a positive nonnegative number.")
+            raise ValueError("max_term_dist must be a positive nonzero number.")
 
         if max_term_dist < 1:
             max_term_dist = max_term_dist * self.ref_lens[aln_idx]
 
         return self.query_starts[aln_idx] <= max_term_dist, (self.query_len - self.query_ends[aln_idx]) <= max_term_dist
+
+    def has_internal_ref_cuttings(self, max_term_dist):
+        """
+        This is when a reference sequence is well contained within a query sequence, yet there are parts of the
+        reference sequence that don't align. Should be used after filtering an merging.
+        :return:
+        """
+        self.sort_by_query()
+        for i in range(self.num_alns):
+
+            # For each reference/query alignment terminus, determine if it is close to the sequence terminus
+            ref_left_end, ref_right_end = self.ref_start_end(i, max_term_dist)
+            query_left_end, query_right_end = self.query_start_end(i, max_term_dist)
+
+            if not query_left_end and not query_right_end:
+                if not ref_left_end or not ref_right_end:
+                    return True
+
+        return False

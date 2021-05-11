@@ -130,12 +130,6 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
                     cur_reversed = True
 
             if last is not None:
-                if als.ref_headers[i] == "seq00000080":
-                    print("\nyay")
-                    print(cur_reversed)
-                    print(ref_left_end, ref_right_end)
-                    print(query_left_end, query_right_end)
-                    print()
                 if als.ref_headers[last] != als.ref_headers[i]:
                     my_query_end_offset = als.ref_lens[last] - als.ref_ends[last]
                     if last_reversed:
@@ -277,7 +271,7 @@ def main():
     min_sup_aln_len = args.s
     max_term_dist = args.i
     if max_term_dist <= 0:
-        raise ValueError("-i must be a positive nonnegative number.")
+        raise ValueError("-i must be a positive nonzero number.")
 
     # Task options
     fill_only = args.fill_only
@@ -416,7 +410,7 @@ def main():
                         ctg_alns[i] = ctg_alns[i].keep_terminals(max_term_dist)
 
                         # Save the remaining useful alignments
-                        if ctg_alns[i] is not None and ctg_alns[i].num_refs > 1:
+                        if ctg_alns[i] is not None and ctg_alns[i].num_refs > 1 and not ctg_alns[i].has_internal_ref_cuttings(max_term_dist):
                             useful_strings.append(str(ctg_alns[i]))
                             fltrd_ctg_alns[i] = ctg_alns[i]
 
@@ -520,15 +514,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-    # TODO
-    """
-    Implement two changes:
-    
-    1. -i can be between 0 and 1 or >=1
-    If fraction, the max term distance is based on the percentage of the reference sequence length. If >=1, it is the 
-    normal fixed length. default=0.05
-    
-    2. If not left_ref_end and not right_ref end, both ends of the reference should be true.
-    This means that if a query sequence completely contains an alignment, the reference sequence should be completely
-    covered from terminus to terminus.
-    """

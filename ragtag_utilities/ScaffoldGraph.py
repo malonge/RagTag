@@ -842,6 +842,7 @@ class PatchScaffoldGraph:
         Write the AGP file implied by the scaffold graph
         :param agp_fn: AGP file name
         :param ref_fn: reference FASTA file name
+        :param add_suffix_to_unplaced: add "_RagTag" to unscaffolded sequences
         """
         used_components = set()
         used_edges = set()
