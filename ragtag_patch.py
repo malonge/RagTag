@@ -130,6 +130,12 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
                     cur_reversed = True
 
             if last is not None:
+                if als.ref_headers[i] == "seq00000080":
+                    print("\nyay")
+                    print(cur_reversed)
+                    print(ref_left_end, ref_right_end)
+                    print(query_left_end, query_right_end)
+                    print()
                 if als.ref_headers[last] != als.ref_headers[i]:
                     my_query_end_offset = als.ref_lens[last] - als.ref_ends[last]
                     if last_reversed:
@@ -186,7 +192,7 @@ def main():
     patch_options.add_argument("-q", metavar="INT", type=int, default=10, help="minimum mapq (NA for Nucmer alignments) [10]")
     patch_options.add_argument("-d", metavar="INT", type=int, default=100000, help="maximum alignment merge distance [100000]")
     patch_options.add_argument("-s", metavar="INT", type=int, default=50000, help="minimum merged alignment length [50000]")
-    patch_options.add_argument("-i", metavar="INT", type=int, default=1000, help="maximum merged alignment distance from sequence terminus [1000]")
+    patch_options.add_argument("-i", metavar="FLOAT", type=float, default=0.05, help="maximum merged alignment distance from sequence terminus. fraction of the sequence length if < 1 [0.05]")
     patch_options.add_argument("--fill-only", action="store_true", default=False, help="only fill existing target gaps. do not join target sequences")
     patch_options.add_argument("--join-only", action="store_true", default=False, help="only join and patch target sequences. do not fill existing gaps")
 
@@ -270,6 +276,8 @@ def main():
     # Supporting alignment parameters
     min_sup_aln_len = args.s
     max_term_dist = args.i
+    if max_term_dist <= 0:
+        raise ValueError("-i must be a positive nonnegative number.")
 
     # Task options
     fill_only = args.fill_only
@@ -512,3 +520,15 @@ def main():
 
 if __name__ == "__main__":
     main()
+    # TODO
+    """
+    Implement two changes:
+    
+    1. -i can be between 0 and 1 or >=1
+    If fraction, the max term distance is based on the percentage of the reference sequence length. If >=1, it is the 
+    normal fixed length. default=0.05
+    
+    2. If not left_ref_end and not right_ref end, both ends of the reference should be true.
+    This means that if a query sequence completely contains an alignment, the reference sequence should be completely
+    covered from terminus to terminus.
+    """

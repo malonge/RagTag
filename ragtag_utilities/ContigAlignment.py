@@ -526,7 +526,13 @@ class ContigAlignment:
         remove any alignments that aren't within max_term_dist of a reference terminus
         :param max_term_dist: maximum distance from a reference terminus
         """
-        hits = [i for i in range(len(self._ref_headers)) if self._ref_starts[i] <= max_term_dist or (self._ref_lens[i] - self._ref_ends[i]) <= max_term_dist]
+        if max_term_dist <= 0:
+            raise ValueError("max_term_dist must be a positive nonnegative number.")
+
+        if max_term_dist < 1:
+            hits = [i for i in range(self.num_alns) if self.ref_starts[i] <= (max_term_dist*self.ref_lens[i]) or (self.ref_lens[i] - self.ref_ends[i]) <= (max_term_dist*self.ref_lens[i])]
+        else:
+            hits = [i for i in range(self.num_alns) if self.ref_starts[i] <= max_term_dist or (self.ref_lens[i] - self.ref_ends[i]) <= max_term_dist]
         return self._update_alns(hits)
 
     def ref_start_end(self, aln_idx, max_term_dist):
@@ -534,6 +540,12 @@ class ContigAlignment:
         :param aln_idx: Index of the alignment
         :param max_term_dist: maximum distance from a reference terminus
         """
+        if max_term_dist <= 0:
+            raise ValueError("max_term_dist must be a positive nonnegative number.")
+
+        if max_term_dist < 1:
+            max_term_dist = max_term_dist * self.ref_lens[aln_idx]
+
         return self.ref_starts[aln_idx] <= max_term_dist, (self.ref_lens[aln_idx] - self.ref_ends[aln_idx]) <= max_term_dist
 
     def query_start_end(self, aln_idx, max_term_dist):
@@ -541,4 +553,10 @@ class ContigAlignment:
         :param aln_idx: Index of the alignment
         :param max_term_dist: maximum distance from a query terminus
         """
+        if max_term_dist <= 0:
+            raise ValueError("max_term_dist must be a positive nonnegative number.")
+
+        if max_term_dist < 1:
+            max_term_dist = max_term_dist * self.ref_lens[aln_idx]
+
         return self.query_starts[aln_idx] <= max_term_dist, (self.query_len - self.query_ends[aln_idx]) <= max_term_dist
