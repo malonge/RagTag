@@ -673,8 +673,8 @@ class Alignment:
             self.target_from,
             self.query,
             self.query_len,
-            self.query_len - self.their_query_start,
-            self.query_len - self.my_query_end,
+            self.my_query_end,
+            self.their_query_start,
             1 - self.strand,
             is_gap=self.is_gap
         )
