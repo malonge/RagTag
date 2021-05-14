@@ -4,14 +4,14 @@
 
 [![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=EE7733)](https://github.com/malonge/RagTag/releases/tag/v2.0.0) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=009988&label=conda)](https://anaconda.org/bioconda/ragtag) [![GitHub](https://img.shields.io/github/license/malonge/RagTag?color=CC3311)](https://github.com/malonge/RagTag/blob/master/LICENSE)
 
-RagTag is a collection of command-line utilities for improving modern genome assemblies. Tasks include:
+RagTag is a collection of tools for scaffolding and improving modern genome assemblies. Tasks include:
 
-- Homology-based sequence [correction](https://github.com/malonge/RagTag/wiki/correct)
-- Homology-based sequence [scaffolding](https://github.com/malonge/RagTag/wiki/scaffold)
+- Homology-based misassembly [correction](https://github.com/malonge/RagTag/wiki/correct)
+- Homology-based assembly [scaffolding](https://github.com/malonge/RagTag/wiki/scaffold)
 - Homology-based continuous scaffolding and gap-filling ([patching](https://github.com/malonge/RagTag/wiki/patch))
 - Scaffold [merging](https://github.com/malonge/RagTag/wiki/merge)
   
-Ragtag also provides a [collection of command line utilities](https://github.com/malonge/RagTag/wiki/Usage) for working with common genome assembly file formats.
+Ragtag also provides [command line utilities](https://github.com/malonge/RagTag/wiki/Usage) for working with common genome assembly file formats.
 
 ## Getting Started
 
@@ -25,13 +25,13 @@ ragtag.py correct ref.fasta query.fasta
 # scaffold contigs
 ragtag.py scaffold ref.fa ragtag_output/query.corrected.fasta
 
-# scaffold with multiple references
+# scaffold with multiple references/maps
 ragtag.py scaffold -o out_1 ref1.fasta query.fasta
 ragtag.py scaffold -o out_2 ref2.fasta query.fasta
-ragtag.py merge query.fasta out_*/*.agp
+ragtag.py merge query.fasta out_*/*.agp other.map.agp
 
 # use Hi-C to resolve conflicts
-ragtag.py merge -b hic.bam query.fasta out_*/*.agp
+ragtag.py merge -b hic.bam query.fasta out_*/*.agp other.map.agp
 
 # make joins and fill gaps in target.fa using sequences from query.fa
 ragtag.py patch target.fa query.fa

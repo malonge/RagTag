@@ -242,7 +242,9 @@ def write_agp_solution(cover_graph, scaffold_graph, agp_fname, gap_func="MIN", a
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Merging and reconciling scaffolds", usage="ragtag.py merge <asm.fa> <scf1.agp> <scf2.agp> [...]")
+    description = "Scaffold merging: derive a consensus scaffolding solution by reconciling distinct scaffoldings of " \
+                  "'asm.fa'"
+    parser = argparse.ArgumentParser(description=description, usage="ragtag.py merge <asm.fa> <scf1.agp> <scf2.agp> [...]")
     parser.add_argument("components", metavar="<asm.fasta>", nargs='?', default="", type=str, help="assembly fasta file (uncompressed or bgzipped)")
     parser.add_argument("agps", metavar="<scf1.agp> <scf2.agp> [...]", nargs='*', default=[], type=str, help="scaffolding AGP files")
 

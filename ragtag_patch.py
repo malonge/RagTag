@@ -173,7 +173,10 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Make joins and fill gaps in one assembly (target.fa) using sequences from another assembly (query.fa)', usage="ragtag.py patch <target.fa> <query.fa>")
+    description = "Homology-based continuous assembly scaffolding and gap-filling: Make continuous joins and fill gaps " \
+                  "in 'target.fa' using sequences from 'query.fa'"
+
+    parser = argparse.ArgumentParser(description=description, usage="ragtag.py patch <target.fa> <query.fa>")
 
     parser.add_argument("reference", metavar="<target.fa>", nargs='?', default="", type=str, help="target fasta file (uncompressed or bgzipped)")
     parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (uncompressed or bgzipped)")

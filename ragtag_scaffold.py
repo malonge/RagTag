@@ -264,7 +264,9 @@ def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Reference-guided scaffolding', usage="ragtag.py scaffold <reference.fa> <query.fa>")
+    description = "Homology-based assembly scaffolding: Order and orient sequences in 'query.fa' by comparing them to " \
+                  "sequences in 'reference.fa'>"
+    parser = argparse.ArgumentParser(description=description, usage="ragtag.py scaffold <reference.fa> <query.fa>")
 
     parser.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file (uncompressed or bgzipped)")
     parser.add_argument("query", metavar="<query.fa>", nargs='?', default="", type=str, help="query fasta file (uncompressed or bgzipped)")
