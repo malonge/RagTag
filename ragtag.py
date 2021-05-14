@@ -53,11 +53,11 @@ usage: ragtag.py <command> [options]
     file utilities:
       agp2fa          build a FASTA file from an AGP file
       agpcheck        check for valid AGP file format
-      updategff       update gff intervals
       asmstats        assembly statistics
       splitasm        split an assembly at gaps
       delta2paf       delta to PAF file conversion
       paf2delta       PAF to delta file conversion
+      updategff       update gff intervals
       
 
     options:
