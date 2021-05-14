@@ -371,8 +371,7 @@ def main():
 
     if not args.reference or not args.query:
         parser.print_help()
-        print("\n** The reference and query FASTA files are required **")
-        sys.exit()
+        sys.exit("\n** The reference and query FASTA files are required **")
 
     log("VERSION", "RagTag " + get_ragtag_version())
     log("CMD", "ragtag.py correct " + " ".join(sys.argv[1:]))

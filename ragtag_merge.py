@@ -270,17 +270,15 @@ def main():
     # Print a restriction enzyme help message if requested
     if args.list_enzymes:
         RestrictionEnzymes.get_info()
-        sys.exit()
+        sys.exit(0)
 
     if not args.components:
         parser.print_help()
-        print("\n** The assembly FASTA file is required **")
-        sys.exit()
+        sys.exit("\n** The assembly FASTA file is required **")
 
     if not args.agps and not args.f:
         parser.print_help()
-        print("\n** At least two AGP files are required **")
-        sys.exit()
+        sys.exit("\n** At least two AGP files are required **")
 
     log("VERSION", "RagTag " + get_ragtag_version())
     log("WARNING", "This is a beta version of `ragtag merge`")

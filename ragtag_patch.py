@@ -207,8 +207,7 @@ def main():
     args = parser.parse_args()
     if not args.reference or not args.query:
         parser.print_help()
-        print("\n** The target and query FASTA files are required **")
-        sys.exit()
+        sys.exit("\n** The target and query FASTA files are required **")
 
     log("VERSION", "RagTag " + get_ragtag_version())
     log("WARNING", "This is a beta version of `ragtag patch`")
