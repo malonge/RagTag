@@ -39,7 +39,7 @@ https://doi.org/10.1186/s13059-019-1829-6
     """
 
     description = """
-RagTag: Fast and flexible genome assembly scaffolding.
+RagTag: Tools for fast and flexible genome assembly scaffolding and improvement.
 Version: %s
 
 usage: ragtag.py <command> [options]
