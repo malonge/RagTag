@@ -33,6 +33,6 @@ GENES_PREF=`basename $GENES .gff`
 OUTDIR=$4
 
 ragtag.py correct --aligner nucmer --nucmer-params "-l 500 -c 1000" --debug -f 1000 -u --gff $GENES -o $OUTDIR $REF $QUERY
-ragtag.py scaffold --aligner nucmer --nucmer-params "-l 500 -c 1000" --debug -f 1000 -u -C -o $OUTDIR $REF $OUTDIR/$QUERY_PREF.corrected.fasta
-ragtag.py updategff -c $GENES $OUTDIR/ragtag.correction.agp > $OUTDIR/$GENES_PREF.corr.gff
-ragtag.py updategff $OUTDIR/$GENES_PREF.corr.gff $OUTDIR/ragtag.scaffolds.agp > $OUTDIR/$GENES_PREF.scaf.gff
+ragtag.py scaffold --aligner nucmer --nucmer-params "-l 500 -c 1000" --debug -f 1000 -u -C -o $OUTDIR $REF $OUTDIR/ragtag.correct.fasta
+ragtag.py updategff -c $GENES $OUTDIR/ragtag.correct.agp > $OUTDIR/$GENES_PREF.corr.gff
+ragtag.py updategff $OUTDIR/$GENES_PREF.corr.gff $OUTDIR/ragtag.scaffold.agp > $OUTDIR/$GENES_PREF.scaf.gff

@@ -19,11 +19,11 @@ Ragtag also provides [command line utilities](https://github.com/malonge/RagTag/
 # install with conda
 conda install -c bioconda ragtag
 
-# correct contigs
+# correct a query assembly
 ragtag.py correct ref.fasta query.fasta
 
-# scaffold contigs
-ragtag.py scaffold ref.fa ragtag_output/query.corrected.fasta
+# scaffold a query assembly
+ragtag.py scaffold ref.fasta query.fasta
 
 # scaffold with multiple references/maps
 ragtag.py scaffold -o out_1 ref1.fasta query.fasta

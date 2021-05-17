@@ -99,10 +99,10 @@ mecho "Validating results:"
 echo ""
 
 bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.correct.agp \
-    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.correction.agp
+    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.correct.agp
 
 bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.scaffold.agp \
-    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.scaffolds.agp
+    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.scaffold.agp
 
 
 # Run RagTag
@@ -125,12 +125,12 @@ mecho "Validating AGP files and associated fasta files:"
 echo ""
 
 bash scripts/validate_agp.sh $A_QUERY \
-    ragtag_output_Ara_nucmer/$A_QUERY_PREF.corrected.fasta \
-    ragtag_output_Ara_nucmer/ragtag.correction.agp
+    ragtag_output_Ara_nucmer/ragtag.correct.fasta \
+    ragtag_output_Ara_nucmer/ragtag.correct.agp
 
-bash scripts/validate_agp.sh ragtag_output_Ara_nucmer/ragtag.scaffolds.fasta \
-    ragtag_output_Ara_nucmer/$A_QUERY_PREF.corrected.fasta \
-    ragtag_output_Ara_nucmer/ragtag.scaffolds.agp
+bash scripts/validate_agp.sh ragtag_output_Ara_nucmer/ragtag.scaffold.fasta \
+    ragtag_output_Ara_nucmer/ragtag.correct.fasta \
+    ragtag_output_Ara_nucmer/ragtag.scaffold.agp
 
 # Validate the gff files
 echo ""
@@ -139,12 +139,12 @@ echo ""
 
 bash scripts/validate_gff.sh $A_QUERY \
     $A_GFF \
-    ragtag_output_Ara_nucmer/$A_QUERY_PREF.corrected.fasta \
+    ragtag_output_Ara_nucmer/ragtag.correct.fasta \
     ragtag_output_Ara_nucmer/$A_GFF_PREF.corr.gff
 
-bash scripts/validate_gff.sh ragtag_output_Ara_nucmer/$A_QUERY_PREF.corrected.fasta \
+bash scripts/validate_gff.sh ragtag_output_Ara_nucmer/ragtag.correct.fasta \
     ragtag_output_Ara_nucmer/$A_GFF_PREF.corr.gff \
-    ragtag_output_Ara_nucmer/ragtag.scaffolds.fasta \
+    ragtag_output_Ara_nucmer/ragtag.scaffold.fasta \
     ragtag_output_Ara_nucmer/$A_GFF_PREF.scaf.gff
 
 # Validate the unique anchor filtering
@@ -152,12 +152,12 @@ echo ""
 mecho "Validating alignment filtering:"
 echo ""
 
-bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/c_query_against_ref.delta \
-    ragtag_output_Ara_nucmer/ragtag.correction.debug.filtered.paf \
+bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/ragtag.correct.asm.delta \
+    ragtag_output_Ara_nucmer/ragtag.correct.debug.filtered.paf \
     1000
 
-bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/query_against_ref.delta \
-    ragtag_output_Ara_nucmer/ragtag.scaffolds.debug.filtered.paf \
+bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/ragtag.scaffold.asm.delta \
+    ragtag_output_Ara_nucmer/ragtag.scaffold.debug.filtered.paf \
     1000
 
 # Validate the results
@@ -165,11 +165,11 @@ echo ""
 mecho "Validating results:"
 echo ""
 
-bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.correction.agp \
-    ~/Projects/ragtag_workspace/static_results/ara/ragtag.correction.agp
+bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.correct.agp \
+    ~/Projects/ragtag_workspace/static_results/ara/ragtag.correct.agp
 
-bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.scaffolds.agp \
-    ~/Projects/ragtag_workspace/static_results/ara/ragtag.scaffolds.agp
+bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.scaffold.agp \
+    ~/Projects/ragtag_workspace/static_results/ara/ragtag.scaffold.agp
 
 
 # Run RagTag

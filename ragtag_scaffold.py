@@ -143,7 +143,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 pos = 0
                 pid = 1
                 new_ref_header = "Chr0_RagTag"
-                for q in cat_seqs:
+                for q in sorted(list(cat_seqs)):
                     out_agp_line = []
                     qlen = fai.get_reference_length(q)
                     out_agp_line.append(new_ref_header)
@@ -175,7 +175,7 @@ def write_orderings(out_agp_file, out_confidence_file, query_file, ordering_dict
                 agp.pop_agp_line()
             if skip_no_cat:
                 # List these unplaced contigs individually
-                for q in skip_no_cat:
+                for q in sorted(list(skip_no_cat)):
                     out_agp_line = []
                     qlen = fai.get_reference_length(q)
                     if add_suffix:
