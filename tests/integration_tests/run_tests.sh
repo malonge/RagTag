@@ -192,8 +192,8 @@ mecho "Validating AGP files and associated fasta files:"
 echo ""
 
 bash scripts/validate_agp.sh $E_QUERY \
-    ragtag_output_ecoli_val/$E_QUERY_PREF.corrected.fasta \
-    ragtag_output_ecoli_val/ragtag.correction.agp
+    ragtag_output_ecoli_val/ragtag.correct.fasta \
+    ragtag_output_ecoli_val/ragtag.correct.agp
 
 
 # Run ragtag merge

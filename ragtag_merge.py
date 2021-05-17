@@ -363,7 +363,7 @@ def main():
     if min_comp_len:
         agp_multi_sg.filter_by_seq_len(min_comp_len)
     if debug_mode:
-        agp_multi_sg.connect_and_write_gml(output_path + "ragtag.merge.msg.gml")
+        nx.readwrite.gml.write_gml(agp_multi_sg.graph, output_path + "ragtag.merge.msg.gml")
 
     # Merge the SAG
     log("INFO", "Merging the scaffold graph")
@@ -406,7 +406,10 @@ def main():
     log("INFO", "Computing a scaffolding solution")
     cover_graph = get_maximal_matching(agp_sg)
     if debug_mode:
-        nx.readwrite.gml.write_gml(cover_graph, output_path + file_prefix + ".covergraph.gml")
+        tmp_cover_graph = nx.Graph()
+        for u, v in cover_graph.edges:
+            tmp_cover_graph.add_edge(u, v)
+        nx.readwrite.gml.write_gml(tmp_cover_graph, output_path + file_prefix + ".covergraph.gml")
 
     # Write the scaffolding output to an AGP file
     log("INFO", "Writing results")

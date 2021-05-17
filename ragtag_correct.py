@@ -91,22 +91,22 @@ def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
 def get_median_read_coverage(output_path, num_threads, overwrite_files):
     """ Given the read alignments, use samtools stats to return an approximate median coverage value. """
     log("INFO", "Calculating global read coverage")
-    if os.path.isfile(output_path + "c_reads_against_query.s.bam.stats"):
+    if os.path.isfile(output_path + "ragtag.correct.reads.s.bam.stats"):
         if not overwrite_files:
-            log("INFO", "Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
+            log("INFO", "Retaining pre-existing file: " + output_path + "ragtag.correct.reads.s.bam.stats")
         else:
-            log("INFO", "Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.stats")
-            st = pysam.stats("-@", str(num_threads), output_path + "c_reads_against_query.s.bam")
-            with open(output_path + "c_reads_against_query.s.bam.stats", "w") as f:
+            log("INFO", "Overwriting pre-existing file: " + output_path + "ragtag.correct.reads.s.bam.stats")
+            st = pysam.stats("-@", str(num_threads), output_path + "ragtag.correct.reads.s.bam")
+            with open(output_path + "ragtag.correct.reads.s.bam.stats", "w") as f:
                 f.write(st)
     else:
-        st = pysam.stats("-@", str(num_threads), output_path + "c_reads_against_query.s.bam")
-        with open(output_path + "c_reads_against_query.s.bam.stats", "w") as f:
+        st = pysam.stats("-@", str(num_threads), output_path + "ragtag.correct.reads.s.bam")
+        with open(output_path + "ragtag.correct.reads.s.bam.stats", "w") as f:
             f.write(st)
 
     # Get the coverage histogram (for 1 to 1k)
     covs = []
-    with open(output_path + "c_reads_against_query.s.bam.stats") as f:
+    with open(output_path + "ragtag.correct.reads.s.bam.stats") as f:
         for line in f:
             if line.startswith("COV"):
                 covs.append(int(line.split("\t")[3]))
@@ -127,26 +127,26 @@ def get_median_read_coverage(output_path, num_threads, overwrite_files):
 
 def run_samtools(output_path, num_threads, overwrite_files):
     """ Compress, sort and index alignments with pysam. """
-    if os.path.isfile(output_path + "c_reads_against_query.s.bam"):
+    if os.path.isfile(output_path + "ragtag.correct.reads.s.bam"):
         if not overwrite_files:
-            log("INFO", "Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam")
+            log("INFO", "Retaining pre-existing file: " + output_path + "ragtag.correct.reads.s.bam")
         else:
-            log("INFO", "Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam")
-            pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
-            pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
+            log("INFO", "Overwriting pre-existing file: " + output_path + "ragtag.correct.reads.s.bam")
+            pysam.view("-@", str(num_threads), "-b", "-o", output_path + "ragtag.correct.reads.bam", output_path + "ragtag.correct.reads.sam", catch_stdout=False)
+            pysam.sort("-@", str(num_threads), "-o", output_path + "ragtag.correct.reads.s.bam", output_path + "ragtag.correct.reads.bam", catch_stdout=False)
     else:
-        pysam.view("-@", str(num_threads), "-b", "-o", output_path + "c_reads_against_query.bam", output_path + "c_reads_against_query.sam", catch_stdout=False)
-        pysam.sort("-@", str(num_threads), "-o", output_path + "c_reads_against_query.s.bam", output_path + "c_reads_against_query.bam", catch_stdout=False)
+        pysam.view("-@", str(num_threads), "-b", "-o", output_path + "ragtag.correct.reads.bam", output_path + "ragtag.correct.reads.sam", catch_stdout=False)
+        pysam.sort("-@", str(num_threads), "-o", output_path + "ragtag.correct.reads.s.bam", output_path + "ragtag.correct.reads.bam", catch_stdout=False)
 
     log("INFO", "Indexing read alignments")
-    if os.path.isfile(output_path + "c_reads_against_query.s.bam.bai"):
+    if os.path.isfile(output_path + "ragtag.correct.reads.s.bam.bai"):
         if not overwrite_files:
-            log("INFO", "Retaining pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
+            log("INFO", "Retaining pre-existing file: " + output_path + "ragtag.correct.reads.s.bam.bai")
         else:
-            log("INFO", "Overwriting pre-existing file: " + output_path + "c_reads_against_query.s.bam.bai")
-            pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
+            log("INFO", "Overwriting pre-existing file: " + output_path + "ragtag.correct.reads.s.bam.bai")
+            pysam.index(output_path + "ragtag.correct.reads.s.bam", catch_stdout=False)
     else:
-        pysam.index(output_path + "c_reads_against_query.s.bam", catch_stdout=False)
+        pysam.index(output_path + "ragtag.correct.reads.s.bam", catch_stdout=False)
 
 
 def clean_breaks(val_breaks, d):
@@ -179,7 +179,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
     log("INFO", "The max and min coverage thresholds are %dX and %dX, respectively" % (max_cutoff, min_cutoff))
 
     # Go through each break point and query the coverage within the vicinity of the breakpoint.
-    bam = pysam.AlignmentFile(output_path + "c_reads_against_query.s.bam")
+    bam = pysam.AlignmentFile(output_path + "ragtag.correct.reads.s.bam")
     validated_ctg_breaks = dict()
     for ctg in ctg_breaks:
         val_breaks = []
@@ -194,7 +194,7 @@ def validate_breaks(ctg_breaks, output_path, num_threads, overwrite_files, min_b
                 continue
 
             region = "%s:%d-%d" % (ctg, min_range, max_range-1)
-            depth_out = pysam.samtools.depth("-aa", "-r", region, output_path + "c_reads_against_query.s.bam")
+            depth_out = pysam.samtools.depth("-aa", "-r", region, output_path + "ragtag.correct.reads.s.bam")
             covs = np.asarray(
                 [j.split("\t")[2] for j in [i for i in depth_out.rstrip().split("\n")]],
                 dtype=np.int32
