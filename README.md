@@ -4,14 +4,15 @@
 
 [![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=EE7733)](https://github.com/malonge/RagTag/releases/tag/v2.0.0) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=009988&label=conda)](https://anaconda.org/bioconda/ragtag) [![GitHub](https://img.shields.io/github/license/malonge/RagTag?color=CC3311)](https://github.com/malonge/RagTag/blob/master/LICENSE)
 
-RagTag is a collection of tools for scaffolding and improving modern genome assemblies. Tasks include:
+RagTag is a collection of software tools for scaffolding and improving modern genome assemblies. Tasks include:
 
 - Homology-based misassembly [correction](https://github.com/malonge/RagTag/wiki/correct)
-- Homology-based assembly [scaffolding](https://github.com/malonge/RagTag/wiki/scaffold)
-- Homology-based continuous scaffolding and gap-filling ([patching](https://github.com/malonge/RagTag/wiki/patch))
+- Homology-based assembly [scaffolding](https://github.com/malonge/RagTag/wiki/scaffold) and [patching](https://github.com/malonge/RagTag/wiki/patch)
 - Scaffold [merging](https://github.com/malonge/RagTag/wiki/merge)
   
 Ragtag also provides [command line utilities](https://github.com/malonge/RagTag/wiki/Usage) for working with common genome assembly file formats.
+
+![logo_text](logo/descriptive_diagram.svg)
 
 ## Getting Started
 
