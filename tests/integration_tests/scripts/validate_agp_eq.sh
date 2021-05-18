@@ -26,12 +26,12 @@ AGP1=$2
 AGP2=$3
 
 # Prep the objects for the first AGP file
-ragtag.py agp2fasta $AGP1 $ASM > 1.fasta
+ragtag.py agp2fa $AGP1 $ASM > 1.fasta
 python3 scripts/choose_strand.py 1.fasta > 1.s.fasta
 grep -v ">"  1.s.fasta | sort > 1.seq
 
 # Prep the objects for the second AGP file
-ragtag.py agp2fasta $AGP2 $ASM > 2.fasta
+ragtag.py agp2fa $AGP2 $ASM > 2.fasta
 python3 scripts/choose_strand.py 2.fasta > 2.s.fasta
 grep -v ">"  2.s.fasta | sort > 2.seq
 

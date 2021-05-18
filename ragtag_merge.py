@@ -423,6 +423,8 @@ def main():
     ]
     run_oae(cmd, output_path + file_prefix + ".fasta", merge_log)
 
+    log("INFO", "Goodbye")
+
 
 if __name__ == "__main__":
     main()
