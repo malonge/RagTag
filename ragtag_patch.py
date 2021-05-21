@@ -173,7 +173,7 @@ def build_aln_scaffold_graph(ctg_alns, components_fn, max_term_dist):
 
 
 def main():
-    description = "Homology-based continuous assembly scaffolding and gap-filling: Make continuous joins and fill gaps " \
+    description = "Homology-based assembly patching: Make continuous joins and fill gaps " \
                   "in 'target.fa' using sequences from 'query.fa'"
 
     parser = argparse.ArgumentParser(description=description, usage="ragtag.py patch <target.fa> <query.fa>")

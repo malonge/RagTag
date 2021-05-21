@@ -326,7 +326,7 @@ def write_breaks(out_file, query_file, ctg_breaks, overwrite, remove_suffix):
 
 
 def main():
-    description = "Homology-based assembly correction: Correct sequences in 'query.fa' by comparing them to " \
+    description = "Homology-based misassembly correction: Correct sequences in 'query.fa' by comparing them to " \
                   "sequences in 'reference.fa'>"
     parser = argparse.ArgumentParser(description=description, usage="ragtag.py correct <reference.fa> <query.fa>")
 

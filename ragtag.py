@@ -45,10 +45,10 @@ Version: %s
 usage: ragtag.py <command> [options]
     
     assembly improvement:
-      correct         misassembly correction
-      scaffold        synteny scaffolding
+      correct         homology-based misassembly correction
+      scaffold        homology-based assembly scaffolding
+      patch           homology-based assembly patching
       merge           scaffold merging
-      patch           continuous scaffolding & gap filling
       
     file utilities:
       agp2fa          build a FASTA file from an AGP file
