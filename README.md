@@ -10,7 +10,7 @@ RagTag is a collection of software tools for scaffolding and improving modern ge
 - Homology-based assembly [scaffolding](https://github.com/malonge/RagTag/wiki/scaffold) and [patching](https://github.com/malonge/RagTag/wiki/patch)
 - Scaffold [merging](https://github.com/malonge/RagTag/wiki/merge)
   
-Ragtag also provides [command line utilities](https://github.com/malonge/RagTag/wiki/Usage) for working with common genome assembly file formats.
+RagTag also provides [command line utilities](https://github.com/malonge/RagTag/wiki/Usage) for working with common genome assembly file formats.
 
 ![logo_text](logo/descriptive_diagram.svg)
 
