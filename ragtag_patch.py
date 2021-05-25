@@ -466,12 +466,12 @@ def main():
 
     # Remove known false edges
     for u, v in agp_psg.edges:
-        for neighbor in aln_psg.neighbors(u):
+        for neighbor in list(aln_psg.neighbors(u)):
             if neighbor != v:
                 aln_psg.remove_edge(u, neighbor)
                 aln_psg.remove_edge(neighbor, u)
 
-        for neighbor in aln_psg.neighbors(v):
+        for neighbor in list(aln_psg.neighbors(v)):
             if neighbor != u:
                 aln_psg.remove_edge(neighbor, v)
                 aln_psg.remove_edge(v, neighbor)
