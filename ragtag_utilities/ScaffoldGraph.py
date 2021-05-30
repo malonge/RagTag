@@ -268,7 +268,7 @@ class ScaffoldGraphBase:
 
         # networkx doesn't like writing non-string attributes to GML
         for u, v in G.edges:
-            for key in G[u][v]:
+            for key in list(G[u][v].keys()):
                 G[u][v][key] = str(G[u][v][key])
         nx.readwrite.gml.write_gml(G, f)
 
@@ -284,7 +284,7 @@ class ScaffoldGraphBase:
 
         # networkx doesn't like writing non-string attributes to GML
         for u, v in G.edges:
-            for key in G[u][v]:
+            for key in list(G[u][v].keys()):
                 G[u][v][key] = str(G[u][v][key])
         nx.readwrite.gml.write_gml(G, f)
 
