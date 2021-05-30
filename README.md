@@ -2,7 +2,7 @@
 
 ## RagTag 
 
-[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=EE7733)](https://github.com/malonge/RagTag/releases/tag/v2.0.0) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=009988&label=conda)](https://anaconda.org/bioconda/ragtag) [![GitHub](https://img.shields.io/github/license/malonge/RagTag?color=CC3311)](https://github.com/malonge/RagTag/blob/master/LICENSE)
+[![DOI](https://zenodo.org/badge/242898323.svg)](https://zenodo.org/badge/latestdoi/242898323) [![RELEASE](https://img.shields.io/github/v/release/malonge/RagTag?color=EE7733)](https://github.com/malonge/RagTag/releases/tag/v2.0.1) [![CONDA](https://img.shields.io/conda/dn/bioconda/ragtag?color=009988&label=conda)](https://anaconda.org/bioconda/ragtag) [![GitHub](https://img.shields.io/github/license/malonge/RagTag?color=CC3311)](https://github.com/malonge/RagTag/blob/master/LICENSE)
 
 RagTag is a collection of software tools for scaffolding and improving modern genome assemblies. Tasks include:
 
