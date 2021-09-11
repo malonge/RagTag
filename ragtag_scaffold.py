@@ -265,7 +265,7 @@ def read_genome_alignments(aln_file, query_blacklist, ref_blacklist):
 
 def main():
     description = "Homology-based assembly scaffolding: Order and orient sequences in 'query.fa' by comparing them to " \
-                  "sequences in 'reference.fa'>"
+                  "sequences in 'reference.fa'"
     parser = argparse.ArgumentParser(description=description, usage="ragtag.py scaffold <reference.fa> <query.fa>")
 
     parser.add_argument("reference", metavar="<reference.fa>", nargs='?', default="", type=str, help="reference fasta file (uncompressed or bgzipped)")
@@ -297,8 +297,8 @@ def main():
     aln_options.add_argument("-t", metavar="INT", type=int, default=1, help="number of minimap2/unimap threads [1]")
     aln_options.add_argument("--aligner", metavar="PATH", type=str, default="minimap2", help="aligner executable ('nucmer', 'unimap' or 'minimap2') [minimap2]")
     mm2_default = "-x asm5"
-    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 parameters ['%s']" % mm2_default)
-    aln_options.add_argument("--unimap-params", metavar="STR", type=str, default=mm2_default, help="space delimited unimap parameters ['%s']" % mm2_default)
+    aln_options.add_argument("--mm2-params", metavar="STR", type=str, default=mm2_default, help="space delimited minimap2 parameters (overrides '-t') ['%s']" % mm2_default)
+    aln_options.add_argument("--unimap-params", metavar="STR", type=str, default=mm2_default, help="space delimited unimap parameters (overrides '-t') ['%s']" % mm2_default)
     aln_options.add_argument("--nucmer-params", metavar="STR", type=str, default="--maxmatch -l 100 -c 500", help="space delimted nucmer parameters ['--maxmatch -l 100 -c 500']")
 
     args = parser.parse_args()

@@ -108,7 +108,7 @@ def write_delta(in_alns, in_r_lens, in_q_lens, ref_file, query_file):
 
 
 def paf2delta():
-    parser = argparse.ArgumentParser(description="Convert a PAF file to a Nucmer delta file.\nPAF file lines must have CIGAR strings ('-c' when using Minimap2)")
+    parser = argparse.ArgumentParser(description="Convert a PAF file to a Nucmer delta file.\nPAF file lines must have CIGAR strings ('-c' when using Minimap2)", usage="ragtag.py paf2delta <with-cg.paf>")
     parser.add_argument("paf_file", metavar="<with-cg.paf>", type=str, help="PAF file to convert (gzip allowed).")
     parser.add_argument("-r", default="", metavar="PATH", type=str, help="PATH to there reference fasta file")
     parser.add_argument("-q", default="", metavar="PATH", type=str, help="PATH to there query fasta file")

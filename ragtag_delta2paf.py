@@ -34,7 +34,7 @@ def delta2paf():
 
     https://github.com/lh3/minimap2/tree/master/misc
     """
-    parser = argparse.ArgumentParser(description="Convert a Nucmer delta file to a PAF file.")
+    parser = argparse.ArgumentParser(description="Convert a Nucmer delta file to a PAF file.", usage="ragtag.py delta2paf <alns.delta>")
     parser.add_argument("delta_file", metavar="<alns.delta>", type=str, help="delta file to convert.")
 
     args = parser.parse_args()
