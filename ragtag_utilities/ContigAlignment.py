@@ -442,13 +442,15 @@ class ContigAlignment:
         i = 0
         j = 1
         while j < len(ref_headers):
+            r_consec_aln_dist = ref_starts[j] - ref_ends[i]
+            q_consec_aln_dist = query_starts[j] - query_ends[i]
             conditions = [
                 ref_headers[i] == ref_headers[j],
                 strands[i] == strands[j],
-                ref_starts[j] - ref_ends[i] <= merge_dist
+                (-1*merge_dist) <= r_consec_aln_dist <= merge_dist
             ]
             if careful_merge:
-                conditions.append(query_starts[j] - query_ends[i] <= merge_dist)
+                conditions.append((-1*merge_dist) <= q_consec_aln_dist <= merge_dist)
 
             if all(conditions):
                 # Merge the alignments in place of the first alignment
