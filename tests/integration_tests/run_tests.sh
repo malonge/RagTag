@@ -90,12 +90,11 @@ echo ""
 mecho "Validating results:"
 echo ""
 
-# TODO replace with new results
 bash scripts/validate_results.sh ${OUTDIR}/ragtag.correct.agp \
-    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.correct.agp
+    ~/Projects/ragtag_workspace/static_results/ara/default/ragtag.correct.agp
 
-bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.scaffold.agp \
-    ~/Projects/ragtag_workspace/static_results/tomato/ragtag.scaffold.agp
+bash scripts/validate_results.sh ${OUTDIR}/ragtag.scaffold.agp \
+    ~/Projects/ragtag_workspace/static_results/ara/default/ragtag.scaffold.agp
 
 
 # Run RagTag
@@ -159,12 +158,11 @@ echo ""
 mecho "Validating results:"
 echo ""
 
-# TODO update results
-bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.correct.agp \
-    ~/Projects/ragtag_workspace/static_results/ara/ragtag.correct.agp
+bash scripts/validate_results.sh ${OUTDIR}/ragtag.correct.agp \
+    ~/Projects/ragtag_workspace/static_results/ara/nucmer/ragtag.correct.agp
 
-bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.scaffold.agp \
-    ~/Projects/ragtag_workspace/static_results/ara/ragtag.scaffold.agp
+bash scripts/validate_results.sh ${OUTDIR}/ragtag.scaffold.agp \
+    ~/Projects/ragtag_workspace/static_results/ara/nucmer/ragtag.scaffold.agp
 
 
 # Run RagTag
