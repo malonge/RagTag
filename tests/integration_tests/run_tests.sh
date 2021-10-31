@@ -1,22 +1,18 @@
 #!/usr/bin/env bash
 
 # position args:
-## 1. tomato reference
-## 2. tomato query
-## 3. tomato gff
-## 4. ara reference
-## 5. ara query
-## 6. ara gff
-## 7. E. coli reference
-## 8. E. coli query
-## 9. E.coli reads fofn
+## 1. A. thaliana reference
+## 2. A. thaliana query
+## 3. A. thaliana gff
+## 4. E. coli reference
+## 5. E. coli query
+## 6. E.coli reads fofn
+## 7. A. thaliana solution against Ler
+## 8. Copy of A. thaliana solution against Ler
+## 9. A. thaliana solution against Col-0
 
 # Assumes fasta suffixes are ".fasta"
 # Assumes gff suffixes are ".gff"
-
-Usage() {
-    echo "Usage: $0 tomato.ref.fa tomato.query.fa tomato.genes.gff ara.ref.fa ara.query.fa ara.genes.gff"
-}
 
 mecho() {
     NAME=`basename $0`
@@ -28,69 +24,65 @@ if [ $# -lt 6 ] ; then
     exit 1
 fi
 
-T_REF=$1
-T_QUERY=$2
-T_QUERY_PREF=`basename $T_QUERY .fasta`
-T_GFF=$3
-T_GFF_PREF=`basename $T_GFF .gff`
-
-A_REF=$4
-A_QUERY=$5
+A_REF=$1
+A_QUERY=$2
 A_QUERY_PREF=`basename $A_QUERY .fasta`
-A_GFF=$6
+A_GFF=$3
 A_GFF_PREF=`basename $A_GFF .gff`
 
-E_REF=$7
-E_QUERY=$8
+E_REF=$4
+E_QUERY=$5
 E_QUERY_PREF=`basename $E_QUERY .fasta`
-E_VAL_FOFN=$9
+E_VAL_FOFN=$6
 
 M_ASM=$A_QUERY
-M_AGP_1=${10}
-M_AGP_2=${11}
-M_AGP_3=${12}
+M_AGP_1=${7}
+M_AGP_2=${8}
+M_AGP_3=${9}
 
 
 # Run RagTag
 # Settings: default
-# Data: Tomato
+# Data: A. thaliana
 echo ""
-echo "*************************************************************"
-echo "*** Running RagTag on tomato data with default parameters ***"
-echo "*************************************************************"
+echo "******************************************************************"
+echo "*** Running RagTag on A. thaliana data with default parameters ***"
+echo "******************************************************************"
 echo ""
-bash scripts/run_default.sh $T_REF \
-    $T_QUERY \
-    $T_GFF \
-    ragtag_output_tomato_default
+
+OUTDIR=ragtag_output_Ara_default
+bash scripts/run_default.sh $A_REF \
+    $A_QUERY \
+    $A_GFF \
+    $OUTDIR
 
 # Validate the agp files
 echo ""
 mecho "Validating AGP files and associated fasta files:"
 echo ""
 
-bash scripts/validate_agp.sh $T_QUERY \
-    ragtag_output_tomato_default/ragtag.correct.fasta \
-    ragtag_output_tomato_default/ragtag.correct.agp
+bash scripts/validate_agp.sh $A_QUERY \
+    ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/ragtag.correct.agp
 
-bash scripts/validate_agp.sh ragtag_output_tomato_default/ragtag.scaffold.fasta \
-    ragtag_output_tomato_default/ragtag.correct.fasta \
-    ragtag_output_tomato_default/ragtag.scaffold.agp
+bash scripts/validate_agp.sh ${OUTDIR}/ragtag.scaffold.fasta \
+    ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/ragtag.scaffold.agp
 
 # Validate the gff files
 echo ""
 mecho "Validating GFF files:"
 echo ""
 
-bash scripts/validate_gff.sh $T_QUERY \
-    $T_GFF \
-    ragtag_output_tomato_default/ragtag.correct.fasta \
-    ragtag_output_tomato_default/$T_GFF_PREF.corr.gff
+bash scripts/validate_gff.sh $A_QUERY \
+    $A_GFF \
+    ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/$A_GFF_PREF.corr.gff
 
-bash scripts/validate_gff.sh ragtag_output_tomato_default/ragtag.correct.fasta \
-    ragtag_output_tomato_default/$T_GFF_PREF.corr.gff \
-    ragtag_output_tomato_default/ragtag.scaffold.fasta \
-    ragtag_output_tomato_default/$T_GFF_PREF.scaf.gff
+bash scripts/validate_gff.sh ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/$A_GFF_PREF.corr.gff \
+    ${OUTDIR}/ragtag.scaffold.fasta \
+    ${OUTDIR}/$A_GFF_PREF.scaf.gff
 
 
 # Validate the results
@@ -98,7 +90,8 @@ echo ""
 mecho "Validating results:"
 echo ""
 
-bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.correct.agp \
+# TODO replace with new results
+bash scripts/validate_results.sh ${OUTDIR}/ragtag.correct.agp \
     ~/Projects/ragtag_workspace/static_results/tomato/ragtag.correct.agp
 
 bash scripts/validate_results.sh ragtag_output_tomato_default/ragtag.scaffold.agp \
@@ -113,11 +106,12 @@ echo "**************************************************************"
 echo "***     Running RagTag on Arabidopsis data with Nucmer     ***"
 echo "**************************************************************"
 echo ""
+OUTDIR=ragtag_output_Ara_nucmer
 
 bash scripts/run_nucmer.sh $A_REF \
     $A_QUERY \
     $A_GFF \
-    ragtag_output_Ara_nucmer
+    $OUTDIR
 
 # Validate the agp files
 echo ""
@@ -125,12 +119,12 @@ mecho "Validating AGP files and associated fasta files:"
 echo ""
 
 bash scripts/validate_agp.sh $A_QUERY \
-    ragtag_output_Ara_nucmer/ragtag.correct.fasta \
-    ragtag_output_Ara_nucmer/ragtag.correct.agp
+    ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/ragtag.correct.agp
 
-bash scripts/validate_agp.sh ragtag_output_Ara_nucmer/ragtag.scaffold.fasta \
-    ragtag_output_Ara_nucmer/ragtag.correct.fasta \
-    ragtag_output_Ara_nucmer/ragtag.scaffold.agp
+bash scripts/validate_agp.sh ${OUTDIR}/ragtag.scaffold.fasta \
+    ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/ragtag.scaffold.agp
 
 # Validate the gff files
 echo ""
@@ -139,25 +133,25 @@ echo ""
 
 bash scripts/validate_gff.sh $A_QUERY \
     $A_GFF \
-    ragtag_output_Ara_nucmer/ragtag.correct.fasta \
-    ragtag_output_Ara_nucmer/$A_GFF_PREF.corr.gff
+    ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/$A_GFF_PREF.corr.gff
 
-bash scripts/validate_gff.sh ragtag_output_Ara_nucmer/ragtag.correct.fasta \
-    ragtag_output_Ara_nucmer/$A_GFF_PREF.corr.gff \
-    ragtag_output_Ara_nucmer/ragtag.scaffold.fasta \
-    ragtag_output_Ara_nucmer/$A_GFF_PREF.scaf.gff
+bash scripts/validate_gff.sh ${OUTDIR}/ragtag.correct.fasta \
+    ${OUTDIR}/$A_GFF_PREF.corr.gff \
+    ${OUTDIR}/ragtag.scaffold.fasta \
+    ${OUTDIR}/$A_GFF_PREF.scaf.gff
 
 # Validate the unique anchor filtering
 echo ""
 mecho "Validating alignment filtering:"
 echo ""
 
-bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/ragtag.correct.asm.delta \
-    ragtag_output_Ara_nucmer/ragtag.correct.debug.filtered.paf \
+bash scripts/validate_uaf.sh ${OUTDIR}/ragtag.correct.asm.delta \
+    ${OUTDIR}/ragtag.correct.debug.filtered.paf \
     1000
 
-bash scripts/validate_uaf.sh ragtag_output_Ara_nucmer/ragtag.scaffold.asm.delta \
-    ragtag_output_Ara_nucmer/ragtag.scaffold.debug.filtered.paf \
+bash scripts/validate_uaf.sh ${OUTDIR}/ragtag.scaffold.asm.delta \
+    ${OUTDIR}/ragtag.scaffold.debug.filtered.paf \
     1000
 
 # Validate the results
@@ -165,6 +159,7 @@ echo ""
 mecho "Validating results:"
 echo ""
 
+# TODO update results
 bash scripts/validate_results.sh ragtag_output_Ara_nucmer/ragtag.correct.agp \
     ~/Projects/ragtag_workspace/static_results/ara/ragtag.correct.agp
 
