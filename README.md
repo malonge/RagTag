@@ -51,7 +51,11 @@ Please see the [Wiki](https://github.com/malonge/RagTag/wiki) for detailed docum
     
 ## Citation
 
-Alonge, Michael, et al. ["RaGOO: fast and accurate reference-guided scaffolding of draft genomes."](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1829-6) Genome biology 20.1 (2019): 1-17. <br>https://doi.org/10.1186/s13059-019-1829-6
+- Alonge, Michael, et al. ["Automated assembly scaffolding elevates a new tomato system for high-throughput genome editing."](https://www.biorxiv.org/content/10.1101/2021.11.18.469135v1) bioRxiv (2021). <br>https://doi.org/10.1101/2021.11.18.469135
+
+RagTag supersedes RaGOO:
+
+- Alonge, Michael, et al. ["RaGOO: fast and accurate reference-guided scaffolding of draft genomes."](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-019-1829-6) Genome biology 20.1 (2019): 1-17. <br>https://doi.org/10.1186/s13059-019-1829-6
 
 ## Acknowledgments
 

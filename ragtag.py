@@ -33,6 +33,12 @@ from ragtag_utilities.utilities import get_ragtag_version
 def main():
     VERSION = get_ragtag_version()
     CITATION = """
+Alonge, Michael, et al. "Automated assembly scaffolding elevates a new tomato system for high-throughput genome editing."
+bioRxiv (2021). 
+https://doi.org/10.1101/2021.11.18.469135
+
+** RagTag supersedes RaGOO **
+
 Alonge, Michael, et al. "RaGOO: fast and accurate reference-guided scaffolding of draft genomes."
 Genome biology 20.1 (2019): 1-17.
 https://doi.org/10.1186/s13059-019-1829-6
