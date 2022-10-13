@@ -28,6 +28,7 @@ import os
 import sys
 import argparse
 from collections import defaultdict
+import warnings
 
 from intervaltree import IntervalTree
 
@@ -35,25 +36,30 @@ from ragtag_utilities.utilities import log, get_ragtag_version
 from ragtag_utilities.AGPFile import AGPFile
 
 
-def sub_update(gff_file, agp_file):
+def sub_update(gff_file, agp_file, is_split):
     # Make a dictionary associating each original sequence with an interval tree of component sequences
     trans = defaultdict(IntervalTree)
     agp = AGPFile(agp_file, mode="r")
     for agp_line in agp.iterate_lines():
 
         # Check that the agp file looks correct for this task
-        if agp_line.orientation == "-":
-            raise ValueError("The placement BED file is not formatted correctly. No sequences should be reverse complemented for misassembly correction.")
-        if not agp_line.comp_type == "W":
+        if not agp_line.comp_type == "W" and not is_split:
             raise ValueError("The placement BED file is not formatted correctly. All lines should be WGS contig (W).")
-        if agp_line.is_gap:
+        if agp_line.is_gap and not is_split:
             raise ValueError("There should be no gaps in the correction AGP file.")
+        # gaps don't have the orientation attribute so this check should come last
+        if not is_split:
+            if agp_line.orientation == "-":
+                raise ValueError("The placement BED file is not formatted correctly. No sequences should be reverse complemented for misassembly correction.")
 
-        start, end = agp_line.obj_beg - 1, agp_line.obj_end
-        trans[agp_line.obj][start:end] = agp_line.comp
+        # Cant adjust gap comps because gaps aren't assembled into object
+        if agp_line.comp_type == "W":
+            start, end = agp_line.obj_beg - 1, agp_line.obj_end
+            trans[agp_line.obj][start:end] = agp_line.comp
 
     # Iterate through the gff intervals and update them according to trans
     with open(gff_file, "r") as f:
+        print(list(trans.keys())[0])
         for line in f:
             line = line.rstrip()
             if line.startswith("#"):
@@ -61,6 +67,9 @@ def sub_update(gff_file, agp_file):
             else:
                 fields = line.split("\t")
                 h, s, e = fields[0], int(fields[3]), int(fields[4])
+                #all_attributes = fields[8]
+                #attributes = all_attributes.split(";")
+
                 s -= 1  # Keep everything zero-indexed
 
                 if h not in trans:
@@ -68,9 +77,13 @@ def sub_update(gff_file, agp_file):
 
                 ovlps = trans[h][s:e]
                 if len(ovlps) > 1:
+                    #for ovlp in ovlps:
+                    #    print(ovlp)
+                    #warnings.warn("%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Ignoring feature. Make sure to run 'correct' or 'splitasm' with '--gff'" % (h, s, e))
                     raise ValueError(
                         "%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Make sure to run 'ragtag.py correct' with '--gff'" % (h, s, e)
                     )
+                    #skipped_parent_feats =
                 if len(ovlps) < 1:
                     raise ValueError("The placement BED file is not formatted correctly.")
 
@@ -84,7 +97,7 @@ def sub_update(gff_file, agp_file):
                 print("\t".join(fields))
 
 
-def sup_update(gff_file, agp_file):
+def sup_update(gff_file, agp_file, is_split):
     # Make a dictionary associating each original sequence with the destination sequence
     trans = {}
     strands = {}
@@ -132,10 +145,11 @@ def sup_update(gff_file, agp_file):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Update gff intervals given a RagTag AGP file", usage="ragtag.py updategff [-c] <genes.gff> <ragtag.agp>")
+    parser = argparse.ArgumentParser(description="Update gff intervals from `correct`, `scaffold`, or `splitasm` given a RagTag AGP file", usage="ragtag.py updategff [-c] <genes.gff> <ragtag.agp>")
     parser.add_argument("gff", nargs='?', default="", metavar="<genes.gff>", type=str, help="gff file")
     parser.add_argument("agp", nargs='?', default="", metavar="<ragtag.*.agp>", type=str, help="agp file")
     parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction (ragtag.correction.agp)")
+    parser.add_argument("-s", action="store_true", default=False, help="update for assembly splitting from RagTag")
 
     args = parser.parse_args()
 
@@ -149,9 +163,10 @@ def main():
     gff_file = os.path.abspath(args.gff)
     agp_file = os.path.abspath(args.agp)
     is_sub = args.c
+    is_split = args.s
 
-    if is_sub:
-        sub_update(gff_file, agp_file)
+    if is_sub or is_split:
+        sub_update(gff_file, agp_file, is_split)
     else:
         sup_update(gff_file, agp_file)
 
