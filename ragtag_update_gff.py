@@ -29,6 +29,7 @@ import sys
 import argparse
 from collections import defaultdict
 import warnings
+import re
 
 from intervaltree import IntervalTree
 
@@ -59,7 +60,9 @@ def sub_update(gff_file, agp_file, is_split):
 
     # Iterate through the gff intervals and update them according to trans
     with open(gff_file, "r") as f:
-        print(list(trans.keys())[0])
+        attr_id = re.compile('(?<=ID=).*')
+        attr_parent = re.compile('(?<=Parent=).*')
+        ovlp_ids = []
         for line in f:
             line = line.rstrip()
             if line.startswith("#"):
@@ -67,8 +70,15 @@ def sub_update(gff_file, agp_file, is_split):
             else:
                 fields = line.split("\t")
                 h, s, e = fields[0], int(fields[3]), int(fields[4])
-                #all_attributes = fields[8]
-                #attributes = all_attributes.split(";")
+                attributes = fields[8]
+                for attr in attributes.split(";"):
+                    feat_id_matches = attr_id.findall(attr)
+                    parent_matches = attr_parent.findall(attr)
+                    if feat_id_matches:
+                        feat_id = feat_id_matches
+                    if parent_matches:
+                        parent = parent_matches
+
 
                 s -= 1  # Keep everything zero-indexed
 
@@ -77,24 +87,36 @@ def sub_update(gff_file, agp_file, is_split):
 
                 ovlps = trans[h][s:e]
                 if len(ovlps) > 1:
-                    #for ovlp in ovlps:
-                    #    print(ovlp)
-                    #warnings.warn("%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Ignoring feature. Make sure to run 'correct' or 'splitasm' with '--gff'" % (h, s, e))
-                    raise ValueError(
-                        "%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Make sure to run 'ragtag.py correct' with '--gff'" % (h, s, e)
-                    )
-                    #skipped_parent_feats =
+                    warnings.warn("%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Make sure to run 'correct' or 'splitasm' with '--gff'" % (h, s, e))
+                    #raise ValueError(
+                    #    "%s:%d-%d in the gff file overlaps two sub-sequences in the placement file. Make sure to run 'ragtag.py correct' with '--gff'" % (h, s, e)
+                    #)
+                    if feat_id:
+                        ovlp_ids.append(feat_id)
                 if len(ovlps) < 1:
                     raise ValueError("The placement BED file is not formatted correctly.")
 
-                # Get the data from the overlapping interval and print the new line
-                o = list(ovlps)[0]
-                new_s = s - o.begin
-                new_e = e - o.begin
-                fields[0] = o.data
-                fields[3] = str(new_s + 1)  # back to one-based indexing for gff format
-                fields[4] = str(new_e)
-                print("\t".join(fields))
+                # Check if feat needs to be skipped because of ID or parent match,
+                # complex solution ensuring orphan feats aren't added e.g. parent gene overlaps but not its stop codon
+                if (feat_id in ovlp_ids) or (parent_matches and parent in ovlp_ids):
+                    #if (feat_id in ovlp_ids):
+                    #    print("ID %s found in list" % (feat_id))
+                    #if (parent in ovlp_ids):
+                    #    print("Parent %s found in list" % (parent))
+                    #print("Ignoring %s spanning a gap between two sub sequences %s:%d-%d" % (feat_id, h, s, e))
+                    # To access level 3 feats, add parent to ID exclusion list
+                    if parent:
+                        ovlp_ids.append(feat_id)
+                    continue
+                else:
+                    # Get the data from the overlapping interval and print the new line
+                    o = list(ovlps)[0]
+                    new_s = s - o.begin
+                    new_e = e - o.begin
+                    fields[0] = o.data
+                    fields[3] = str(new_s + 1)  # back to one-based indexing for gff format
+                    fields[4] = str(new_e)
+                    print("\t".join(fields))
 
 
 def sup_update(gff_file, agp_file, is_split):
