@@ -28,7 +28,6 @@ import os
 import sys
 import argparse
 from collections import defaultdict
-import warnings
 import re
 
 from intervaltree import IntervalTree
@@ -87,10 +86,10 @@ def sub_update(gff_file, agp_file, is_split):
 
                 ovlps = trans[h][s:e]
                 if len(ovlps) > 1:
-                    warnings.warn("%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Make sure to run 'correct' or 'splitasm' with '--gff'" % (h, s, e))
                     #raise ValueError(
                     #    "%s:%d-%d in the gff file overlaps two sub-sequences in the placement file. Make sure to run 'ragtag.py correct' with '--gff'" % (h, s, e)
                     #)
+                    log("WARNING", "%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Skipping %s. Make sure to run 'correct' or 'splitasm' with '--gff'" % (h, s, e, feat_id))
                     if feat_id:
                         ovlp_ids.append(feat_id)
                 if len(ovlps) < 1:
@@ -119,7 +118,7 @@ def sub_update(gff_file, agp_file, is_split):
                     print("\t".join(fields))
 
 
-def sup_update(gff_file, agp_file, is_split):
+def sup_update(gff_file, agp_file):
     # Make a dictionary associating each original sequence with the destination sequence
     trans = {}
     strands = {}
@@ -167,7 +166,7 @@ def sup_update(gff_file, agp_file, is_split):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Update gff intervals from `correct`, `scaffold`, or `splitasm` given a RagTag AGP file", usage="ragtag.py updategff [-c] <genes.gff> <ragtag.agp>")
+    parser = argparse.ArgumentParser(description="Update gff intervals from given a RagTag AGP file", usage="ragtag.py updategff [-c] <genes.gff> <ragtag.agp>")
     parser.add_argument("gff", nargs='?', default="", metavar="<genes.gff>", type=str, help="gff file")
     parser.add_argument("agp", nargs='?', default="", metavar="<ragtag.*.agp>", type=str, help="agp file")
     parser.add_argument("-c", action="store_true", default=False, help="update for misassembly correction (ragtag.correction.agp)")
