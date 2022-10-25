@@ -70,6 +70,8 @@ def sub_update(gff_file, agp_file, is_split):
                 fields = line.split("\t")
                 h, s, e = fields[0], int(fields[3]), int(fields[4])
                 attributes = fields[8]
+                parent = None
+                feat_id = None
                 for attr in attributes.split(";"):
                     feat_id_matches = attr_id.findall(attr)
                     parent_matches = attr_parent.findall(attr)
@@ -89,23 +91,19 @@ def sub_update(gff_file, agp_file, is_split):
                     #raise ValueError(
                     #    "%s:%d-%d in the gff file overlaps two sub-sequences in the placement file. Make sure to run 'ragtag.py correct' with '--gff'" % (h, s, e)
                     #)
-                    log("WARNING", "%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Skipping %s. Make sure to run 'correct' or 'splitasm' with '--gff'" % (h, s, e, feat_id))
+                    log("WARNING", "%s:%d-%d in the gff file overlaps two sub sequences in the placement file. Skipping %s and any child features. To retain feature, include '--gff' and re-run 'correct' or 'splitasm'" % (h, s, e, feat_id))
                     if feat_id:
                         ovlp_ids.append(feat_id)
+                    continue
                 if len(ovlps) < 1:
                     raise ValueError("The placement BED file is not formatted correctly.")
 
                 # Check if feat needs to be skipped because of ID or parent match,
                 # complex solution ensuring orphan feats aren't added e.g. parent gene overlaps but not its stop codon
-                if (feat_id in ovlp_ids) or (parent_matches and parent in ovlp_ids):
-                    #if (feat_id in ovlp_ids):
-                    #    print("ID %s found in list" % (feat_id))
-                    #if (parent in ovlp_ids):
-                    #    print("Parent %s found in list" % (parent))
-                    #print("Ignoring %s spanning a gap between two sub sequences %s:%d-%d" % (feat_id, h, s, e))
-                    # To access level 3 feats, add parent to ID exclusion list
-                    if parent:
-                        ovlp_ids.append(feat_id)
+                if parent and parent in ovlp_ids:
+                    log("WARNING", "Parent %s already excluded for overlapping two sub sequences. Skipping %s." % (parent, feat_id))
+                    # To access any potential level 3 feats, add parent to ID exclusion list
+                    ovlp_ids.append(feat_id)
                     continue
                 else:
                     # Get the data from the overlapping interval and print the new line
