@@ -39,11 +39,12 @@ from ragtag_utilities.AGPFile import AGPFile
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Split sequencs at gaps', usage="ragtag.py splitasm <asm.fa>")
+    parser = argparse.ArgumentParser(description='Split sequences at gaps', usage="ragtag.py splitasm <asm.fa>")
     parser.add_argument("asm", metavar="<asm.fa>", default="", type=str, help="assembly fasta file (uncompressed or bgzipped)")
     parser.add_argument("-n", metavar="INT", type=int, default=0, help="minimum gap size [0]")
     parser.add_argument("-o", metavar="PATH", type=str, default="ragtag.splitasm.agp", help="output AGP file path [./ragtag.splitasm.agp]")
     parser.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals [null]")
+    parser.add_argument("--bed", metavar="<splits.bed>", type=str, default="", help="BED file of where to break sequences [null]")
 
     # Parse the command line arguments
     args = parser.parse_args()
@@ -56,6 +57,17 @@ def main():
     min_gap_size = args.n
     agp_fn = args.o
     gff_file = args.gff
+    bed_file = args.bed
+    # Initialize Tabix-indexed BED file
+    if bed_file:
+        log("INFO", "Breaking across positions from BED file")
+        bed = pysam.TabixFile(bed_file)
+        bed_contigs = [row.contig for row in bed.fetch(parser = pysam.asBed())]
+        #print(bed_contigs)
+        # Fetch will break if sequence is absent
+        #for row in bed.fetch("seq00000000", parser = pysam.asBed()):
+        #    print(row)
+            #log("INFO", row.contig)
     if gff_file:
         gff_file = os.path.abspath(gff_file)
         it = make_gff_interval_tree(gff_file)
@@ -65,6 +77,8 @@ def main():
     agp.add_pragma()
     agp.add_comment("# AGP created by RagTag {}".format(get_ragtag_version()))
 
+
+
     # Process the FASTA file
     new_header_idx = 0
     fai = pysam.FastaFile(asm_fn)
@@ -72,6 +86,12 @@ def main():
         seq = fai.fetch(header).upper()
         seq_len = fai.get_reference_length(header)
         gap_coords = [(i.start(), i.end()) for i in re.finditer(r'N+', seq) if i.end() - i.start() > min_gap_size]
+        if bed_file and header in bed_contigs:
+            splits_pos = [(row.start, row.end) for row in bed.fetch(header, parser=pysam.asBed()) if row.end <= seq_len]
+        else:
+            splits_pos = []
+        #log("INFO", "Splitting %s at %s" % (header, splits_pos))
+        #print("Splitting %s at %s" % (header, splits_pos))
         # Remove coordinates overlapping gff features
         if gff_file:
             #non_gff_breaks = dict()
@@ -82,11 +102,22 @@ def main():
                                 % (header, gap[0], gap[1]))
                 else:
                     new_breaks.append(gap)
+            if splits_pos:
+                new_splits = []
+                for split in splits_pos:
+                    if it[header][split[1]]:
+                        log("INFO", "Avoiding breaking %s at %d. This point intersects a feature in the gff file."
+                                    % (header, split[1]))
+                    else:
+                        new_splits.append(split)
+                if new_splits:
+                    splits_pos = new_splits
             if new_breaks:
                 #non_gff_breaks[header] = new_breaks
                 gap_coords = new_breaks
+            
 
-        if not gap_coords:
+        if not gap_coords and not splits_pos:
             new_header = "seq{0:08}".format(new_header_idx)
             new_header_idx += 1
             agp.add_seq_line(header, "1", seq_len, "1", "W", new_header, "1", seq_len, "+")
@@ -96,7 +127,37 @@ def main():
             if gap_coords[0][0]:
                 # The sequence doesn't start with a gap
                 new_header = "seq{0:08}".format(new_header_idx)
-                agp.add_seq_line(header, "1", str(gap_coords[0][0]), str(pid), "W", new_header, "1", str(gap_coords[0][0]), "+")
+                # if there's a split coordinate before the end, that needs to be the "new" end
+                # First, if/ELSE allows current behavior to be the same
+                # Make any/all splits necessary before the *first* gap sequence
+                # *later*: will need to check for split coords between every gap coord
+                if splits_pos:
+                    log("INFO", "Should break %s %s times at gaps %s" % (header, len(splits_pos), str(splits_pos)))
+                    for i in range(0, len(splits_pos)):
+                        log("INFO", "Breaking %s at gap %s" % (header, str(splits_pos)))
+                        if splits_pos[i][1] < gap_coords[0][0]:
+                            # Only first iteration starts at 1 (object; component always starts at 1)
+                            if i == 0:
+                                obj_start=1
+                                obj_end=splits_pos[i][1]
+                                cmp_end=obj_end
+                                log("INFO", "Found first split in %s at %s" % (header, obj_end))
+                            else:
+                                obj_start=obj_end+1
+                                obj_end=splits_pos[i][1]
+                                cmp_end=obj_end - obj_start + 1
+                                log("INFO", "Found another split in %s at %s producing seq of length %s" % (header, obj_end, cmp_end))
+                            agp.add_seq_line(header, str(obj_start), str(obj_end), str(pid), "W", new_header, "1", str(cmp_end), "+")
+                            new_header_idx += 1
+                            new_header = "seq{0:08}".format(new_header_idx)
+                            pid += 1
+                    # Add in final component to object - from last break till end of the sequence
+                    obj_start=obj_end+1
+                    obj_end=seq_len
+                    cmp_end=obj_end - obj_start + 1
+                    agp.add_seq_line(header, str(obj_start), str(obj_end), str(pid), "W", new_header, "1", str(cmp_end), "+")
+                else:  
+                    agp.add_seq_line(header, "1", str(gap_coords[0][0]), str(pid), "W", new_header, "1", str(gap_coords[0][0]), "+")
                 new_header_idx += 1
                 pid += 1
 
