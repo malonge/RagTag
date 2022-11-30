@@ -64,11 +64,6 @@ def main():
         log("INFO", "Breaking across positions from BED file")
         bed = pysam.TabixFile(bed_file)
         bed_contigs = [row.contig for row in bed.fetch(parser = pysam.asBed())]
-        #print(bed_contigs)
-        # Fetch will break if sequence is absent
-        #for row in bed.fetch("seq00000000", parser = pysam.asBed()):
-        #    print(row)
-            #log("INFO", row.contig)
     if gff_file:
         gff_file = os.path.abspath(gff_file)
         it = make_gff_interval_tree(gff_file)
@@ -88,8 +83,6 @@ def main():
             splits_pos = [(row.start, row.end) for row in bed.fetch(header, parser=pysam.asBed()) if row.end <= seq_len]
         else:
             splits_pos = []
-        #log("INFO", "Splitting %s at %s" % (header, splits_pos))
-        #print("Splitting %s at %s" % (header, splits_pos))
         # Remove coordinates overlapping gff features
         if gff_file:
             #non_gff_breaks = dict()
@@ -115,9 +108,7 @@ def main():
             # if there's a split coordinate before the end, that needs to be the "new" end
             # Make any/all splits necessary
             if splits_pos:
-                log("INFO", "Should break %s %s times at gaps %s" % (header, len(splits_pos), str(splits_pos)))
                 for i in range(0, len(splits_pos)):
-                    log("INFO", "Breaking %s at gap %s" % (header, str(splits_pos)))
                     # Only first iteration starts at 1 (object; component always starts at 1)
                     if i == 0:
                         obj_start=1
@@ -128,7 +119,7 @@ def main():
                         obj_start=obj_end+1
                         obj_end=splits_pos[i][1]
                         cmp_end=obj_end - obj_start + 1
-                        log("INFO", "Found another split in %s at %s producing seq of length %s" % (header, obj_end, cmp_end))
+                        log("INFO", "Found another split in %s at %s" % (header, obj_end))
                     agp.add_seq_line(header, str(obj_start), str(obj_end), str(pid), "W", new_header, "1", str(cmp_end), "+")
                     new_header_idx += 1
                     new_header = "seq{0:08}".format(new_header_idx)
