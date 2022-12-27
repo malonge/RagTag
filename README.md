@@ -51,7 +51,7 @@ Please see the [Wiki](https://github.com/malonge/RagTag/wiki) for detailed docum
     
 ## Citation
 
-- Alonge, Michael, et al. ["Automated assembly scaffolding elevates a new tomato system for high-throughput genome editing."](https://www.biorxiv.org/content/10.1101/2021.11.18.469135v1) bioRxiv (2021). <br>https://doi.org/10.1101/2021.11.18.469135
+- Alonge, Michael, et al. ["Automated assembly scaffolding elevates a new tomato system for high-throughput genome editing."](https://genomebiology.biomedcentral.com/articles/10.1186/s13059-022-02823-7) Genome Biology (2022). <br>https://doi.org/10.1186/s13059-022-02823-7
 
 RagTag supersedes RaGOO:
 

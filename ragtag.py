@@ -34,8 +34,8 @@ def main():
     VERSION = get_ragtag_version()
     CITATION = """
 Alonge, Michael, et al. "Automated assembly scaffolding elevates a new tomato system for high-throughput genome editing."
-bioRxiv (2021). 
-https://doi.org/10.1101/2021.11.18.469135
+Genome Biology (2022). 
+https://doi.org/10.1186/s13059-022-02823-7
 
 ** RagTag supersedes RaGOO **
 
