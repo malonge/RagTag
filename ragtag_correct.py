@@ -112,7 +112,7 @@ def get_median_read_coverage(output_path, num_threads, overwrite_files):
                 covs.append(int(line.split("\t")[3]))
 
     # Get the median from the histogram
-    covs = np.asarray(covs, dtype=np.int32)
+    covs = np.asarray(covs, dtype=np.int64)
 
     # Remove the last value, which is a catch-all for coverages > 1k
     covs = covs[:-1]
