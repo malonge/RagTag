@@ -443,7 +443,12 @@ class ContigAlignment:
         j = 1
         while j < len(ref_headers):
             r_consec_aln_dist = ref_starts[j] - ref_ends[i]
-            q_consec_aln_dist = query_starts[j] - query_ends[i]
+
+            # sort_by_ref() orders alignments by reference position. On the reverse strand, j thus precedes i in the query.
+            if strands[i] == "+":
+                q_consec_aln_dist = query_starts[j] - query_ends[i]
+            else:
+                q_consec_aln_dist = query_starts[i] - query_ends[j]
             conditions = [
                 ref_headers[i] == ref_headers[j],
                 strands[i] == strands[j],
