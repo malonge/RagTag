@@ -24,21 +24,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 
+import os
 import re
 import sys
 import argparse
 
 import pysam
 
+from ragtag_correct import make_gff_interval_tree
+
 from ragtag_utilities.utilities import get_ragtag_version
+from ragtag_utilities.utilities import log
 from ragtag_utilities.AGPFile import AGPFile
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Split sequencs at gaps', usage="ragtag.py splitasm <asm.fa>")
+    parser = argparse.ArgumentParser(description='Split sequences at gaps', usage="ragtag.py splitasm <asm.fa>")
     parser.add_argument("asm", metavar="<asm.fa>", default="", type=str, help="assembly fasta file (uncompressed or bgzipped)")
     parser.add_argument("-n", metavar="INT", type=int, default=0, help="minimum gap size [0]")
     parser.add_argument("-o", metavar="PATH", type=str, default="ragtag.splitasm.agp", help="output AGP file path [./ragtag.splitasm.agp]")
+    parser.add_argument("--gff", metavar="<features.gff>", type=str, default="", help="don't break sequences within gff intervals [null]")
 
     # Parse the command line arguments
     args = parser.parse_args()
@@ -50,7 +55,11 @@ def main():
     asm_fn = args.asm
     min_gap_size = args.n
     agp_fn = args.o
-
+    gff_file = args.gff
+    if gff_file:
+        gff_file = os.path.abspath(gff_file)
+        it = make_gff_interval_tree(gff_file)
+        log("INFO", "Avoiding breaks within GFF intervals")
     # Initialize the AGP file
     agp = AGPFile(agp_fn, mode="w")
     agp.add_pragma()
@@ -63,8 +72,21 @@ def main():
         seq = fai.fetch(header).upper()
         seq_len = fai.get_reference_length(header)
         gap_coords = [(i.start(), i.end()) for i in re.finditer(r'N+', seq) if i.end() - i.start() > min_gap_size]
+        # Remove coordinates overlapping gff features
+        if gff_file:
+            #non_gff_breaks = dict()
+            new_breaks = []
+            for gap in gap_coords:
+                if it[header][gap[0]] or it[header][gap[1]]:
+                    log("INFO", "Avoiding breaking %s between %d-%d. This point intersects a feature in the gff file."
+                                % (header, gap[0], gap[1]))
+                else:
+                    new_breaks.append(gap)
+            if new_breaks:
+                #non_gff_breaks[header] = new_breaks
+                gap_coords = new_breaks
 
-        if not gap_coords:
+        if not gap_coords and not splits_pos:
             new_header = "seq{0:08}".format(new_header_idx)
             new_header_idx += 1
             agp.add_seq_line(header, "1", seq_len, "1", "W", new_header, "1", seq_len, "+")

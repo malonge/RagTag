@@ -64,6 +64,7 @@ usage: ragtag.py <command> [options]
       delta2paf       delta to PAF file conversion
       paf2delta       PAF to delta file conversion
       updategff       update gff intervals
+      manualsplits    split an assembly at manually identified misjoins
       
 
     options:
@@ -128,6 +129,10 @@ usage: ragtag.py <command> [options]
 
         elif cmd == "paf2delta":
             subcmd = ["ragtag_paf2delta.py"] + sys.argv[2:]
+            subprocess.call(subcmd)
+            
+        elif cmd == "manualsplits":
+            subcmd = ["ragtag_manualsplits.py"] + sys.argv[2:]
             subprocess.call(subcmd)
 
         else:
